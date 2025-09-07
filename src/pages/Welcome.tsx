@@ -17,14 +17,14 @@ export default function Welcome() {
             </p>
             
             <div className="space-y-3">
-              <Link to="/login" className="block w-full">
+              <Link to="/" className="block w-full">
                 <Button className="w-full" size="lg">
                   로그인하기
                 </Button>
               </Link>
-              <Link to="/dashboard" className="block w-full">
+              <Link to="/chatbots" className="block w-full">
                 <Button variant="outline" className="w-full" size="lg">
-                  대시보드 둘러보기
+                  챗봇 둘러보기
                 </Button>
               </Link>
               <Button variant="ghost" className="w-full" size="sm">

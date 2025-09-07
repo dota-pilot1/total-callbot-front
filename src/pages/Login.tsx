@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { Button } from '../components/ui';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -15,7 +16,7 @@ export default function Login() {
 
     try {
       await login(email, password);
-      navigate('/dashboard');
+      navigate('/chatbots');
     } catch (error) {
       console.error('Login failed:', error);
     } finally {
@@ -28,28 +29,30 @@ export default function Login() {
       <div className="flex items-center justify-center min-h-screen px-4">
         <div className="max-w-md w-full">
           <div className="bg-white rounded-lg shadow-lg p-8">
-            <div className="mb-6 text-center">
-              <h1 className="text-3xl font-bold text-gray-800 mb-2">로그인</h1>
-              <div className="w-12 h-1 bg-indigo-500 mx-auto"></div>
+            <div className="mb-8 text-center">
+              <h1 className="text-3xl font-bold text-gray-800 mb-2">콜봇 로그인</h1>
+              <div className="w-12 h-1 bg-indigo-500 mx-auto mb-2"></div>
+              <p className="text-gray-600 text-sm">AI 기반 음성 통화 시스템에 로그인하세요</p>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-5">
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                  이메일
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                  이메일 주소
                 </label>
                 <input
                   type="email"
                   id="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-200"
+                  placeholder="your@email.com"
                   required
                 />
               </div>
 
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
                   비밀번호
                 </label>
                 <input
@@ -57,24 +60,32 @@ export default function Login() {
                   id="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-200"
+                  placeholder="••••••••"
                   required
                 />
               </div>
 
-              <button
+              <Button
                 type="submit"
                 disabled={isLoading}
-                className="w-full bg-indigo-500 hover:bg-indigo-600 disabled:bg-indigo-300 text-white font-medium py-3 px-6 rounded-lg transition duration-200"
+                className="w-full"
+                size="lg"
               >
-                {isLoading ? '로그인 중...' : '로그인'}
-              </button>
+                {isLoading ? '로그인 중...' : '로그인하기'}
+              </Button>
             </form>
 
             <div className="mt-6 text-center">
-              <Link to="/" className="text-sm text-indigo-500 hover:text-indigo-600">
-                ← 홈으로 돌아가기
+              <Link to="/welcome" className="text-sm text-indigo-500 hover:text-indigo-600">
+                ← 서비스 소개 보기
               </Link>
+            </div>
+
+            <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+              <p className="text-xs text-gray-600 mb-1">테스트 계정:</p>
+              <p className="text-xs text-gray-500">이메일: user@example.com</p>
+              <p className="text-xs text-gray-500">비밀번호: password</p>
             </div>
           </div>
         </div>

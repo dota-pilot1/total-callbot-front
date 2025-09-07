@@ -3,20 +3,29 @@ import { AuthProvider } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Welcome from './pages/Welcome';
 import Login from './pages/Login';
-import Dashboard from './pages/Dashboard';
+import ChatbotSelector from './pages/ChatbotSelector';
+import CallbotChat from './pages/CallbotChat';
 
 function App() {
   return (
     <AuthProvider>
       <Router>
         <Routes>
-          <Route path="/" element={<Welcome />} />
-          <Route path="/login" element={<Login />} />
+          <Route path="/" element={<Login />} />
+          <Route path="/welcome" element={<Welcome />} />
           <Route 
-            path="/dashboard" 
+            path="/chatbots" 
             element={
               <ProtectedRoute>
-                <Dashboard />
+                <ChatbotSelector />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/chat/:botId" 
+            element={
+              <ProtectedRoute>
+                <CallbotChat />
               </ProtectedRoute>
             } 
           />
