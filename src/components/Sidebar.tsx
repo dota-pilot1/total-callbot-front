@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  ChevronRightIcon,
   ChevronLeftIcon,
   CodeBracketIcon,
   BuildingLibraryIcon,
@@ -292,19 +291,21 @@ interface SidebarProps {
 
 export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const location = useLocation();
-  const [openCategories, setOpenCategories] = useState<string[]>(['development']);
+  const [openCategories, setOpenCategories] = useState<string[]>([]);
 
   const toggleCategory = (categoryId: string) => {
     if (collapsed) {
       // 축소된 상태에서는 사이드바를 펼치고 해당 카테고리 열기
       onToggle();
-      setOpenCategories(prev => [...prev, categoryId]);
+      setOpenCategories([categoryId]); // 해당 카테고리만 열기
       return;
     }
+    
+    // 펼쳐진 상태에서는 클릭한 카테고리만 열리고 나머지는 닫기
     setOpenCategories(prev => 
       prev.includes(categoryId) 
-        ? prev.filter(id => id !== categoryId)
-        : [...prev, categoryId]
+        ? [] // 이미 열린 카테고리를 클릭하면 모두 닫기
+        : [categoryId] // 새로운 카테고리만 열기
     );
   };
 
@@ -340,11 +341,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
           onClick={onToggle}
           className="p-1 rounded-md hover:bg-gray-100 transition-colors"
         >
-          {collapsed ? (
-            <ChevronRightIcon className="w-5 h-5 text-gray-600" />
-          ) : (
-            <ChevronLeftIcon className="w-5 h-5 text-gray-600" />
-          )}
+          <ChevronLeftIcon className="w-5 h-5 text-gray-600" />
         </button>
       </div>
 
@@ -356,32 +353,23 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
             <div className="space-y-2">
               {categories.map((category) => {
                 const CategoryIcon = category.icon;
-                const isAnyBotActive = chatbots
-                  .filter(bot => bot.category === category.id)
-                  .some(bot => location.pathname === `/chat/${bot.id}`);
                 
                 return (
                   <button
                     key={category.id}
                     onClick={() => {
                       onToggle(); // 사이드바 펼치기
-                      setOpenCategories(prev => [...prev, category.id]); // 해당 카테고리 열기
+                      setOpenCategories([category.id]); // 해당 카테고리만 열기 (독점적)
                     }}
-                    className={`relative group flex items-center justify-center w-full px-3 py-3 rounded-lg transition-all duration-200 ${
-                      isAnyBotActive
-                        ? 'bg-indigo-100 text-indigo-700'
-                        : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                    }`}
+                    className="relative group flex items-center justify-center w-full px-3 py-3 rounded-lg transition-all duration-200 text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                   >
-                    <CategoryIcon className="h-5 w-5 flex-shrink-0" />
+                    <CategoryIcon className="h-5 w-5 flex-shrink-0 text-gray-500" />
                     
-                    {/* 카테고리 툴팁 */}
-                    <div className="absolute left-full ml-2 px-3 py-2 bg-gray-800 text-white text-sm rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
-                      <div className="font-medium">{category.name}</div>
-                      <div className="text-xs text-gray-300 mt-1">{category.description}</div>
-                      <div className="text-xs text-gray-400 mt-1">{chatbots.filter(bot => bot.category === category.id).length}개 봇</div>
+                    {/* 간단한 카테고리 툴팁 */}
+                    <div className="absolute left-full ml-3 px-3 py-2 bg-gray-900 text-white text-sm rounded-md shadow-xl opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none whitespace-nowrap z-[99999] top-1/2 transform -translate-y-1/2">
+                      {category.name} - {category.description}
                       {/* 툴팁 화살표 */}
-                      <div className="absolute left-0 top-1/2 transform -translate-y-1/2 -translate-x-1 w-2 h-2 bg-gray-800 rotate-45"></div>
+                      <div className="absolute right-full top-1/2 transform -translate-y-1/2 w-2 h-2 bg-gray-900 rotate-45 -mr-1"></div>
                     </div>
                   </button>
                 );
@@ -392,30 +380,41 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
             groupedChatbots.map((category) => {
               const CategoryIcon = category.icon;
               const isOpen = openCategories.includes(category.id);
+              // 개별 봇이 활성화된 경우 상위 카테고리 하이라이트 제거
+              const hasActiveBot = category.bots.some(bot => location.pathname === `/chat/${bot.id}`);
+              const shouldHighlight = isOpen && !hasActiveBot;
               
               return (
                 <div key={category.id}>
                   {/* 카테고리 헤더 */}
                   <motion.button 
                     onClick={() => toggleCategory(category.id)}
-                    className="flex items-center justify-between w-full px-3 py-2 text-left text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
+                    className={`flex items-center justify-between w-full px-3 py-2 text-left text-sm font-medium rounded-lg hover:bg-gray-100 transition-colors relative group ${
+                      shouldHighlight 
+                        ? 'bg-indigo-100 text-indigo-700' 
+                        : 'text-gray-700'
+                    }`}
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                   >
-                    <div className="flex items-center space-x-3">
-                      <CategoryIcon className="h-5 w-5 text-gray-500 flex-shrink-0" />
-                      <span className="truncate">{category.name}</span>
-                      <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
+                    <div className="flex items-center space-x-3 w-full">
+                      <CategoryIcon className={`h-5 w-5 flex-shrink-0 ${
+                        shouldHighlight ? 'text-indigo-600' : 'text-gray-500'
+                      }`} />
+                      <span className="truncate flex-1">{category.name}</span>
+                      <span className={`text-xs px-2 py-0.5 rounded-full ${
+                        shouldHighlight ? 'text-indigo-700 bg-indigo-100' : 'text-gray-400 bg-gray-100'
+                      }`}>
                         {category.bots.length}
                       </span>
                     </div>
                     
-                    <motion.div
-                      animate={{ rotate: isOpen ? 90 : 0 }}
-                      transition={{ duration: 0.2 }}
-                    >
-                      <ChevronRightIcon className="h-4 w-4 text-gray-500" />
-                    </motion.div>
+                    {/* 간단한 텍스트 툴팁 */}
+                    <div className="absolute left-full ml-3 px-3 py-2 bg-gray-900 text-white text-sm rounded-md shadow-xl opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none whitespace-nowrap z-[99999] top-1/2 transform -translate-y-1/2">
+                      {category.description}
+                      {/* 툴팁 화살표 */}
+                      <div className="absolute right-full top-1/2 transform -translate-y-1/2 w-2 h-2 bg-gray-900 rotate-45 -mr-1"></div>
+                    </div>
                   </motion.button>
 
                   {/* 챗봇 목록 */}
@@ -447,14 +446,21 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                                   greeting: bot.greeting
                                 }
                               }}
-                              className={`flex items-center space-x-3 w-full px-3 py-2 text-sm rounded-md transition-all duration-200 ${
+                              className={`relative group flex items-center space-x-3 w-full px-3 py-2 text-sm rounded-md transition-all duration-200 ${
                                 isActive
-                                  ? 'bg-indigo-100 text-indigo-700 border-r-4 border-indigo-500'
+                                  ? 'bg-indigo-100 text-indigo-700'
                                   : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                               }`}
                             >
                               <BotIcon className="h-4 w-4 flex-shrink-0" />
                               <span className="truncate">{bot.name}</span>
+                              
+                              {/* 간단한 봇 툴팁 */}
+                              <div className="absolute left-full ml-3 px-3 py-2 bg-gray-900 text-white text-sm rounded-md shadow-xl opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none whitespace-nowrap z-[99999] top-1/2 transform -translate-y-1/2">
+                                {bot.description}
+                                {/* 툴팁 화살표 */}
+                                <div className="absolute right-full top-1/2 transform -translate-y-1/2 w-2 h-2 bg-gray-900 rotate-45 -mr-1"></div>
+                              </div>
                             </Link>
                           );
                         })}
