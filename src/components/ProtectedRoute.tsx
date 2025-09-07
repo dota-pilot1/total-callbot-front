@@ -1,23 +1,33 @@
-import { Navigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
 }
 
 export default function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { user, isLoading } = useAuth();
+  const navigate = useNavigate();
+  
+  const getToken = () => {
+    return localStorage.getItem('accessToken');
+  };
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-500"></div>
-      </div>
-    );
-  }
-
-  if (!user) {
-    return <Navigate to="/" replace />;
+  useEffect(() => {
+    // localStorage에서 토큰 확인
+    const token = getToken();
+    console.log('ProtectedRoute - checking token:', !!token);
+    
+    if (!token) {
+      console.log('No token found, redirecting to login');
+      navigate('/login', { replace: true });
+    }
+  }, [navigate]);
+  
+  // 토큰이 있으면 렌더링
+  const isAuthenticated = !!getToken();
+  
+  if (!isAuthenticated) {
+    return null; // 리다이렉트 중이므로 아무것도 렌더링하지 않음
   }
 
   return <>{children}</>;

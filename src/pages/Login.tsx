@@ -1,26 +1,22 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuthStore } from '../features/auth';
 import { Button } from '../components/ui';
 
 export default function Login() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuth();
+  const [email, setEmail] = useState('terecal@daum.net');
+  const [password, setPassword] = useState('123456');
+  const { login, isLoading } = useAuthStore();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
 
     try {
-      await login(email, password);
+      await login({ email, password });
       navigate('/chatbots');
     } catch (error) {
       console.error('Login failed:', error);
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -84,8 +80,8 @@ export default function Login() {
 
             <div className="mt-4 p-4 bg-gray-50 rounded-lg">
               <p className="text-xs text-gray-600 mb-1">테스트 계정:</p>
-              <p className="text-xs text-gray-500">이메일: user@example.com</p>
-              <p className="text-xs text-gray-500">비밀번호: password</p>
+              <p className="text-xs text-gray-500">이메일: terecal@daum.net</p>
+              <p className="text-xs text-gray-500">비밀번호: 123456</p>
             </div>
           </div>
         </div>

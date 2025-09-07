@@ -1,48 +1,72 @@
 import { useState } from 'react';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuthStore } from '../features/auth';
 import { Button } from '../components/ui';
 import Sidebar from '../components/Sidebar';
-import { Bars3Icon } from '@heroicons/react/24/outline';
 
 export default function ChatbotSelector() {
-  const { user, logout } = useAuth();
+  const { logout } = useAuthStore();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  
+  // localStorage에서 직접 사용자 정보 가져오기
+  const getUserFromStorage = () => {
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      try {
+        return JSON.parse(userStr);
+      } catch (e) {
+        console.error('Failed to parse user:', e);
+        return null;
+      }
+    }
+    return null;
+  };
+  
+  const user = getUserFromStorage();
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      {/* 사이드바 */}
-      <Sidebar 
-        collapsed={sidebarCollapsed} 
-        onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} 
-      />
-      
-      {/* 메인 콘텐츠 */}
-      <div className="flex-1">
-        {/* 헤더 */}
-        <nav className="bg-white shadow-sm border-b">
-          <div className="px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center h-16">
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-indigo-500 rounded-full flex items-center justify-center">
-                  <span className="text-white font-bold text-sm">콜</span>
-                </div>
-                <h1 className="text-xl font-semibold text-gray-900">개발 교육 챗봇</h1>
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      {/* 헤더 */}
+      <nav className="bg-white shadow-sm border-b flex-shrink-0">
+        <div className="px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-indigo-500 rounded-full flex items-center justify-center">
+                <span className="text-white font-bold text-sm">콜</span>
               </div>
-              <div className="flex items-center space-x-4">
-                <span className="text-sm text-gray-600">
-                  {user?.name || user?.email}님
-                </span>
-                <Button variant="outline" onClick={logout}>
-                  로그아웃
-                </Button>
-              </div>
+              <h1 className="text-xl font-semibold text-gray-900">개발 교육 챗봇</h1>
+            </div>
+            <div className="flex items-center space-x-4">
+              <span className="text-sm text-gray-600">
+                {user?.name || user?.email || '게스트'}님
+              </span>
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  console.log('Logout button clicked');
+                  logout();
+                }}
+              >
+                로그아웃
+              </Button>
             </div>
           </div>
-        </nav>
+        </div>
+      </nav>
 
+      {/* 메인 영역 */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* 사이드바 */}
+        <div className="flex-shrink-0">
+          <Sidebar 
+            collapsed={sidebarCollapsed} 
+            onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} 
+          />
+        </div>
+        
         {/* 메인 콘텐츠 */}
-        <main className="p-6">
-          <div className="max-w-4xl mx-auto">
+        <div className="flex-1 min-w-0">
+          <main className="p-6">
+            <div className="max-w-4xl mx-auto">
             <div className="text-center mb-12">
               <h2 className="text-3xl font-bold text-gray-900 mb-4">
                 전문 분야별 AI 개발 멘토
@@ -128,8 +152,9 @@ export default function ChatbotSelector() {
                 </p>
               </div>
             </div>
-          </div>
-        </main>
+            </div>
+          </main>
+        </div>
       </div>
     </div>
   );

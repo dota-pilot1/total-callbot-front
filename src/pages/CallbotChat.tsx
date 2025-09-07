@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { useLocation, useParams } from 'react-router-dom';
+import { useAuthStore } from '../features/auth';
 import { Button } from '../components/ui';
 import Sidebar from '../components/Sidebar';
 import { 
@@ -90,13 +90,38 @@ const mockMessages = [
 ];
 
 export default function CallbotChat() {
-  const { user, logout } = useAuth();
+  const { logout } = useAuthStore();
   const location = useLocation();
-  const navigate = useNavigate();
+  const params = useParams();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   
-  // 선택된 챗봇 데이터 가져오기
-  const chatbot = location.state?.chatbot;
+  // localStorage에서 직접 사용자 정보 가져오기
+  const getUserFromStorage = () => {
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      try {
+        return JSON.parse(userStr);
+      } catch (e) {
+        console.error('Failed to parse user:', e);
+        return null;
+      }
+    }
+    return null;
+  };
+  
+  const user = getUserFromStorage();
+  
+  // URL 파라미터에서 botId 가져오기
+  const botId = params.botId;
+  
+  // 선택된 챗봇 데이터 가져오기 (state가 있으면 우선, 없으면 botId로 기본값 설정)
+  const chatbot = location.state?.chatbot || (botId ? { 
+    id: botId, 
+    name: '챗봇', 
+    greeting: '안녕하세요! 무엇을 도와드릴까요?',
+    description: '전문 AI 어시스턴트',
+    color: 'from-indigo-500 to-purple-600'
+  } : null);
   
   // 챗봇별 초기 메시지 설정
   const getInitialMessages = (greeting: string) => [
@@ -120,13 +145,17 @@ export default function CallbotChat() {
   const [voiceEnabled, setVoiceEnabled] = useState(true);
   const [settingsPanelOpen, setSettingsPanelOpen] = useState(true);
 
-  const sendMessage = () => {
+  const handleSendMessage = async () => {
     if (!newMessage.trim()) return;
     
+    const messageContent = newMessage.trim();
+    setNewMessage('');
+    
+    // 로컬 시뮬레이션 (채팅방이 없는 경우)
     const userMessage = {
       id: messages.length + 1,
       sender: 'user' as const,
-      message: newMessage,
+      message: messageContent,
       timestamp: new Date().toLocaleTimeString('ko-KR', { 
         hour: '2-digit', 
         minute: '2-digit' 
@@ -135,7 +164,6 @@ export default function CallbotChat() {
     };
     
     setMessages([...messages, userMessage]);
-    setNewMessage('');
     
     // 선택된 챗봇별 맞춤 응답 시뮬레이션
     setTimeout(() => {
@@ -192,139 +220,147 @@ export default function CallbotChat() {
   };
 
   return (
-    <div className="h-screen bg-gray-50 flex overflow-hidden">
-      {/* 사이드바 */}
-      <Sidebar 
-        collapsed={sidebarCollapsed} 
-        onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} 
-      />
-      
-      {/* 메인 콘텐츠 */}
-      <div className="flex-1 flex flex-col">
-        {/* 헤더 */}
-        <nav className="bg-white shadow-sm border-b flex-shrink-0">
-          <div className="px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center h-16">
-              <div className="flex items-center space-x-3">
+    <div className="h-screen bg-gray-50 flex flex-col overflow-hidden">
+      {/* 헤더 */}
+      <nav className="bg-white shadow-sm border-b flex-shrink-0">
+        <div className="px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center space-x-3">
 
-                <div className="w-8 h-8 bg-indigo-500 rounded-full flex items-center justify-center">
-                  <span className="text-white font-bold text-sm">
-                    {chatbot?.name.slice(0, 2) || '콜'}
+              <div className="w-8 h-8 bg-indigo-500 rounded-full flex items-center justify-center">
+                <span className="text-white font-bold text-sm">
+                  {chatbot?.name.slice(0, 2) || '콜'}
+                </span>
+              </div>
+              <h1 className="text-xl font-semibold text-gray-900">
+                {chatbot?.name || '콜봇'} 채팅
+              </h1>
+            </div>
+            <div className="flex items-center space-x-4">
+              <span className="text-sm text-gray-600">
+                {user?.name || user?.email || '게스트'}님
+              </span>
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  console.log('Logout button clicked in CallbotChat');
+                  logout();
+                }}
+              >
+                로그아웃
+              </Button>
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      {/* 메인 영역 */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* 사이드바 */}
+        <Sidebar 
+          collapsed={sidebarCollapsed} 
+          onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} 
+        />
+        
+        {/* 메인 콘텐츠 */}
+        <div className="flex-1 flex flex-col">
+          {/* 메인 콘텐츠 */}
+          <main className="flex flex-1 overflow-hidden">
+            {/* 왼쪽: 콜봇 아바타 및 연결 */}
+            <div className="w-64 bg-white border-r border-gray-200 p-4 flex flex-col">
+              <div className="text-center mb-6">
+                <div className={`w-24 h-24 mx-auto mb-3 bg-gradient-to-br ${chatbot?.color || 'from-indigo-500 to-purple-600'} rounded-full flex items-center justify-center`}>
+                  {chatbot?.id ? (
+                    (() => {
+                      const IconComponent = getIconComponent(chatbot.id);
+                      return <IconComponent className="h-12 w-12 text-white" />;
+                    })()
+                  ) : (
+                    <span className="text-white text-2xl font-bold">콜봇</span>
+                  )}
+                </div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                  {chatbot?.name || 'AI 콜봇'}
+                </h3>
+                {chatbot && (
+                  <p className="text-sm text-gray-600 mb-2 text-center">
+                    {chatbot.description}
+                  </p>
+                )}
+                <div className="flex items-center justify-center space-x-2">
+                  <div className={`w-3 h-3 rounded-full ${isConnected ? 'bg-green-400' : 'bg-gray-400'}`}></div>
+                  <span className={`text-sm ${isConnected ? 'text-green-600' : 'text-gray-500'}`}>
+                    {isConnected ? '연결됨' : '연결 대기중'}
                   </span>
                 </div>
-                <h1 className="text-xl font-semibold text-gray-900">
-                  {chatbot?.name || '콜봇'} 채팅
-                </h1>
               </div>
-              <div className="flex items-center space-x-4">
-                <span className="text-sm text-gray-600">
-                  {user?.name || user?.email}님
-                </span>
-                <Button variant="outline" onClick={logout}>
-                  로그아웃
+
+              <div className="space-y-4">
+                <Button 
+                  onClick={toggleConnection}
+                  variant={isConnected ? "destructive" : "default"}
+                  className="w-full"
+                >
+                  {isConnected ? '연결 해제' : '콜봇 연결하기'}
+                </Button>
+                
+                <Button variant="outline" className="w-full">
+                  콜봇 소개
                 </Button>
               </div>
-            </div>
-          </div>
-        </nav>
 
-        {/* 메인 콘텐츠 */}
-        <main className="flex flex-1 overflow-hidden">
-          {/* 왼쪽: 콜봇 아바타 및 연결 */}
-          <div className="w-64 bg-white border-r border-gray-200 p-4 flex flex-col">
-            <div className="text-center mb-6">
-              <div className={`w-24 h-24 mx-auto mb-3 bg-gradient-to-br ${chatbot?.color || 'from-indigo-500 to-purple-600'} rounded-full flex items-center justify-center`}>
-                {chatbot?.id ? (
-                  (() => {
-                    const IconComponent = getIconComponent(chatbot.id);
-                    return <IconComponent className="h-12 w-12 text-white" />;
-                  })()
-                ) : (
-                  <span className="text-white text-2xl font-bold">콜봇</span>
-                )}
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                {chatbot?.name || 'AI 콜봇'}
-              </h3>
-              {chatbot && (
-                <p className="text-sm text-gray-600 mb-2 text-center">
-                  {chatbot.description}
-                </p>
-              )}
-              <div className="flex items-center justify-center space-x-2">
-                <div className={`w-3 h-3 rounded-full ${isConnected ? 'bg-green-400' : 'bg-gray-400'}`}></div>
-                <span className={`text-sm ${isConnected ? 'text-green-600' : 'text-gray-500'}`}>
-                  {isConnected ? '연결됨' : '연결 대기중'}
-                </span>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <Button 
-                onClick={toggleConnection}
-                variant={isConnected ? "destructive" : "default"}
-                className="w-full"
-              >
-                {isConnected ? '연결 해제' : '콜봇 연결하기'}
-              </Button>
-              
-              <Button variant="outline" className="w-full">
-                콜봇 소개
-              </Button>
-            </div>
-
-            <div className="mt-auto pt-6 border-t border-gray-200">
-              <h4 className="text-sm font-medium text-gray-900 mb-3">음성 설정</h4>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">음성 인식</span>
-                  <button
-                    onClick={() => setVoiceEnabled(!voiceEnabled)}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                      voiceEnabled ? 'bg-indigo-600' : 'bg-gray-200'
-                    }`}
-                  >
-                    <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                        voiceEnabled ? 'translate-x-6' : 'translate-x-1'
+              <div className="mt-auto pt-6 border-t border-gray-200">
+                <h4 className="text-sm font-medium text-gray-900 mb-3">음성 설정</h4>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">음성 인식</span>
+                    <button
+                      onClick={() => setVoiceEnabled(!voiceEnabled)}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                        voiceEnabled ? 'bg-indigo-600' : 'bg-gray-200'
                       }`}
-                    />
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* 가운데: 채팅 영역 */}
-          <div className="flex-1 flex flex-col min-h-0">
-            {/* 채팅 메시지 */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-4">
-              {messages.map((message) => (
-                <div
-                  key={message.id}
-                  className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
-                >
-                  <div
-                    className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                      message.sender === 'user'
-                        ? 'bg-indigo-500 text-white'
-                        : 'bg-white border border-gray-200 text-gray-900'
-                    }`}
-                  >
-                    <p className="text-sm">{message.message}</p>
-                    <p className={`text-xs mt-1 ${
-                      message.sender === 'user' ? 'text-indigo-100' : 'text-gray-500'
-                    }`}>
-                      {message.timestamp}
-                    </p>
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                          voiceEnabled ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
                   </div>
                 </div>
-              ))}
+              </div>
             </div>
 
-            {/* 메시지 입력 */}
-            <div className="p-4 bg-white border-t border-gray-200 flex-shrink-0">
-              <div className="flex items-center space-x-4">
+            {/* 가운데: 채팅 영역 */}
+            <div className="flex-1 flex flex-col min-h-0">
+              {/* 채팅 메시지 */}
+              <div className="flex-1 overflow-y-auto p-6 space-y-4">
+                {messages.map((message) => (
+                  <div
+                    key={message.id}
+                    className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+                  >
+                    <div
+                      className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                        message.sender === 'user'
+                          ? 'bg-indigo-500 text-white'
+                          : 'bg-white border border-gray-200 text-gray-900'
+                      }`}
+                    >
+                      <p className="text-sm">{message.message}</p>
+                      <p className={`text-xs mt-1 ${
+                        message.sender === 'user' ? 'text-indigo-100' : 'text-gray-500'
+                      }`}>
+                        {message.timestamp}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* 메시지 입력 */}
+              <div className="p-4 bg-white border-t border-gray-200 flex-shrink-0">
+                <div className="flex items-center space-x-4">
                 <button
                   onClick={toggleRecording}
                   className={`p-3 rounded-full transition-colors ${
@@ -346,13 +382,13 @@ export default function CallbotChat() {
                     type="text"
                     value={newMessage}
                     onChange={(e) => setNewMessage(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
+                    onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
                     placeholder={isConnected ? "메시지를 입력하세요..." : "콜봇에 연결해주세요"}
                     disabled={!isConnected}
                     className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
                   />
                   <Button 
-                    onClick={sendMessage}
+                    onClick={handleSendMessage}
                     disabled={!isConnected || !newMessage.trim()}
                     size="sm"
                     className="px-3"
@@ -374,65 +410,66 @@ export default function CallbotChat() {
             </div>
           </div>
 
-          {/* 오른쪽: 설정 패널 (조건부 렌더링) */}
-          {settingsPanelOpen && (
-            <div className="w-72 bg-white border-l border-gray-200 p-4">
-            <div className="flex items-center space-x-2 mb-6">
-              <CogIcon className="h-5 w-5 text-gray-600" />
-              <h3 className="text-lg font-semibold text-gray-900">설정</h3>
-            </div>
+            {/* 오른쪽: 설정 패널 (조건부 렌더링) */}
+            {settingsPanelOpen && (
+              <div className="w-72 bg-white border-l border-gray-200 p-4">
+                <div className="flex items-center space-x-2 mb-6">
+                  <CogIcon className="h-5 w-5 text-gray-600" />
+                  <h3 className="text-lg font-semibold text-gray-900">설정</h3>
+                </div>
 
-            <div className="space-y-6">
-              <div>
-                <h4 className="text-sm font-medium text-gray-900 mb-3">음성 옵션</h4>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">음성 출력</span>
-                    <SpeakerWaveIconSolid className="h-5 w-5 text-indigo-500" />
+                <div className="space-y-6">
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-900 mb-3">음성 옵션</h4>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-600">음성 출력</span>
+                        <SpeakerWaveIconSolid className="h-5 w-5 text-indigo-500" />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-600">음성 속도</span>
+                        <select className="text-sm border border-gray-300 rounded px-2 py-1">
+                          <option>보통</option>
+                          <option>빠름</option>
+                          <option>느림</option>
+                        </select>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">음성 속도</span>
-                    <select className="text-sm border border-gray-300 rounded px-2 py-1">
-                      <option>보통</option>
-                      <option>빠름</option>
-                      <option>느림</option>
-                    </select>
+
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-900 mb-3">콜봇 설정</h4>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-600">자동 응답</span>
+                        <input type="checkbox" defaultChecked className="rounded" />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-600">응답 지연</span>
+                        <span className="text-sm text-gray-500">1.5초</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-900 mb-3">대화 기록</h4>
+                    <div className="space-y-2">
+                      <Button variant="outline" size="sm" className="w-full text-left justify-start">
+                        대화 내용 저장
+                      </Button>
+                      <Button variant="outline" size="sm" className="w-full text-left justify-start">
+                        기록 다운로드
+                      </Button>
+                      <Button variant="destructive" size="sm" className="w-full text-left justify-start">
+                        대화 기록 삭제
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </div>
-
-              <div>
-                <h4 className="text-sm font-medium text-gray-900 mb-3">콜봇 설정</h4>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">자동 응답</span>
-                    <input type="checkbox" defaultChecked className="rounded" />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">응답 지연</span>
-                    <span className="text-sm text-gray-500">1.5초</span>
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <h4 className="text-sm font-medium text-gray-900 mb-3">대화 기록</h4>
-                <div className="space-y-2">
-                  <Button variant="outline" size="sm" className="w-full text-left justify-start">
-                    대화 내용 저장
-                  </Button>
-                  <Button variant="outline" size="sm" className="w-full text-left justify-start">
-                    기록 다운로드
-                  </Button>
-                  <Button variant="destructive" size="sm" className="w-full text-left justify-start">
-                    대화 기록 삭제
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
-          )}
-        </main>
+            )}
+          </main>
+        </div>
       </div>
     </div>
   );

@@ -1,37 +1,40 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { AuthProvider } from './contexts/AuthContext';
-import ProtectedRoute from './components/ProtectedRoute';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Welcome from './pages/Welcome';
 import Login from './pages/Login';
 import ChatbotSelector from './pages/ChatbotSelector';
 import CallbotChat from './pages/CallbotChat';
 
+function ProtectedApp() {
+  const location = useLocation();
+  
+  // 간단한 인증 체크: accessToken이 있는지만 확인
+  const isAuthenticated = !!localStorage.getItem('accessToken');
+  
+  // 로그인 페이지들은 인증 없이 접근 가능
+  const publicPaths = ['/', '/login', '/welcome'];
+  const isPublicPath = publicPaths.includes(location.pathname);
+  
+  if (!isAuthenticated && !isPublicPath) {
+    return <Navigate to="/login" replace />;
+  }
+  
+  return (
+    <Routes>
+      <Route path="/" element={<Login />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/welcome" element={<Welcome />} />
+      <Route path="/chatbots" element={<ChatbotSelector />} />
+      <Route path="/chat/bot/:botId" element={<CallbotChat />} />
+      <Route path="/chat/:chatRoomId" element={<CallbotChat />} />
+    </Routes>
+  );
+}
+
 function App() {
   return (
-    <AuthProvider>
-      <Router>
-        <Routes>
-          <Route path="/" element={<Login />} />
-          <Route path="/welcome" element={<Welcome />} />
-          <Route 
-            path="/chatbots" 
-            element={
-              <ProtectedRoute>
-                <ChatbotSelector />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/chat/:botId" 
-            element={
-              <ProtectedRoute>
-                <CallbotChat />
-              </ProtectedRoute>
-            } 
-          />
-        </Routes>
-      </Router>
-    </AuthProvider>
+    <Router>
+      <ProtectedApp />
+    </Router>
   );
 }
 

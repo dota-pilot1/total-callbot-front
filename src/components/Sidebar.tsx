@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { useLocation, Link } from 'react-router-dom';
+import { useLocation, Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useChatStore } from '../features/chat/model/chatStore';
 import {
   ChevronLeftIcon,
   CodeBracketIcon,
@@ -291,6 +292,8 @@ interface SidebarProps {
 
 export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { getOrCreateChatRoom } = useChatStore();
   const [openCategories, setOpenCategories] = useState<string[]>([]);
 
   const toggleCategory = (categoryId: string) => {
@@ -319,7 +322,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
       initial={{ width: 280 }}
       animate={{ width: collapsed ? 60 : 280 }}
       transition={{ duration: 0.3, ease: "easeInOut" }}
-      className="relative bg-white border-r border-gray-200 shadow-sm flex flex-col h-screen"
+      className="relative bg-white border-r border-gray-200 shadow-sm flex flex-col h-full"
     >
       {/* 헤더 */}
       <div className="flex items-center justify-between p-4 border-b border-gray-200">
@@ -429,24 +432,60 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                       >
                         {category.bots.map((bot) => {
                           const BotIcon = bot.icon;
-                          const isActive = location.pathname === `/chat/${bot.id}`;
+                          const isActive = location.pathname === `/chat/bot/${bot.id}`;
+                          
+                          const handleBotClick = async (e: React.MouseEvent) => {
+                            e.preventDefault();
+                            console.log(`Clicking bot: ${bot.name} (id: ${bot.id})`);
+                            
+                            try {
+                              const chatRoom = await getOrCreateChatRoom(bot.id, bot.name);
+                              console.log('ChatRoom created:', chatRoom);
+                              const targetPath = `/chat/${chatRoom.id}`;
+                              console.log('Navigating to:', targetPath);
+                              navigate(targetPath, {
+                                state: { 
+                                  chatbot: {
+                                    id: bot.id,
+                                    category: bot.category,
+                                    name: bot.name,
+                                    color: bot.color,
+                                    description: bot.description,
+                                    expertise: bot.expertise,
+                                    greeting: bot.greeting
+                                  },
+                                  chatRoom
+                                }
+                              });
+                            } catch (error) {
+                              console.error('Failed to create/access chat room:', error);
+                              // 에러 시에도 기본 페이지로 이동
+                              const fallbackPath = `/chat/bot/${bot.id}`;
+                              console.log('Navigating to fallback:', fallbackPath);
+                              navigate(fallbackPath, {
+                                state: { 
+                                  chatbot: {
+                                    id: bot.id,
+                                    category: bot.category,
+                                    name: bot.name,
+                                    color: bot.color,
+                                    description: bot.description,
+                                    expertise: bot.expertise,
+                                    greeting: bot.greeting
+                                  }
+                                }
+                              });
+                            }
+                          };
                           
                           return (
-                            <Link
+                            <button
                               key={bot.id}
-                              to={`/chat/${bot.id}`}
-                              state={{ 
-                                chatbot: {
-                                  id: bot.id,
-                                  category: bot.category,
-                                  name: bot.name,
-                                  color: bot.color,
-                                  description: bot.description,
-                                  expertise: bot.expertise,
-                                  greeting: bot.greeting
-                                }
+                              onClick={(e) => {
+                                console.log('BUTTON CLICKED!', bot.name);
+                                handleBotClick(e);
                               }}
-                              className={`relative group flex items-center space-x-3 w-full px-3 py-2 text-sm rounded-md transition-all duration-200 ${
+                              className={`relative group flex items-center space-x-3 w-full px-3 py-2 text-sm rounded-md transition-all duration-200 text-left ${
                                 isActive
                                   ? 'bg-indigo-100 text-indigo-700'
                                   : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
@@ -461,7 +500,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                                 {/* 툴팁 화살표 */}
                                 <div className="absolute right-full top-1/2 transform -translate-y-1/2 w-2 h-2 bg-gray-900 rotate-45 -mr-1"></div>
                               </div>
-                            </Link>
+                            </button>
                           );
                         })}
                       </motion.div>
