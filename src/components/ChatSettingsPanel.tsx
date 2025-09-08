@@ -8,13 +8,15 @@ interface ChatSettingsPanelProps {
   onClose: () => void;
   voiceEnabled: boolean;
   onVoiceEnabledChange: (enabled: boolean) => void;
+  onClearChat?: () => void;
 }
 
 const ChatSettingsPanel: React.FC<ChatSettingsPanelProps> = ({
   isOpen,
   onClose,
   voiceEnabled,
-  onVoiceEnabledChange
+  onVoiceEnabledChange,
+  onClearChat
 }) => {
   if (!isOpen) return null;
 
@@ -92,7 +94,12 @@ const ChatSettingsPanel: React.FC<ChatSettingsPanelProps> = ({
             <Button variant="outline" size="sm" className="w-full text-left justify-start">
               기록 다운로드
             </Button>
-            <Button variant="destructive" size="sm" className="w-full text-left justify-start">
+            <Button
+              variant="destructive"
+              size="sm"
+              className="w-full text-left justify-start"
+              onClick={() => onClearChat?.()}
+            >
               대화 기록 삭제
             </Button>
           </div>

@@ -1,9 +1,14 @@
+// 음성(WebRTC) 연결 옵션
 export type VoiceConnectOptions = {
   token: string;
   model: string;
   audioElement?: HTMLAudioElement | null;
+  onUserTranscript?: (text: string, isFinal: boolean, meta?: { itemId?: string; eventId?: string }) => void;
+  onAssistantText?: (text: string, isFinal: boolean, meta?: { responseId?: string; outputIndex?: number; eventId?: string }) => void;
+  onEvent?: (evt: unknown) => void; // raw debug events
 };
 
+// 음성(WebRTC) 연결 핸들
 export type VoiceConnection = {
   pc: RTCPeerConnection;
   dc: RTCDataChannel;
@@ -11,42 +16,125 @@ export type VoiceConnection = {
   stop: () => void;
 };
 
-// Establish a WebRTC connection to OpenAI Realtime API
+// OpenAI Realtime API와 WebRTC 연결을 수립
 export async function connectRealtimeVoice(opts: VoiceConnectOptions): Promise<VoiceConnection> {
   const pc = new RTCPeerConnection();
+  console.debug('[realtime] RTCPeerConnection created');
 
-  // Optional: collect remote audio into provided element
+  // 원격 오디오 트랙을 <audio> 엘리먼트로 재생
   const remoteStream = new MediaStream();
   pc.ontrack = (event) => {
     event.streams[0].getAudioTracks().forEach(() => {
-      // Attach the incoming stream
+      // 들어온 트랙을 원격 스트림에 추가
       remoteStream.addTrack(event.track);
     });
     if (opts.audioElement) {
-      // Older browsers need srcObject set each ontrack
+      // 일부 브라우저는 ontrack 때마다 srcObject를 설정해야 함
       opts.audioElement.srcObject = event.streams[0];
       opts.audioElement.play().catch(() => {/* autoplay might be blocked */});
     }
   };
 
-  // Data channel for control events
-  const dc = pc.createDataChannel('oai-events');
-  dc.onopen = () => {
-    // You can send an initial event to prompt a response if desired
-    // dc.send(JSON.stringify({ type: 'response.create', response: { modalities: ['audio'] } }));
+  // 컨트롤/이벤트 수신용 데이터 채널
+  let dc: RTCDataChannel = pc.createDataChannel('oai-events');
+
+  const bindDataChannel = (channel: RTCDataChannel) => {
+    dc = channel;
+    console.debug('[realtime] datachannel created:', dc.label);
+    dc.onopen = () => {
+      console.debug('[realtime] datachannel open');
+      // 오디오와 함께 텍스트도 생성되도록 요청
+      try {
+      dc.send(JSON.stringify({
+        type: 'response.create',
+        response: {
+          modalities: ['audio', 'text'],
+          // 대화 컨텍스트 자동 유지('true'가 아닌 문자열이어야 함)
+          conversation: 'auto',
+        },
+      }));
+      } catch {}
+    };
+    dc.onmessage = (ev) => {
+      const raw = String(ev.data || '');
+      let msg: any = null;
+      try { msg = JSON.parse(raw); } catch { /* not JSON */ }
+      if (msg) {
+        opts.onEvent?.(msg);
+        try {
+          // 공통 Realtime 이벤트 추론 처리
+          // 사용자 음성 전사: input_audio_buffer.* 또는 conversation.item.input_audio_transcription.*
+          if ((msg.type === 'input_audio_buffer.transcript.delta' || msg.type === 'conversation.item.input_audio_transcription.delta') && typeof msg.delta === 'string') {
+            opts.onUserTranscript?.(msg.delta, false, { itemId: msg.item_id, eventId: msg.event_id });
+          }
+          if ((msg.type === 'input_audio_buffer.transcript.completed' || msg.type === 'conversation.item.input_audio_transcription.completed') && typeof msg.transcript === 'string') {
+            opts.onUserTranscript?.(msg.transcript, true, { itemId: msg.item_id, eventId: msg.event_id });
+          }
+          // 어시스턴트 텍스트 스트림
+          if ((msg.type === 'response.output_text.delta' || msg.type === 'response.text.delta') && typeof msg.delta === 'string') {
+            opts.onAssistantText?.(msg.delta, false);
+          }
+          if ((msg.type === 'response.output_text.done' || msg.type === 'response.text.done') && typeof msg.text === 'string') {
+            opts.onAssistantText?.(msg.text, true, { responseId: msg.response_id, outputIndex: msg.output_index, eventId: msg.event_id });
+          }
+          // 어시스턴트 오디오 전사(assistant가 말한 내용의 텍스트)
+          if (msg.type === 'response.audio_transcript.delta' && typeof msg.delta === 'string') {
+            opts.onAssistantText?.(msg.delta, false, { responseId: msg.response_id, outputIndex: msg.output_index, eventId: msg.event_id });
+          }
+          if (msg.type === 'response.audio_transcript.done' && typeof msg.transcript === 'string') {
+            opts.onAssistantText?.(msg.transcript, true, { responseId: msg.response_id, outputIndex: msg.output_index, eventId: msg.event_id });
+          }
+
+          // 구조화된 아이템 형태로 오는 응답 처리 (텍스트만 사용)
+          if (msg.type === 'response.output_item.done' && msg.item) {
+            const item = msg.item;
+            if (Array.isArray(item.content)) {
+              const texts: string[] = [];
+              for (const part of item.content) {
+                if (!part) continue;
+                if (part.type === 'output_text' && typeof part.text === 'string') texts.push(part.text);
+                // 오디오 전사는 별도의 response.audio_transcript.done에서만 처리
+              }
+              if (texts.length) {
+                opts.onAssistantText?.(texts.join(' '), true, { responseId: msg.response_id, outputIndex: msg.output_index, eventId: msg.event_id });
+              }
+            }
+          }
+
+          if (msg.type === 'response.content_part.done' && msg.part) {
+            const part = msg.part;
+            if (part.type === 'output_text' && typeof part.text === 'string') {
+              opts.onAssistantText?.(part.text, true, { responseId: msg.response_id, outputIndex: msg.output_index, eventId: msg.event_id });
+            }
+          }
+        } catch {}
+      } else {
+        // 텍스트/바이너리 등 비-JSON 페이로드
+        opts.onEvent?.(raw);
+      }
+    };
   };
 
-  // Mic capture and add to peer connection
+  // 서버가 데이터채널을 생성하는 방식도 대비하여 바인딩
+  pc.ondatachannel = (evt) => {
+    console.debug('[realtime] ondatachannel:', evt.channel?.label);
+    bindDataChannel(evt.channel);
+  };
+
+  // 우선 우리가 만든 채널을 바인딩
+  bindDataChannel(dc);
+
+  // 마이크 캡처 후 피어 연결에 추가
   const localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
   for (const track of localStream.getTracks()) {
     pc.addTrack(track, localStream);
   }
 
-  // Create local offer
+  // 로컬 SDP 오퍼 생성
   const offer = await pc.createOffer({ offerToReceiveAudio: true, offerToReceiveVideo: false });
   await pc.setLocalDescription(offer);
 
-  // Send SDP to OpenAI and get answer
+  // OpenAI로 SDP 전송 → 원격 SDP(answer) 수신
   const sdpResponse = await fetch(`https://api.openai.com/v1/realtime?model=${encodeURIComponent(opts.model)}`, {
     method: 'POST',
     body: (offer.sdp || ''),
@@ -59,6 +147,7 @@ export async function connectRealtimeVoice(opts: VoiceConnectOptions): Promise<V
   const answerSdp = await sdpResponse.text();
   await pc.setRemoteDescription({ type: 'answer', sdp: answerSdp });
 
+  // 정리 함수: 채널/피어/마이크 트랙 종료
   const stop = () => {
     try { dc.close(); } catch {}
     try { pc.close(); } catch {}
@@ -67,4 +156,3 @@ export async function connectRealtimeVoice(opts: VoiceConnectOptions): Promise<V
 
   return { pc, dc, localStream, stop };
 }
-
