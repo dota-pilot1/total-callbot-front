@@ -1,9 +1,11 @@
-import { useState } from 'react';
-import { useLocation, useParams } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useLocation, useParams, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../features/auth';
 import { Button } from '../components/ui';
 import Sidebar from '../components/Sidebar';
+import ChatSettingsPanel from '../components/ChatSettingsPanel';
 import { chatApi } from '../features/chat/api/chat';
+import type { ChatRoom } from '../shared/api/chat-types';
 import { 
   MicrophoneIcon, 
   PaperAirplaneIcon, 
@@ -148,6 +150,44 @@ export default function CallbotChat() {
   const [chatRoomId, setChatRoomId] = useState<string | null>(null);
   const [chatRoomDetails, setChatRoomDetails] = useState<any>(null);
   const [isConnecting, setIsConnecting] = useState(false);
+  const [chatRooms, setChatRooms] = useState<ChatRoom[]>([]);
+  const [loadingRooms, setLoadingRooms] = useState(false);
+  const navigate = useNavigate();
+
+  // 챗봇이 로드되면 채팅방 목록 불러오기
+  useEffect(() => {
+    if (chatbot && !isConnected) {
+      loadBotChatRooms();
+    }
+  }, [chatbot, isConnected]);
+
+  const loadBotChatRooms = async () => {
+    if (!chatbot) return;
+    
+    try {
+      setLoadingRooms(true);
+      const allRooms = await chatApi.getChatRooms();
+      // 선택한 챗봇과 관련된 채팅방만 필터링
+      const botRooms = allRooms.filter(room => 
+        (room as any).botType === chatbot.id || 
+        (room as any).botId === chatbot.id
+      );
+      setChatRooms(botRooms);
+    } catch (err) {
+      console.error('Error loading bot chat rooms:', err);
+    } finally {
+      setLoadingRooms(false);
+    }
+  };
+
+  const handleRoomSelect = async (room: ChatRoom) => {
+    try {
+      await chatApi.joinChatRoom(room.id);
+      navigate(`/chat/${room.id}`);
+    } catch (err) {
+      console.error('Error joining chat room:', err);
+    }
+  };
 
   const handleSendMessage = async () => {
     if (!newMessage.trim()) return;
@@ -386,142 +426,152 @@ export default function CallbotChat() {
               </div>
             </div>
 
-            {/* 가운데: 채팅 영역 */}
+            {/* 오른쪽: 메인 콘텐츠 (채팅방 목록 또는 채팅창) */}
             <div className="flex-1 flex flex-col min-h-0">
-              {/* 채팅 메시지 */}
-              <div className="flex-1 overflow-y-auto p-6 space-y-4">
-                {messages.map((message) => (
-                  <div
-                    key={message.id}
-                    className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
-                  >
-                    <div
-                      className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                        message.sender === 'user'
-                          ? 'bg-indigo-500 text-white'
-                          : 'bg-white border border-gray-200 text-gray-900'
-                      }`}
-                    >
-                      <p className="text-sm">{message.message}</p>
-                      <p className={`text-xs mt-1 ${
-                        message.sender === 'user' ? 'text-indigo-100' : 'text-gray-500'
-                      }`}>
-                        {message.timestamp}
-                      </p>
+              {isConnected ? (
+                /* 연결됨: 채팅 메시지 + 입력창 */
+                <>
+                  <div className="flex-1 overflow-y-auto p-6 space-y-4">
+                    {messages.map((message) => (
+                      <div
+                        key={message.id}
+                        className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+                      >
+                        <div
+                          className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                            message.sender === 'user'
+                              ? 'bg-indigo-500 text-white'
+                              : 'bg-white border border-gray-200 text-gray-900'
+                          }`}
+                        >
+                          <p className="text-sm">{message.message}</p>
+                          <p className={`text-xs mt-1 ${
+                            message.sender === 'user' ? 'text-indigo-100' : 'text-gray-500'
+                          }`}>
+                            {message.timestamp}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* 메시지 입력 */}
+                  <div className="p-4 bg-white border-t border-gray-200 flex-shrink-0">
+                    <div className="flex items-center space-x-4">
+                      <button
+                        onClick={toggleRecording}
+                        className={`p-3 rounded-full transition-colors ${
+                          isRecording 
+                            ? 'bg-red-500 text-white animate-pulse' 
+                            : 'bg-gray-100 hover:bg-gray-200 text-gray-600'
+                        }`}
+                        disabled={!isConnected || !voiceEnabled || isConnecting}
+                      >
+                        {isRecording ? (
+                          <MicrophoneIconSolid className="h-5 w-5" />
+                        ) : (
+                          <MicrophoneIcon className="h-5 w-5" />
+                        )}
+                      </button>
+                      
+                      <div className="flex-1 flex items-center space-x-2">
+                        <input
+                          type="text"
+                          value={newMessage}
+                          onChange={(e) => setNewMessage(e.target.value)}
+                          onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
+                          placeholder="메시지를 입력하세요..."
+                          className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        />
+                        <Button 
+                          onClick={handleSendMessage}
+                          disabled={!newMessage.trim()}
+                          size="sm"
+                          className="px-3"
+                        >
+                          <PaperAirplaneIcon className="h-4 w-4" />
+                        </Button>
+                        
+                        {/* 설정 패널 토글 버튼 - 연결된 상태에서만 표시 */}
+                        <Button 
+                          onClick={() => setSettingsPanelOpen(!settingsPanelOpen)}
+                          variant="outline"
+                          size="sm"
+                          className="px-3"
+                        >
+                          <CogIcon className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
-                ))}
-              </div>
-
-              {/* 메시지 입력 */}
-              <div className="p-4 bg-white border-t border-gray-200 flex-shrink-0">
-                <div className="flex items-center space-x-4">
-                <button
-                  onClick={toggleRecording}
-                  className={`p-3 rounded-full transition-colors ${
-                    isRecording 
-                      ? 'bg-red-500 text-white animate-pulse' 
-                      : 'bg-gray-100 hover:bg-gray-200 text-gray-600'
-                  }`}
-                  disabled={!isConnected || !voiceEnabled || isConnecting}
-                >
-                  {isRecording ? (
-                    <MicrophoneIconSolid className="h-5 w-5" />
-                  ) : (
-                    <MicrophoneIcon className="h-5 w-5" />
-                  )}
-                </button>
-                
-                <div className="flex-1 flex items-center space-x-2">
-                  <input
-                    type="text"
-                    value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
-                    placeholder={isConnected ? "메시지를 입력하세요..." : (isConnecting ? "연결 중..." : "콜봇에 연결해주세요")}
-                    disabled={!isConnected || isConnecting}
-                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-                  />
-                  <Button 
-                    onClick={handleSendMessage}
-                    disabled={!isConnected || !newMessage.trim() || isConnecting}
-                    size="sm"
-                    className="px-3"
-                  >
-                    <PaperAirplaneIcon className="h-4 w-4" />
-                  </Button>
-                  
-                  {/* 설정 패널 토글 버튼 */}
-                  <Button 
-                    onClick={() => setSettingsPanelOpen(!settingsPanelOpen)}
-                    variant="outline"
-                    size="sm"
-                    className="px-3"
-                  >
-                    <CogIcon className="h-4 w-4" />
-                  </Button>
+                </>
+              ) : (
+                /* 연결 전: 채팅방 목록 */
+                <div className="flex-1 overflow-y-auto p-6">
+                  <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+                    <div className="border-b border-gray-200 p-4">
+                      <h3 className="text-lg font-semibold text-gray-900">
+                        채팅방 목록
+                      </h3>
+                    </div>
+                    
+                    {loadingRooms ? (
+                      <div className="p-8 text-center">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
+                        <p className="text-gray-600">대화 목록을 불러오는 중...</p>
+                      </div>
+                    ) : chatRooms.length === 0 ? (
+                      <div className="p-8 text-center">
+                        <div className="text-gray-400 mb-4">
+                          <svg className="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                          </svg>
+                        </div>
+                        <p className="text-gray-500">
+                          아직 개설된 채팅방이 없습니다.<br/>
+                          왼쪽의 "콜봇 연결하기" 버튼을 눌러 새 채팅방을 만들어보세요!
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="divide-y divide-gray-200">
+                        {chatRooms.map((room) => (
+                          <div
+                            key={room.id}
+                            onClick={() => handleRoomSelect(room)}
+                            className="p-4 hover:bg-gray-50 cursor-pointer transition-colors"
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex-1">
+                                <h4 className="font-medium text-gray-900">
+                                  {(room as any).name || `${chatbot?.name}와의 대화`}
+                                </h4>
+                                <p className="text-sm text-gray-500 mt-1">
+                                  {(room as any).lastMessageAt && `마지막 활동: ${new Date((room as any).lastMessageAt).toLocaleDateString()}`}
+                                </p>
+                              </div>
+                              <div className="flex items-center text-gray-400">
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                </svg>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
-          </div>
 
-            {/* 오른쪽: 설정 패널 (조건부 렌더링) */}
-            {settingsPanelOpen && (
-              <div className="w-72 bg-white border-l border-gray-200 p-4">
-                <div className="flex items-center space-x-2 mb-6">
-                  <CogIcon className="h-5 w-5 text-gray-600" />
-                  <h3 className="text-lg font-semibold text-gray-900">설정</h3>
-                </div>
-
-                <div className="space-y-6">
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-900 mb-3">음성 옵션</h4>
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-600">음성 출력</span>
-                        <SpeakerWaveIconSolid className="h-5 w-5 text-indigo-500" />
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-600">음성 속도</span>
-                        <select className="text-sm border border-gray-300 rounded px-2 py-1">
-                          <option>보통</option>
-                          <option>빠름</option>
-                          <option>느림</option>
-                        </select>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-900 mb-3">콜봇 설정</h4>
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-600">자동 응답</span>
-                        <input type="checkbox" defaultChecked className="rounded" />
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-600">응답 지연</span>
-                        <span className="text-sm text-gray-500">1.5초</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-900 mb-3">대화 기록</h4>
-                    <div className="space-y-2">
-                      <Button variant="outline" size="sm" className="w-full text-left justify-start">
-                        대화 내용 저장
-                      </Button>
-                      <Button variant="outline" size="sm" className="w-full text-left justify-start">
-                        기록 다운로드
-                      </Button>
-                      <Button variant="destructive" size="sm" className="w-full text-left justify-start">
-                        대화 기록 삭제
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </div>
+            {/* 오른쪽: 설정 패널 (연결된 상태에서만) */}
+            {isConnected && (
+              <ChatSettingsPanel
+                isOpen={settingsPanelOpen}
+                onClose={() => setSettingsPanelOpen(false)}
+                voiceEnabled={voiceEnabled}
+                onVoiceEnabledChange={setVoiceEnabled}
+              />
             )}
           </main>
         </div>
