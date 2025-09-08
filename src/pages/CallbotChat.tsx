@@ -190,13 +190,9 @@ export default function CallbotChat() {
   const lastUserFinalRef = useRef<string>("");
   const lastAssistantFinalRef = useRef<string>("");
   const processedAssistantKeysRef = useRef<Set<string>>(new Set());
-  const userAggRef = useRef<
-    Map<string, { buffer: string; completed: boolean }>
+  const userItemsRef = useRef<
+    Map<string, { buffer: string; completed: boolean; timer: any }>
   >(new Map());
-  const userCoalesceRef = useRef<{ buffer: string; timer: any }>({
-    buffer: "",
-    timer: null,
-  });
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // 새 메시지 도착 시 자동 스크롤
@@ -429,105 +425,58 @@ export default function CallbotChat() {
                       e?.type === "response.input_audio_buffer.stopped") &&
                     e?.item_id
                   ) {
-                    const key = e.item_id as string;
-                    const agg = userAggRef.current.get(key);
-                    const finalText = (agg?.buffer || "").trim();
-                    if (
-                      finalText &&
-                      !agg?.completed &&
-                      finalText !== lastUserFinalRef.current.trim()
-                    ) {
-                      // 코얼레스: 짧게 분할된 문장을 하나로 합쳐 일정 시간 후 확정
-                      const agg2 = userCoalesceRef.current;
-                      agg2.buffer =
-                        (agg2.buffer ? agg2.buffer + " " : "") + finalText;
-                      if (agg2.timer) clearTimeout(agg2.timer);
-                      agg2.timer = setTimeout(() => {
-                        const merged = normalizeText(
-                          userCoalesceRef.current.buffer,
-                        );
-                        const lastNormalized = normalizeText(
-                          lastUserFinalRef.current,
-                        );
-                        if (
-                          merged &&
-                          merged.length > 0 &&
-                          merged !== lastNormalized
-                        ) {
-                          setMessages((prev) => [
-                            ...prev,
-                            {
-                              id: prev.length + 1,
-                              sender: "user" as const,
-                              message: merged,
-                              timestamp: new Date().toLocaleTimeString(
-                                "ko-KR",
-                                { hour: "2-digit", minute: "2-digit" },
-                              ),
-                              type: "text" as const,
-                            },
-                          ]);
-                          lastUserFinalRef.current = merged;
-                        }
-                        userCoalesceRef.current = { buffer: "", timer: null };
-                      }, coalesceDelayMs);
-                    }
-                    userAggRef.current.delete(key);
-                  }
-                } catch {}
-              },
-              onUserTranscript: (text, isFinal, meta) => {
-                const key = meta?.itemId || "default";
-                const agg = userAggRef.current.get(key) || {
-                  buffer: "",
-                  completed: false,
-                };
-                if (!isFinal) {
-                  agg.buffer += text;
-                  userAggRef.current.set(key, agg);
-                } else {
-                  agg.buffer = agg.buffer || text;
-                  agg.completed = true;
-                  userAggRef.current.set(key, agg);
-                  const finalText = normalizeText(agg.buffer.trim());
-                  if (debugEvents && finalText)
-                    console.debug("[voice:user:final]", finalText);
-                  if (finalText) {
-                    const agg2 = userCoalesceRef.current;
-                    agg2.buffer =
-                      (agg2.buffer ? agg2.buffer + " " : "") + finalText;
-                    if (agg2.timer) clearTimeout(agg2.timer);
-                    agg2.timer = setTimeout(() => {
-                      const merged = normalizeText(
-                        userCoalesceRef.current.buffer,
-                      );
-                      const lastNormalized = normalizeText(
-                        lastUserFinalRef.current,
-                      );
-                      if (
-                        merged &&
-                        merged.length > 0 &&
-                        merged !== lastNormalized
-                      ) {
+                    const key = String(e.item_id);
+                    const entry = userItemsRef.current.get(key);
+                    if (!entry) return;
+                    if (entry.completed) { userItemsRef.current.delete(key); return; }
+                    if (entry.timer) clearTimeout(entry.timer);
+                    entry.timer = setTimeout(() => {
+                      const merged = normalizeText((entry.buffer || '').trim());
+                      if (merged && merged !== normalizeText(lastUserFinalRef.current)) {
                         setMessages((prev) => [
                           ...prev,
                           {
                             id: prev.length + 1,
-                            sender: "user" as const,
+                            sender: 'user' as const,
                             message: merged,
-                            timestamp: new Date().toLocaleTimeString("ko-KR", {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            }),
-                            type: "text" as const,
+                            timestamp: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }),
+                            type: 'text' as const,
                           },
                         ]);
                         lastUserFinalRef.current = merged;
                       }
-                      userCoalesceRef.current = { buffer: "", timer: null };
+                      userItemsRef.current.delete(key);
                     }, coalesceDelayMs);
+                    userItemsRef.current.set(key, entry);
                   }
-                  userAggRef.current.delete(key);
+                } catch {}
+              },
+              onUserTranscript: (text, isFinal, meta) => {
+                const key = String(meta?.itemId || 'default');
+                const entry = userItemsRef.current.get(key) || { buffer: '', completed: false, timer: null };
+                if (!isFinal) {
+                  entry.buffer += text;
+                  userItemsRef.current.set(key, entry);
+                } else {
+                  entry.buffer = entry.buffer || text;
+                  entry.completed = true;
+                  if (entry.timer) { clearTimeout(entry.timer); entry.timer = null; }
+                  const finalText = normalizeText((entry.buffer || '').trim());
+                  if (debugEvents && finalText) console.debug('[voice:user:final]', finalText);
+                  if (finalText && finalText !== normalizeText(lastUserFinalRef.current)) {
+                    setMessages((prev) => [
+                      ...prev,
+                      {
+                        id: prev.length + 1,
+                        sender: 'user' as const,
+                        message: finalText,
+                        timestamp: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }),
+                        type: 'text' as const,
+                      },
+                    ]);
+                    lastUserFinalRef.current = finalText;
+                  }
+                  userItemsRef.current.delete(key);
                 }
               },
               onAssistantText: (text, isFinal, meta) => {
@@ -630,93 +579,58 @@ export default function CallbotChat() {
                 e?.type === "response.input_audio_buffer.stopped") &&
               e?.item_id
             ) {
-              const key = e.item_id as string;
-              const agg = userAggRef.current.get(key);
-              const finalText = (agg?.buffer || "").trim();
-              if (
-                finalText &&
-                !agg?.completed &&
-                finalText !== lastUserFinalRef.current.trim()
-              ) {
-                const agg2 = userCoalesceRef.current;
-                agg2.buffer =
-                  (agg2.buffer ? agg2.buffer + " " : "") + finalText;
-                if (agg2.timer) clearTimeout(agg2.timer);
-                agg2.timer = setTimeout(() => {
-                  const merged = normalizeText(userCoalesceRef.current.buffer);
-                  const lastNormalized = normalizeText(
-                    lastUserFinalRef.current,
-                  );
-                  if (
-                    merged &&
-                    merged.length > 0 &&
-                    merged !== lastNormalized
-                  ) {
-                    setMessages((prev) => [
-                      ...prev,
-                      {
-                        id: prev.length + 1,
-                        sender: "user" as const,
-                        message: merged,
-                        timestamp: new Date().toLocaleTimeString("ko-KR", {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        }),
-                        type: "text" as const,
-                      },
-                    ]);
-                    lastUserFinalRef.current = merged;
-                  }
-                  userCoalesceRef.current = { buffer: "", timer: null };
-                }, coalesceDelayMs);
-              }
-              userAggRef.current.delete(key);
-            }
-          } catch {}
-        },
-        onUserTranscript: (text, isFinal, meta) => {
-          const key = meta?.itemId || "default";
-          const agg = userAggRef.current.get(key) || {
-            buffer: "",
-            completed: false,
-          };
-          if (!isFinal) {
-            agg.buffer += text;
-            userAggRef.current.set(key, agg);
-          } else {
-            agg.buffer = agg.buffer || text;
-            agg.completed = true;
-            userAggRef.current.set(key, agg);
-            const finalText = normalizeText(agg.buffer.trim());
-            if (debugEvents && finalText)
-              console.debug("[voice:user:final]", finalText);
-            if (finalText) {
-              const agg2 = userCoalesceRef.current;
-              agg2.buffer = (agg2.buffer ? agg2.buffer + " " : "") + finalText;
-              if (agg2.timer) clearTimeout(agg2.timer);
-              agg2.timer = setTimeout(() => {
-                const merged = normalizeText(userCoalesceRef.current.buffer);
-                const lastNormalized = normalizeText(lastUserFinalRef.current);
-                if (merged && merged.length > 0 && merged !== lastNormalized) {
+              const key = String(e.item_id);
+              const entry = userItemsRef.current.get(key);
+              if (!entry) return;
+              if (entry.completed) { userItemsRef.current.delete(key); return; }
+              if (entry.timer) clearTimeout(entry.timer);
+              entry.timer = setTimeout(() => {
+                const merged = normalizeText((entry.buffer || '').trim());
+                if (merged && merged !== normalizeText(lastUserFinalRef.current)) {
                   setMessages((prev) => [
                     ...prev,
                     {
                       id: prev.length + 1,
-                      sender: "user" as const,
+                      sender: 'user' as const,
                       message: merged,
-                      timestamp: new Date().toLocaleTimeString("ko-KR", {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      }),
-                      type: "text" as const,
+                      timestamp: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }),
+                      type: 'text' as const,
                     },
                   ]);
                   lastUserFinalRef.current = merged;
                 }
-                userCoalesceRef.current = { buffer: "", timer: null };
+                userItemsRef.current.delete(key);
               }, coalesceDelayMs);
+              userItemsRef.current.set(key, entry);
             }
-            userAggRef.current.delete(key);
+          } catch {}
+        },
+        onUserTranscript: (text, isFinal, meta) => {
+          const key = String(meta?.itemId || 'default');
+          const entry = userItemsRef.current.get(key) || { buffer: '', completed: false, timer: null };
+          if (!isFinal) {
+            entry.buffer += text;
+            userItemsRef.current.set(key, entry);
+          } else {
+            entry.buffer = entry.buffer || text;
+            entry.completed = true;
+            if (entry.timer) { clearTimeout(entry.timer); entry.timer = null; }
+            const finalText = normalizeText((entry.buffer || '').trim());
+            if (debugEvents && finalText) console.debug('[voice:user:final]', finalText);
+            if (finalText && finalText !== normalizeText(lastUserFinalRef.current)) {
+              setMessages((prev) => [
+                ...prev,
+                {
+                  id: prev.length + 1,
+                  sender: 'user' as const,
+                  message: finalText,
+                  timestamp: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }),
+                  type: 'text' as const,
+                },
+              ]);
+              lastUserFinalRef.current = finalText;
+            }
+            userItemsRef.current.delete(key);
           }
         },
         onAssistantText: (text, isFinal, meta) => {
@@ -793,7 +707,7 @@ export default function CallbotChat() {
     assistantPartialRef.current = "";
     userPartialRef.current = "";
     processedAssistantKeysRef.current.clear();
-    userAggRef.current.clear();
+    userItemsRef.current.clear();
   };
 
   return (
