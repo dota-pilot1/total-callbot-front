@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { useLocation, Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useChatStore } from '../features/chat/model/chatStore';
+import { chatApi } from '../features/chat/api/chat';
 import {
   ChevronLeftIcon,
   CodeBracketIcon,
@@ -291,10 +292,10 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
-  const location = useLocation();
   const navigate = useNavigate();
   const { getOrCreateChatRoom } = useChatStore();
   const [openCategories, setOpenCategories] = useState<string[]>([]);
+  const [selectedBot, setSelectedBot] = useState<string | null>(null);
 
   const toggleCategory = (categoryId: string) => {
     if (collapsed) {
@@ -310,6 +311,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
         ? [] // 이미 열린 카테고리를 클릭하면 모두 닫기
         : [categoryId] // 새로운 카테고리만 열기
     );
+    // 카테고리는 단순 토글 역할만 함 - 봇 선택 상태는 유지
   };
 
   const groupedChatbots = categories.map(category => ({
@@ -383,9 +385,8 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
             groupedChatbots.map((category) => {
               const CategoryIcon = category.icon;
               const isOpen = openCategories.includes(category.id);
-              // 개별 봇이 활성화된 경우 상위 카테고리 하이라이트 제거
-              const hasActiveBot = category.bots.some(bot => location.pathname === `/chat/${bot.id}`);
-              const shouldHighlight = isOpen && !hasActiveBot;
+              // 카테고리 하이라이트 효과 완전 제거
+              const shouldHighlight = false;
               
               return (
                 <div key={category.id}>
@@ -432,62 +433,30 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                       >
                         {category.bots.map((bot) => {
                           const BotIcon = bot.icon;
-                          const isActive = location.pathname === `/chat/bot/${bot.id}`;
+                          const isActive = selectedBot === bot.id;
                           
-                          const handleBotClick = async (e: React.MouseEvent) => {
+                          const handleBotClick = (e: React.MouseEvent) => {
                             e.preventDefault();
-                            console.log(`Clicking bot: ${bot.name} (id: ${bot.id})`);
+                            e.stopPropagation();
                             
-                            try {
-                              const chatRoom = await getOrCreateChatRoom(bot.id, bot.name);
-                              console.log('ChatRoom created:', chatRoom);
-                              const targetPath = `/chat/${chatRoom.id}`;
-                              console.log('Navigating to:', targetPath);
-                              navigate(targetPath, {
-                                state: { 
-                                  chatbot: {
-                                    id: bot.id,
-                                    category: bot.category,
-                                    name: bot.name,
-                                    color: bot.color,
-                                    description: bot.description,
-                                    expertise: bot.expertise,
-                                    greeting: bot.greeting
-                                  },
-                                  chatRoom
-                                }
-                              });
-                            } catch (error) {
-                              console.error('Failed to create/access chat room:', error);
-                              // 에러 시에도 기본 페이지로 이동
-                              const fallbackPath = `/chat/bot/${bot.id}`;
-                              console.log('Navigating to fallback:', fallbackPath);
-                              navigate(fallbackPath, {
-                                state: { 
-                                  chatbot: {
-                                    id: bot.id,
-                                    category: bot.category,
-                                    name: bot.name,
-                                    color: bot.color,
-                                    description: bot.description,
-                                    expertise: bot.expertise,
-                                    greeting: bot.greeting
-                                  }
-                                }
-                              });
+                            // 이미 선택된 봇을 다시 클릭하면 선택 해제
+                            if (selectedBot === bot.id) {
+                              setSelectedBot(null);
+                              setOpenCategories([bot.category]);
+                              return;
                             }
+                            
+                            // 봇 선택
+                            setSelectedBot(bot.id);
                           };
                           
                           return (
                             <button
                               key={bot.id}
-                              onClick={(e) => {
-                                console.log('BUTTON CLICKED!', bot.name);
-                                handleBotClick(e);
-                              }}
+                              onClick={handleBotClick}
                               className={`relative group flex items-center space-x-3 w-full px-3 py-2 text-sm rounded-md transition-all duration-200 text-left ${
                                 isActive
-                                  ? 'bg-indigo-100 text-indigo-700'
+                                  ? 'bg-blue-200 text-blue-900 font-bold border-2 border-blue-400'
                                   : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                               }`}
                             >
