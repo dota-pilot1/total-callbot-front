@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useLocation, useParams, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../features/auth';
 import { Button } from '../components/ui';
@@ -35,6 +35,9 @@ import {
   MicrophoneIcon as MicrophoneIconSolid,
   SpeakerWaveIcon as SpeakerWaveIconSolid
 } from '@heroicons/react/24/solid';
+import { voiceApi } from '../features/voice/api/voice';
+import { connectRealtimeVoice, type VoiceConnection } from '../features/voice/lib/realtime';
+import VoicePulse from '../components/VoicePulse';
 
 // 아이콘 매핑 함수
 const getIconComponent = (chatbotId: string) => {
@@ -153,6 +156,8 @@ export default function CallbotChat() {
   const [chatRooms, setChatRooms] = useState<ChatRoom[]>([]);
   const [loadingRooms, setLoadingRooms] = useState(false);
   const navigate = useNavigate();
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const [voiceConn, setVoiceConn] = useState<VoiceConnection | null>(null);
 
   // 챗봇이 로드되면 채팅방 목록 불러오기
   useEffect(() => {
@@ -261,6 +266,12 @@ export default function CallbotChat() {
       setIsConnected(false);
       setChatRoomId(null);
       setChatRoomDetails(null);
+      // 음성 연결 해제
+      try { voiceConn?.stop(); } catch {}
+      setVoiceConn(null);
+      setIsRecording(false);
+      // 연결 아님: 음성 인식 모드 자동 해제
+      setVoiceEnabled(false);
     } else {
       // 연결 시작: 방 참여
       setIsConnecting(true);
@@ -282,8 +293,20 @@ export default function CallbotChat() {
         setChatRoomId(chatRoomData.id);
         setChatRoomDetails(roomDetails);
         setIsConnected(true);
-        
+
         console.log('방 참여 성공:', chatRoomData.id, roomDetails);
+        
+        // 음성 사용 설정 시, 연결 직후 음성 연결 시도
+        if (voiceEnabled) {
+          try {
+            const session = await voiceApi.createSession({});
+            const conn = await connectRealtimeVoice({ token: session.token, model: session.model, audioElement: audioRef.current });
+            setVoiceConn(conn);
+            setIsRecording(true);
+          } catch (e) {
+            console.error('음성 연결 실패:', e);
+          }
+        }
         
       } catch (error) {
         console.error('방 참여 실패:', error);
@@ -294,12 +317,37 @@ export default function CallbotChat() {
     }
   };
 
+  const startVoice = async () => {
+    if (voiceConn) return;
+    try {
+      const session = await voiceApi.createSession({});
+      const conn = await connectRealtimeVoice({ token: session.token, model: session.model, audioElement: audioRef.current });
+      setVoiceConn(conn);
+      setIsRecording(true);
+    } catch (e) {
+      console.error('음성 연결 실패:', e);
+    }
+  };
+
+  const stopVoice = () => {
+    try { voiceConn?.stop(); } catch {}
+    setVoiceConn(null);
+    setIsRecording(false);
+  };
+
   const toggleRecording = () => {
-    setIsRecording(!isRecording);
+    if (!isConnected || !voiceEnabled) return;
+    if (isRecording) {
+      stopVoice();
+    } else {
+      startVoice();
+    }
   };
 
   return (
     <div className="h-screen bg-gray-50 flex flex-col overflow-hidden">
+      {/* Hidden audio sink for AI voice */}
+      <audio ref={audioRef} autoPlay style={{ display: 'none' }} />
       {/* 헤더 */}
       <nav className="bg-white shadow-sm border-b flex-shrink-0">
         <div className="px-4 sm:px-6 lg:px-8">
@@ -402,6 +450,35 @@ export default function CallbotChat() {
                 <Button variant="outline" className="w-full">
                   콜봇 소개
                 </Button>
+
+                {/* 음성 인식 모드 토글 (콜봇 소개 아래) */}
+                <div className="flex items-center justify-between rounded-lg border border-gray-200 px-3 py-2">
+                  <span className="text-sm text-gray-700">음성 인식 모드</span>
+                  <button
+                    onClick={() => {
+                      const next = !voiceEnabled;
+                      setVoiceEnabled(next);
+                      if (isConnected) {
+                        if (next && !isRecording) {
+                          // enable and start voice
+                          startVoice();
+                        } else if (!next && isRecording) {
+                          // disable and stop voice
+                          stopVoice();
+                        }
+                      }
+                    }}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                      voiceEnabled ? 'bg-indigo-600' : 'bg-gray-200'
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                        voiceEnabled ? 'translate-x-6' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
+                </div>
               </div>
 
               <div className="mt-auto pt-6 border-t border-gray-200">
@@ -431,7 +508,13 @@ export default function CallbotChat() {
               {isConnected ? (
                 /* 연결됨: 채팅 메시지 + 입력창 */
                 <>
-                  <div className="flex-1 overflow-y-auto p-6 space-y-4">
+                  <div className="relative flex-1 overflow-y-auto p-6 space-y-4">
+                    {/* 음성 인식 시 상단 우측에 파동 표시 */}
+                    {isRecording && (
+                      <div className="absolute right-6 top-4 z-10">
+                        <VoicePulse active={true} size={56} />
+                      </div>
+                    )}
                     {messages.map((message) => (
                       <div
                         key={message.id}
