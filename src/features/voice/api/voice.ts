@@ -7,13 +7,13 @@ export type RealtimeSession = {
 };
 
 export const voiceApi = {
-  createSession: async (opts?: { model?: string; voice?: string }): Promise<RealtimeSession> => {
+  createSession: async (opts?: { model?: string; voice?: string; lang?: string }): Promise<RealtimeSession> => {
     const params = new URLSearchParams();
     if (opts?.model) params.set('model', opts.model);
     if (opts?.voice) params.set('voice', opts.voice);
+    if (opts?.lang) params.set('lang', opts.lang);
     const url = `/realtime/session${params.toString() ? `?${params.toString()}` : ''}`;
     const res = await apiClient.post<RealtimeSession>(url);
     return res.data;
   },
 };
-

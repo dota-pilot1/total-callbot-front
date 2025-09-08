@@ -6,6 +6,7 @@ export type VoiceConnectOptions = {
   onUserTranscript?: (text: string, isFinal: boolean, meta?: { itemId?: string; eventId?: string }) => void;
   onAssistantText?: (text: string, isFinal: boolean, meta?: { responseId?: string; outputIndex?: number; eventId?: string }) => void;
   onEvent?: (evt: unknown) => void; // raw debug events
+  audioConstraints?: MediaTrackConstraints;
 };
 
 // 음성(WebRTC) 연결 핸들
@@ -125,7 +126,9 @@ export async function connectRealtimeVoice(opts: VoiceConnectOptions): Promise<V
   bindDataChannel(dc);
 
   // 마이크 캡처 후 피어 연결에 추가
-  const localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  const localStream = await navigator.mediaDevices.getUserMedia({
+    audio: opts.audioConstraints ?? true,
+  });
   for (const track of localStream.getTracks()) {
     pc.addTrack(track, localStream);
   }

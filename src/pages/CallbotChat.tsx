@@ -158,11 +158,34 @@ export default function CallbotChat() {
   const navigate = useNavigate();
   const audioRef = useRef<HTMLAudioElement>(null);
   const [voiceConn, setVoiceConn] = useState<VoiceConnection | null>(null);
+  const [isListening, setIsListening] = useState(false);
+  const [isResponding, setIsResponding] = useState(false);
+  const [speechLang, setSpeechLang] = useState<'auto' | 'ko' | 'en'>('auto');
+  const [echoCancellation, setEchoCancellation] = useState(true);
+  const [noiseSuppression, setNoiseSuppression] = useState(true);
+  const [autoGainControl, setAutoGainControl] = useState(false);
+  const [coalesceDelayMs, setCoalesceDelayMs] = useState(800);
+  const [debugEvents, setDebugEvents] = useState(false);
+
+  // 한글 조합/스트리밍 파편으로 인한 깨짐 완화용 정규화
+  const normalizeText = (s: string) => {
+    try { return (s || '').normalize('NFC'); } catch { return s; }
+  };
   const userPartialRef = useRef<string>("");
   const assistantPartialRef = useRef<string>("");
   const lastUserFinalRef = useRef<string>("");
   const lastAssistantFinalRef = useRef<string>("");
   const processedAssistantKeysRef = useRef<Set<string>>(new Set());
+  const userAggRef = useRef<Map<string, { buffer: string; completed: boolean }>>(new Map());
+  const userCoalesceRef = useRef<{ buffer: string; timer: any }>({ buffer: '', timer: null });
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // 새 메시지 도착 시 자동 스크롤
+  useEffect(() => {
+    try {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    } catch {}
+  }, [messages]);
 
   // 챗봇이 로드되면 채팅방 목록 불러오기
   useEffect(() => {
@@ -304,11 +327,17 @@ export default function CallbotChat() {
         // 음성 사용 설정 시, 연결 직후 음성 연결 시도
         if (voiceEnabled) {
       try {
-        const session = await voiceApi.createSession({});
+        const session = await voiceApi.createSession({ lang: speechLang });
         const conn = await connectRealtimeVoice({
           token: session.token,
           model: session.model,
           audioElement: audioRef.current,
+          audioConstraints: {
+            echoCancellation,
+            noiseSuppression,
+            autoGainControl,
+            channelCount: 1,
+          },
           onEvent: (evt) => {
             // 디버그: "내가 말한(사용자 입력)" 이벤트만 로깅
             const e: any = evt as any;
@@ -317,9 +346,14 @@ export default function CallbotChat() {
               t.startsWith('input_audio_buffer') ||
               t.startsWith('conversation.item.input_audio_transcription')
             );
-            if (isUserEvt) {
+            if (isUserEvt && debugEvents) {
               console.debug('[realtime:event:user]', evt);
             }
+            // 듣는 중 / 응답 중 상태 갱신
+            if (t === 'input_audio_buffer.speech_started') setIsListening(true);
+            if (t === 'input_audio_buffer.speech_stopped') setIsListening(false);
+            if (t === 'output_audio_buffer.started') setIsResponding(true);
+            if (t === 'response.done' || t === 'output_audio_buffer.stopped') setIsResponding(false);
             // 일부 모델은 사용자 전사 최종본을 별도 done 없이 버퍼 정지 시그널로 마무리합니다.
             try {
               if ((e?.type === 'input_audio_buffer.stopped' || e?.type === 'response.input_audio_buffer.stopped') && e?.item_id) {
@@ -327,17 +361,27 @@ export default function CallbotChat() {
                 const agg = userAggRef.current.get(key);
                 const finalText = (agg?.buffer || '').trim();
                 if (finalText && !agg?.completed && finalText !== lastUserFinalRef.current.trim()) {
-                  setMessages(prev => ([
-                    ...prev,
-                    {
-                      id: prev.length + 1,
-                      sender: 'user' as const,
-                      message: finalText,
-                      timestamp: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }),
-                      type: 'text' as const,
-                    },
-                  ]));
-                  lastUserFinalRef.current = finalText;
+                  // 코얼레스: 짧게 분할된 문장을 하나로 합쳐 일정 시간 후 확정
+                  const agg2 = userCoalesceRef.current;
+                  agg2.buffer = (agg2.buffer ? agg2.buffer + ' ' : '') + finalText;
+                  if (agg2.timer) clearTimeout(agg2.timer);
+                  agg2.timer = setTimeout(() => {
+                    const merged = normalizeText(userCoalesceRef.current.buffer.trim());
+                    if (merged && merged !== lastUserFinalRef.current.trim()) {
+                      setMessages(prev => ([
+                        ...prev,
+                        {
+                          id: prev.length + 1,
+                          sender: 'user' as const,
+                          message: merged,
+                          timestamp: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }),
+                          type: 'text' as const,
+                        },
+                      ]));
+                      lastUserFinalRef.current = merged;
+                    }
+                    userCoalesceRef.current = { buffer: '', timer: null };
+                  }, coalesceDelayMs);
                 }
                 userAggRef.current.delete(key);
               }
@@ -353,19 +397,28 @@ export default function CallbotChat() {
                   agg.buffer = agg.buffer || text;
                   agg.completed = true;
                   userAggRef.current.set(key, agg);
-                  const finalText = agg.buffer.trim();
-                  if (finalText && finalText !== lastUserFinalRef.current.trim()) {
-                    setMessages(prev => ([
-                      ...prev,
-                      {
-                        id: prev.length + 1,
-                        sender: 'user' as const,
-                        message: finalText,
-                        timestamp: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }),
-                        type: 'text' as const,
-                      },
-                    ]));
-                    lastUserFinalRef.current = finalText;
+                  const finalText = normalizeText(agg.buffer.trim());
+                  if (finalText) {
+                    const agg2 = userCoalesceRef.current;
+                    agg2.buffer = (agg2.buffer ? agg2.buffer + ' ' : '') + finalText;
+                    if (agg2.timer) clearTimeout(agg2.timer);
+                    agg2.timer = setTimeout(() => {
+                      const merged = normalizeText(userCoalesceRef.current.buffer.trim());
+                      if (merged && merged !== lastUserFinalRef.current.trim()) {
+                        setMessages(prev => ([
+                          ...prev,
+                          {
+                            id: prev.length + 1,
+                            sender: 'user' as const,
+                            message: merged,
+                            timestamp: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }),
+                            type: 'text' as const,
+                          },
+                        ]));
+                        lastUserFinalRef.current = merged;
+                      }
+                      userCoalesceRef.current = { buffer: '', timer: null };
+                    }, coalesceDelayMs);
                   }
                   userAggRef.current.delete(key);
                 }
@@ -374,7 +427,7 @@ export default function CallbotChat() {
                 if (!isFinal) {
                   assistantPartialRef.current += text;
                 } else {
-                  const finalText = assistantPartialRef.current || text;
+                  const finalText = normalizeText(assistantPartialRef.current || text);
                   const key = `${meta?.responseId || 'noresp'}:${meta?.outputIndex ?? -1}`;
                   if (meta?.responseId && processedAssistantKeysRef.current.has(key)) {
                     assistantPartialRef.current = "";
@@ -421,11 +474,17 @@ export default function CallbotChat() {
   const startVoice = async () => {
     if (voiceConn) return;
     try {
-      const session = await voiceApi.createSession({});
+      const session = await voiceApi.createSession({ lang: speechLang });
       const conn = await connectRealtimeVoice({
         token: session.token,
         model: session.model,
         audioElement: audioRef.current,
+        audioConstraints: {
+          echoCancellation,
+          noiseSuppression,
+          autoGainControl,
+          channelCount: 1,
+        },
         onEvent: (evt) => {
           const e: any = evt as any;
           const t = e?.type as string | undefined;
@@ -433,59 +492,85 @@ export default function CallbotChat() {
             t.startsWith('input_audio_buffer') ||
             t.startsWith('conversation.item.input_audio_transcription')
           );
-          if (isUserEvt) {
+          if (isUserEvt && debugEvents) {
             console.debug('[realtime:event:user]', evt);
           }
+          if (t === 'input_audio_buffer.speech_started') setIsListening(true);
+          if (t === 'input_audio_buffer.speech_stopped') setIsListening(false);
+          if (t === 'output_audio_buffer.started') setIsResponding(true);
+          if (t === 'response.done' || t === 'output_audio_buffer.stopped') setIsResponding(false);
           try {
-            if ((e?.type === 'input_audio_buffer.stopped' || e?.type === 'response.input_audio_buffer.stopped') && userPartialRef.current.trim()) {
-              const finalText = userPartialRef.current.trim();
-              if (finalText && finalText !== lastUserFinalRef.current.trim()) {
-                setMessages(prev => ([
-                  ...prev,
-                  {
-                    id: prev.length + 1,
-                    sender: 'user' as const,
-                    message: finalText,
-                    timestamp: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }),
-                    type: 'text' as const,
-                  },
-                ]));
-                lastUserFinalRef.current = finalText;
+            if ((e?.type === 'input_audio_buffer.stopped' || e?.type === 'response.input_audio_buffer.stopped') && e?.item_id) {
+              const key = e.item_id as string;
+              const agg = userAggRef.current.get(key);
+              const finalText = (agg?.buffer || '').trim();
+              if (finalText && !agg?.completed && finalText !== lastUserFinalRef.current.trim()) {
+                const agg2 = userCoalesceRef.current;
+                agg2.buffer = (agg2.buffer ? agg2.buffer + ' ' : '') + finalText;
+                if (agg2.timer) clearTimeout(agg2.timer);
+                agg2.timer = setTimeout(() => {
+                  const merged = normalizeText(userCoalesceRef.current.buffer.trim());
+                  if (merged && merged !== lastUserFinalRef.current.trim()) {
+                    setMessages(prev => ([
+                      ...prev,
+                      {
+                        id: prev.length + 1,
+                        sender: 'user' as const,
+                        message: merged,
+                        timestamp: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }),
+                        type: 'text' as const,
+                      },
+                    ]));
+                    lastUserFinalRef.current = merged;
+                  }
+                  userCoalesceRef.current = { buffer: '', timer: null };
+                }, coalesceDelayMs);
               }
-              userPartialRef.current = '';
+              userAggRef.current.delete(key);
             }
           } catch {}
         },
-        onUserTranscript: (text, isFinal) => {
+        onUserTranscript: (text, isFinal, meta) => {
+          const key = meta?.itemId || 'default';
+          const agg = userAggRef.current.get(key) || { buffer: '', completed: false };
           if (!isFinal) {
-            userPartialRef.current += text;
+            agg.buffer += text;
+            userAggRef.current.set(key, agg);
           } else {
-            const finalText = userPartialRef.current || text;
-            if (finalText.trim() === lastUserFinalRef.current.trim()) {
-              userPartialRef.current = "";
-              return;
+            agg.buffer = agg.buffer || text;
+            agg.completed = true;
+            userAggRef.current.set(key, agg);
+            const finalText = normalizeText(agg.buffer.trim());
+            if (finalText) {
+              const agg2 = userCoalesceRef.current;
+              agg2.buffer = (agg2.buffer ? agg2.buffer + ' ' : '') + finalText;
+              if (agg2.timer) clearTimeout(agg2.timer);
+              agg2.timer = setTimeout(() => {
+                const merged = normalizeText(userCoalesceRef.current.buffer.trim());
+                if (merged && merged !== lastUserFinalRef.current.trim()) {
+                  setMessages(prev => ([
+                    ...prev,
+                    {
+                      id: prev.length + 1,
+                      sender: 'user' as const,
+                      message: merged,
+                      timestamp: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }),
+                      type: 'text' as const,
+                    },
+                  ]));
+                  lastUserFinalRef.current = merged;
+                }
+                userCoalesceRef.current = { buffer: '', timer: null };
+              }, coalesceDelayMs);
             }
-            if (finalText.trim()) {
-              setMessages(prev => ([
-                ...prev,
-                {
-                  id: prev.length + 1,
-                  sender: 'user' as const,
-                  message: finalText,
-                  timestamp: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }),
-                  type: 'text' as const,
-                },
-              ]));
-              lastUserFinalRef.current = finalText.trim();
-            }
-            userPartialRef.current = "";
+            userAggRef.current.delete(key);
           }
         },
         onAssistantText: (text, isFinal, meta) => {
           if (!isFinal) {
             assistantPartialRef.current += text;
           } else {
-            const finalText = assistantPartialRef.current || text;
+            const finalText = normalizeText(assistantPartialRef.current || text);
             const key = `${meta?.responseId || 'noresp'}:${meta?.outputIndex ?? -1}`;
             if (meta?.responseId && processedAssistantKeysRef.current.has(key)) {
               assistantPartialRef.current = "";
@@ -533,6 +618,18 @@ export default function CallbotChat() {
     } else {
       startVoice();
     }
+  };
+
+  // 대화 지우기: 초기 인삿말만 남기고 상태/버퍼 초기화
+  const handleClearChat = () => {
+    const greeting = chatbot?.greeting || '안녕하세요! 무엇을 도와드릴까요?';
+    setMessages(getInitialMessages(greeting));
+    lastUserFinalRef.current = '';
+    lastAssistantFinalRef.current = '';
+    assistantPartialRef.current = '';
+    userPartialRef.current = '';
+    processedAssistantKeysRef.current.clear();
+    userAggRef.current.clear();
   };
 
   return (
@@ -699,7 +796,7 @@ export default function CallbotChat() {
               {isConnected ? (
                 /* 연결됨: 채팅 메시지 + 입력창 */
                 <>
-                  <div className="relative flex-1 overflow-y-auto p-6 space-y-4">
+                  <div className="relative flex-1 overflow-y-auto p-6 space-y-4 keep-korean">
                     {/* 음성 인식 시 상단 우측에 파동 표시 */}
                     {isRecording && (
                       <div className="absolute right-6 top-4 z-10">
@@ -727,6 +824,7 @@ export default function CallbotChat() {
                         </div>
                       </div>
                     ))}
+                    <div ref={messagesEndRef} />
                   </div>
 
                   {/* 메시지 입력 */}
@@ -749,6 +847,11 @@ export default function CallbotChat() {
                       </button>
                       
                       <div className="flex-1 flex items-center space-x-2">
+                        {isRecording && (
+                          <span className={`text-xs px-2 py-1 rounded-full ${isListening ? 'bg-red-100 text-red-700' : (isResponding ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600')}`}>
+                            {isListening ? '듣는 중…' : (isResponding ? '응답 중…' : '대기 중')}
+                          </span>
+                        )}
                         <input
                           type="text"
                           value={newMessage}
@@ -764,6 +867,14 @@ export default function CallbotChat() {
                           className="px-3"
                         >
                           <PaperAirplaneIcon className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          onClick={handleClearChat}
+                          variant="outline"
+                          size="sm"
+                          className="px-3"
+                        >
+                          지우기
                         </Button>
                         
                         {/* 설정 패널 토글 버튼 - 연결된 상태에서만 표시 */}
@@ -845,6 +956,19 @@ export default function CallbotChat() {
                 onClose={() => setSettingsPanelOpen(false)}
                 voiceEnabled={voiceEnabled}
                 onVoiceEnabledChange={setVoiceEnabled}
+                lang={speechLang}
+                onLangChange={setSpeechLang}
+                echoCancellation={echoCancellation}
+                onEchoCancellationChange={setEchoCancellation}
+                noiseSuppression={noiseSuppression}
+                onNoiseSuppressionChange={setNoiseSuppression}
+                autoGainControl={autoGainControl}
+                onAutoGainControlChange={setAutoGainControl}
+                coalesceDelayMs={coalesceDelayMs}
+                onCoalesceDelayChange={setCoalesceDelayMs}
+                debugEvents={debugEvents}
+                onDebugEventsChange={setDebugEvents}
+                onClearChat={handleClearChat}
               />
             )}
           </main>

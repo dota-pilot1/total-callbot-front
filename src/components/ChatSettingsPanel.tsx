@@ -9,6 +9,18 @@ interface ChatSettingsPanelProps {
   voiceEnabled: boolean;
   onVoiceEnabledChange: (enabled: boolean) => void;
   onClearChat?: () => void;
+  lang?: 'auto' | 'ko' | 'en';
+  onLangChange?: (lang: 'auto' | 'ko' | 'en') => void;
+  echoCancellation?: boolean;
+  onEchoCancellationChange?: (v: boolean) => void;
+  noiseSuppression?: boolean;
+  onNoiseSuppressionChange?: (v: boolean) => void;
+  autoGainControl?: boolean;
+  onAutoGainControlChange?: (v: boolean) => void;
+  coalesceDelayMs?: number;
+  onCoalesceDelayChange?: (ms: number) => void;
+  debugEvents?: boolean;
+  onDebugEventsChange?: (v: boolean) => void;
 }
 
 const ChatSettingsPanel: React.FC<ChatSettingsPanelProps> = ({
@@ -16,7 +28,19 @@ const ChatSettingsPanel: React.FC<ChatSettingsPanelProps> = ({
   onClose,
   voiceEnabled,
   onVoiceEnabledChange,
-  onClearChat
+  onClearChat,
+  lang = 'auto',
+  onLangChange,
+  echoCancellation = true,
+  onEchoCancellationChange,
+  noiseSuppression = true,
+  onNoiseSuppressionChange,
+  autoGainControl = false,
+  onAutoGainControlChange,
+  coalesceDelayMs = 800,
+  onCoalesceDelayChange,
+  debugEvents = false,
+  onDebugEventsChange,
 }) => {
   if (!isOpen) return null;
 
@@ -67,6 +91,47 @@ const ChatSettingsPanel: React.FC<ChatSettingsPanelProps> = ({
                 <option>빠름</option>
                 <option>느림</option>
               </select>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-600">인식 언어</span>
+              <select
+                className="text-sm border border-gray-300 rounded px-2 py-1"
+                value={lang}
+                onChange={(e) => onLangChange?.(e.target.value as 'auto' | 'ko' | 'en')}
+              >
+                <option value="auto">자동</option>
+                <option value="ko">한국어</option>
+                <option value="en">English</option>
+              </select>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <label className="flex items-center justify-between text-sm text-gray-600 border rounded px-2 py-1">
+                <span>에코 캔슬</span>
+                <input type="checkbox" checked={echoCancellation} onChange={(e)=>onEchoCancellationChange?.(e.target.checked)} />
+              </label>
+              <label className="flex items-center justify-between text-sm text-gray-600 border rounded px-2 py-1">
+                <span>노이즈 제거</span>
+                <input type="checkbox" checked={noiseSuppression} onChange={(e)=>onNoiseSuppressionChange?.(e.target.checked)} />
+              </label>
+              <label className="flex items-center justify-between text-sm text-gray-600 border rounded px-2 py-1 col-span-2">
+                <span>오토 게인</span>
+                <input type="checkbox" checked={autoGainControl} onChange={(e)=>onAutoGainControlChange?.(e.target.checked)} />
+              </label>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-600">문장 병합 지연(ms)</span>
+              <input
+                type="number"
+                className="w-24 text-sm border border-gray-300 rounded px-2 py-1"
+                value={coalesceDelayMs}
+                onChange={(e)=> onCoalesceDelayChange?.(Math.max(200, Number(e.target.value) || 800))}
+                min={200}
+                step={100}
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-600">디버그 로그</span>
+              <input type="checkbox" checked={debugEvents} onChange={(e)=>onDebugEventsChange?.(e.target.checked)} />
             </div>
           </div>
         </div>
