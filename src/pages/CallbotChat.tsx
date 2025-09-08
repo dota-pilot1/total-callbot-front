@@ -141,6 +141,7 @@ export default function CallbotChat() {
 
   const [messages, setMessages] = useState(getInitialMessages());
   const [newMessage, setNewMessage] = useState("");
+  const [isIMEComposing, setIsIMEComposing] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [voiceEnabled, setVoiceEnabled] = useState(false);
@@ -251,7 +252,7 @@ export default function CallbotChat() {
     const userMessage = {
       id: messages.length + 1,
       sender: "user" as const,
-      message: messageContent,
+      message: normalizeText(messageContent),
       timestamp: new Date().toLocaleTimeString("ko-KR", {
         hour: "2-digit",
         minute: "2-digit",
@@ -259,7 +260,36 @@ export default function CallbotChat() {
       type: "text" as const,
     };
 
-    setMessages([...messages, userMessage]);
+    setMessages((prev) => [...prev, userMessage]);
+
+    // Realtime 세션에 텍스트로 전달 (연결 + 데이터채널 오픈 상태일 때)
+    try {
+      if (voiceConn?.dc && voiceConn.dc.readyState === "open") {
+        // Realtime 스펙에 따라 사용자 텍스트를 대화 항목으로 추가
+        voiceConn.dc.send(
+          JSON.stringify({
+            type: "conversation.item.create",
+            item: {
+              type: "message",
+              role: "user",
+              content: [
+                { type: "input_text", text: userMessage.message },
+              ],
+            },
+          }),
+        );
+        // 이어서 응답 생성(오디오+텍스트)
+        voiceConn.dc.send(
+          JSON.stringify({
+            type: "response.create",
+            response: { modalities: ["audio", "text"], conversation: "auto" },
+          }),
+        );
+        return; // 로컬 목업 응답 생략
+      }
+    } catch (e) {
+      console.error("Realtime 텍스트 전송 실패:", e);
+    }
 
     // 선택된 챗봇별 맞춤 응답 시뮬레이션
     setTimeout(() => {
@@ -299,7 +329,7 @@ export default function CallbotChat() {
       const botResponse = {
         id: messages.length + 2,
         sender: "callbot" as const,
-        message: getBotResponse(newMessage, chatbot?.id || "default"),
+        message: getBotResponse(messageContent, chatbot?.id || "default"),
         timestamp: new Date().toLocaleTimeString("ko-KR", {
           hour: "2-digit",
           minute: "2-digit",
@@ -1040,11 +1070,15 @@ export default function CallbotChat() {
                           type="text"
                           value={newMessage}
                           onChange={(e) => setNewMessage(e.target.value)}
-                          onKeyDown={(e) =>
-                            e.key === "Enter" &&
-                            !e.shiftKey &&
-                            handleSendMessage()
-                          }
+                          onCompositionStart={() => setIsIMEComposing(true)}
+                          onCompositionEnd={() => setIsIMEComposing(false)}
+                          onKeyDown={(e) => {
+                            const anyEvt = e.nativeEvent as any;
+                            const composing = isIMEComposing || anyEvt?.isComposing || anyEvt?.keyCode === 229;
+                            if (e.key === "Enter" && !e.shiftKey && !composing) {
+                              handleSendMessage();
+                            }
+                          }}
                           placeholder="메시지를 입력하세요..."
                           className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                         />
