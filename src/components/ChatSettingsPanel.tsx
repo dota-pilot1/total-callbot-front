@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button } from './ui';
 import { CogIcon } from '@heroicons/react/24/outline';
-import { SpeakerWaveIcon as SpeakerWaveIconSolid } from '@heroicons/react/24/solid';
+// Removed voice output icon row to simplify panel
 
 interface ChatSettingsPanelProps {
   isOpen: boolean;
@@ -66,10 +66,6 @@ const ChatSettingsPanel: React.FC<ChatSettingsPanelProps> = ({
           <h4 className="text-sm font-medium text-gray-900 mb-3">음성 옵션</h4>
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">음성 출력</span>
-              <SpeakerWaveIconSolid className="h-5 w-5 text-indigo-500" />
-            </div>
-            <div className="flex items-center justify-between">
               <span className="text-sm text-gray-600">음성 인식</span>
               <button
                 onClick={() => onVoiceEnabledChange(!voiceEnabled)}
@@ -83,14 +79,6 @@ const ChatSettingsPanel: React.FC<ChatSettingsPanelProps> = ({
                   }`}
                 />
               </button>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">음성 속도</span>
-              <select className="text-sm border border-gray-300 rounded px-2 py-1">
-                <option>보통</option>
-                <option>빠름</option>
-                <option>느림</option>
-              </select>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-600">인식 언어</span>
@@ -137,28 +125,8 @@ const ChatSettingsPanel: React.FC<ChatSettingsPanelProps> = ({
         </div>
 
         <div>
-          <h4 className="text-sm font-medium text-gray-900 mb-3">콜봇 설정</h4>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">자동 응답</span>
-              <input type="checkbox" defaultChecked className="rounded" />
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">응답 지연</span>
-              <span className="text-sm text-gray-500">1.5초</span>
-            </div>
-          </div>
-        </div>
-
-        <div>
           <h4 className="text-sm font-medium text-gray-900 mb-3">대화 기록</h4>
           <div className="space-y-2">
-            <Button variant="outline" size="sm" className="w-full text-left justify-start">
-              대화 내용 저장
-            </Button>
-            <Button variant="outline" size="sm" className="w-full text-left justify-start">
-              기록 다운로드
-            </Button>
             <Button
               variant="destructive"
               size="sm"

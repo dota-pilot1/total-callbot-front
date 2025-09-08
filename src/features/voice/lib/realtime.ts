@@ -57,7 +57,18 @@ export async function connectRealtimeVoice(opts: VoiceConnectOptions): Promise<V
       } catch {}
     };
     dc.onmessage = (ev) => {
-      const raw = String(ev.data || '');
+      // UTF-8 텍스트 인코딩 명시적 처리
+      let raw: string;
+      if (ev.data instanceof ArrayBuffer) {
+        const decoder = new TextDecoder('utf-8');
+        raw = decoder.decode(ev.data);
+      } else if (ev.data instanceof Blob) {
+        // Blob의 경우 비동기적으로 처리해야 하지만, 여기서는 동기적 처리 필요
+        raw = String(ev.data || '');
+      } else {
+        raw = String(ev.data || '');
+      }
+      
       let msg: any = null;
       try { msg = JSON.parse(raw); } catch { /* not JSON */ }
       if (msg) {
@@ -66,24 +77,33 @@ export async function connectRealtimeVoice(opts: VoiceConnectOptions): Promise<V
           // 공통 Realtime 이벤트 추론 처리
           // 사용자 음성 전사: input_audio_buffer.* 또는 conversation.item.input_audio_transcription.*
           if ((msg.type === 'input_audio_buffer.transcript.delta' || msg.type === 'conversation.item.input_audio_transcription.delta') && typeof msg.delta === 'string') {
-            opts.onUserTranscript?.(msg.delta, false, { itemId: msg.item_id, eventId: msg.event_id });
+            // 한글 문자 유효성 검증 후 전달
+            const cleanDelta = msg.delta.normalize('NFC');
+            opts.onUserTranscript?.(cleanDelta, false, { itemId: msg.item_id, eventId: msg.event_id });
           }
           if ((msg.type === 'input_audio_buffer.transcript.completed' || msg.type === 'conversation.item.input_audio_transcription.completed') && typeof msg.transcript === 'string') {
-            opts.onUserTranscript?.(msg.transcript, true, { itemId: msg.item_id, eventId: msg.event_id });
+            // 완성된 텍스트는 NFC 정규화만 적용
+            const cleanTranscript = msg.transcript.normalize('NFC');
+            opts.onUserTranscript?.(cleanTranscript, true, { itemId: msg.item_id, eventId: msg.event_id });
           }
           // 어시스턴트 텍스트 스트림
           if ((msg.type === 'response.output_text.delta' || msg.type === 'response.text.delta') && typeof msg.delta === 'string') {
-            opts.onAssistantText?.(msg.delta, false);
+            // 스트리밍 중 한글 깨짐 방지를 위한 NFC 정규화
+            const cleanDelta = msg.delta.normalize('NFC');
+            opts.onAssistantText?.(cleanDelta, false);
           }
           if ((msg.type === 'response.output_text.done' || msg.type === 'response.text.done') && typeof msg.text === 'string') {
-            opts.onAssistantText?.(msg.text, true, { responseId: msg.response_id, outputIndex: msg.output_index, eventId: msg.event_id });
+            const cleanText = msg.text.normalize('NFC');
+            opts.onAssistantText?.(cleanText, true, { responseId: msg.response_id, outputIndex: msg.output_index, eventId: msg.event_id });
           }
           // 어시스턴트 오디오 전사(assistant가 말한 내용의 텍스트)
           if (msg.type === 'response.audio_transcript.delta' && typeof msg.delta === 'string') {
-            opts.onAssistantText?.(msg.delta, false, { responseId: msg.response_id, outputIndex: msg.output_index, eventId: msg.event_id });
+            const cleanDelta = msg.delta.normalize('NFC');
+            opts.onAssistantText?.(cleanDelta, false, { responseId: msg.response_id, outputIndex: msg.output_index, eventId: msg.event_id });
           }
           if (msg.type === 'response.audio_transcript.done' && typeof msg.transcript === 'string') {
-            opts.onAssistantText?.(msg.transcript, true, { responseId: msg.response_id, outputIndex: msg.output_index, eventId: msg.event_id });
+            const cleanTranscript = msg.transcript.normalize('NFC');
+            opts.onAssistantText?.(cleanTranscript, true, { responseId: msg.response_id, outputIndex: msg.output_index, eventId: msg.event_id });
           }
 
           // 구조화된 아이템 형태로 오는 응답 처리 (텍스트만 사용)
