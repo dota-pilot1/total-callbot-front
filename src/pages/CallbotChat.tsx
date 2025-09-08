@@ -3,6 +3,7 @@ import { useLocation, useParams } from 'react-router-dom';
 import { useAuthStore } from '../features/auth';
 import { Button } from '../components/ui';
 import Sidebar from '../components/Sidebar';
+import { chatApi } from '../features/chat/api/chat';
 import { 
   MicrophoneIcon, 
   PaperAirplaneIcon, 
@@ -144,6 +145,9 @@ export default function CallbotChat() {
   const [isRecording, setIsRecording] = useState(false);
   const [voiceEnabled, setVoiceEnabled] = useState(true);
   const [settingsPanelOpen, setSettingsPanelOpen] = useState(true);
+  const [chatRoomId, setChatRoomId] = useState<string | null>(null);
+  const [chatRoomDetails, setChatRoomDetails] = useState<any>(null);
+  const [isConnecting, setIsConnecting] = useState(false);
 
   const handleSendMessage = async () => {
     if (!newMessage.trim()) return;
@@ -211,8 +215,43 @@ export default function CallbotChat() {
     }, 1500);
   };
 
-  const toggleConnection = () => {
-    setIsConnected(!isConnected);
+  const toggleConnection = async () => {
+    if (isConnected) {
+      // 연결 해제: 웹소켓 닫기 (향후 추가)
+      setIsConnected(false);
+      setChatRoomId(null);
+      setChatRoomDetails(null);
+    } else {
+      // 연결 시작: 방 참여
+      setIsConnecting(true);
+      
+      try {
+        // 1. 채팅방 생성 또는 조회
+        const chatRoomData = await chatApi.getOrCreateChatRoom({
+          chatbotId: chatbot?.id || 'default',
+          chatbotName: chatbot?.name || '챗봇'
+        });
+        
+        // 2. 방 참여
+        await chatApi.joinChatRoom(chatRoomData.id);
+        
+        // 3. 방 세부정보 조회
+        const roomDetails = await chatApi.getChatRoomDetails(chatRoomData.id);
+        
+        // 4. 상태 업데이트
+        setChatRoomId(chatRoomData.id);
+        setChatRoomDetails(roomDetails);
+        setIsConnected(true);
+        
+        console.log('방 참여 성공:', chatRoomData.id, roomDetails);
+        
+      } catch (error) {
+        console.error('방 참여 실패:', error);
+        alert('채팅방 참여에 실패했습니다.');
+      } finally {
+        setIsConnecting(false);
+      }
+    }
   };
 
   const toggleRecording = () => {
@@ -288,11 +327,26 @@ export default function CallbotChat() {
                   </p>
                 )}
                 <div className="flex items-center justify-center space-x-2">
-                  <div className={`w-3 h-3 rounded-full ${isConnected ? 'bg-green-400' : 'bg-gray-400'}`}></div>
-                  <span className={`text-sm ${isConnected ? 'text-green-600' : 'text-gray-500'}`}>
-                    {isConnected ? '연결됨' : '연결 대기중'}
+                  <div className={`w-3 h-3 rounded-full ${isConnected ? 'bg-green-400' : (isConnecting ? 'bg-yellow-400' : 'bg-gray-400')}`}></div>
+                  <span className={`text-sm ${isConnected ? 'text-green-600' : (isConnecting ? 'text-yellow-600' : 'text-gray-500')}`}>
+                    {isConnecting ? '연결중...' : (isConnected ? '연결됨' : '연결 대기중')}
                   </span>
                 </div>
+                
+                {/* 방 정보 표시 */}
+                {isConnected && chatRoomId && (
+                  <div className="mt-3 p-2 bg-green-50 rounded-lg border border-green-200">
+                    <div className="text-xs text-green-800 space-y-1">
+                      <div><span className="font-medium">방 ID:</span> {chatRoomId}</div>
+                      {chatRoomDetails?.participantCount && (
+                        <div><span className="font-medium">참여자:</span> {chatRoomDetails.participantCount}명</div>
+                      )}
+                      {chatRoomDetails?.createdAt && (
+                        <div><span className="font-medium">생성:</span> {new Date(chatRoomDetails.createdAt).toLocaleString('ko-KR')}</div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="space-y-4">
@@ -300,8 +354,9 @@ export default function CallbotChat() {
                   onClick={toggleConnection}
                   variant={isConnected ? "destructive" : "default"}
                   className="w-full"
+                  disabled={isConnecting}
                 >
-                  {isConnected ? '연결 해제' : '콜봇 연결하기'}
+                  {isConnecting ? '연결중...' : (isConnected ? '연결 해제' : '콜봇 연결하기')}
                 </Button>
                 
                 <Button variant="outline" className="w-full">
@@ -368,7 +423,7 @@ export default function CallbotChat() {
                       ? 'bg-red-500 text-white animate-pulse' 
                       : 'bg-gray-100 hover:bg-gray-200 text-gray-600'
                   }`}
-                  disabled={!isConnected || !voiceEnabled}
+                  disabled={!isConnected || !voiceEnabled || isConnecting}
                 >
                   {isRecording ? (
                     <MicrophoneIconSolid className="h-5 w-5" />
@@ -383,13 +438,13 @@ export default function CallbotChat() {
                     value={newMessage}
                     onChange={(e) => setNewMessage(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
-                    placeholder={isConnected ? "메시지를 입력하세요..." : "콜봇에 연결해주세요"}
-                    disabled={!isConnected}
+                    placeholder={isConnected ? "메시지를 입력하세요..." : (isConnecting ? "연결 중..." : "콜봇에 연결해주세요")}
+                    disabled={!isConnected || isConnecting}
                     className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
                   />
                   <Button 
                     onClick={handleSendMessage}
-                    disabled={!isConnected || !newMessage.trim()}
+                    disabled={!isConnected || !newMessage.trim() || isConnecting}
                     size="sm"
                     className="px-3"
                   >

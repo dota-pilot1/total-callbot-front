@@ -439,15 +439,16 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                             e.preventDefault();
                             e.stopPropagation();
                             
-                            // 이미 선택된 봇을 다시 클릭하면 선택 해제
-                            if (selectedBot === bot.id) {
-                              setSelectedBot(null);
-                              setOpenCategories([bot.category]);
-                              return;
-                            }
-                            
-                            // 봇 선택
+                            // 봇 선택 및 채팅 페이지로 이동
                             setSelectedBot(bot.id);
+                            navigate(`/chat/bot/${bot.id}`, { 
+                              state: { 
+                                chatbot: {
+                                  ...bot,
+                                  icon: undefined // 컴포넌트 아이콘 제외
+                                }
+                              } 
+                            });
                           };
                           
                           return (

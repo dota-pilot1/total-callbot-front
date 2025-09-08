@@ -36,5 +36,16 @@ export const chatApi = {
   // 채팅방 삭제
   deleteChatRoom: async (chatRoomId: string): Promise<void> => {
     await apiClient.delete(`/chat/rooms/${chatRoomId}`);
+  },
+
+  // 방 참여
+  joinChatRoom: async (chatRoomId: string): Promise<void> => {
+    await apiClient.post(`/chat/rooms/${chatRoomId}/join`);
+  },
+
+  // 방 세부정보 조회
+  getChatRoomDetails: async (chatRoomId: string): Promise<any> => {
+    const response = await apiClient.get(`/chat/rooms/${chatRoomId}/details`);
+    return response.data;
   }
 };
