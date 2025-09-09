@@ -98,7 +98,7 @@ export default function MobileSettingsDropdown({
             className="fixed top-0 left-0 right-0 bg-white shadow-lg z-50 max-h-[80vh] overflow-y-auto"
           >
             {/* 헤더 */}
-            <div className="sticky top-0 bg-white border-b border-gray-200 px-4 py-4 flex justify-between items-center">
+            <div className="sticky top-0 bg-white border-b border-gray-200 px-4 py-3 flex justify-between items-center">
               <h3 className="text-lg font-semibold text-gray-900">채팅 설정</h3>
               <button
                 onClick={onClose}
@@ -111,29 +111,13 @@ export default function MobileSettingsDropdown({
             {/* 설정 내용 */}
             <div className="p-4 space-y-6">
               {/* 음성 인식 기본 설정 */}
-              <div className="space-y-4">
-                <h4 className="text-md font-medium text-gray-900 border-b border-gray-100 pb-2">
-                  🎤 음성 설정
-                </h4>
-                
-                {/* 음성 인식 ON/OFF */}
-                <div className="flex items-center justify-between py-2">
-                  <div className="flex-1">
-                    <div className="font-medium text-gray-900">음성 인식</div>
-                    <div className="text-sm text-gray-600">실시간 음성 대화 기능</div>
-                  </div>
-                  <ToggleSwitch
-                    enabled={voiceEnabled}
-                    onChange={onVoiceEnabledChange}
-                  />
-                </div>
+              <div className="space-y-2">
+                <h4 className="text-md font-medium text-gray-900 border-b border-gray-100 pb-ㅂ">
+                  인식 언어
+                </h4>                
 
                 {/* 언어 설정 */}
-                <div className="flex items-center justify-between py-2">
-                  <div className="flex-1">
-                    <div className="font-medium text-gray-900">인식 언어</div>
-                    <div className="text-sm text-gray-600">음성 인식 언어 선택</div>
-                  </div>
+                <div className="flex items-center justify-between">
                   <div className="flex space-x-1">
                     {[
                       { key: "auto" as const, label: "자동" },
@@ -225,38 +209,9 @@ export default function MobileSettingsDropdown({
                   </div>
                 </div>
 
-                {/* 디버그 모드 */}
-                <div className="flex items-center justify-between py-2">
-                  <div className="flex-1">
-                    <div className="font-medium text-gray-900">디버그 모드</div>
-                    <div className="text-sm text-gray-600">개발자용 로그 출력</div>
-                  </div>
-                  <ToggleSwitch
-                    enabled={debugEvents}
-                    onChange={onDebugEventsChange}
-                    size="small"
-                  />
-                </div>
               </div>
 
-              {/* 위험한 작업들 */}
-              <div className="space-y-4">
-                <h4 className="text-md font-medium text-gray-900 border-b border-gray-100 pb-2">
-                  🗑️ 데이터 관리
-                </h4>
-                
-                <button
-                  onClick={() => {
-                    if (confirm('모든 대화 기록이 삭제됩니다. 계속하시겠습니까?')) {
-                      onClearChat();
-                      onClose();
-                    }
-                  }}
-                  className="w-full p-3 bg-red-50 hover:bg-red-100 text-red-700 rounded-lg font-medium transition-colors border border-red-200"
-                >
-                  대화 기록 전체 삭제
-                </button>
-              </div>
+
 
               {/* 하단 여백 */}
               <div className="h-4" />
