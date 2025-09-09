@@ -6,7 +6,6 @@ import {
   MicrophoneIcon,
   PaperAirplaneIcon,
   CogIcon,
-  PhoneIcon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
 import {
@@ -533,7 +532,7 @@ export default function MobileChat() {
         // 캐릭터/목소리 선택 관련
         characterOptions={CHARACTER_PRESETS.map(c => ({ id: c.id, name: c.name, emoji: c.emoji }))}
         selectedCharacterId={selectedCharacterId}
-        onSelectCharacter={setSelectedCharacterId}
+        onSelectCharacter={(id: string) => setSelectedCharacterId(id as (typeof CHARACTER_PRESETS)[number]['id'])}
         voiceOptions={[...VOICE_OPTIONS]}
         selectedVoice={selectedVoice}
         onSelectVoice={setSelectedVoice}
