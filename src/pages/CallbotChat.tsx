@@ -392,12 +392,6 @@ export default function CallbotChat() {
                 // 디버그: "내가 말한(사용자 입력)" 이벤트만 로깅
                 const e: any = evt as any;
                 const t = e?.type as string | undefined;
-                const isUserEvt =
-                  !!t &&
-                  (t.startsWith("input_audio_buffer") ||
-                    t.startsWith(
-                      "conversation.item.input_audio_transcription",
-                    ));
                 if (
                   debugEvents &&
                   (t === "input_audio_buffer.transcript.completed" ||
@@ -556,10 +550,6 @@ export default function CallbotChat() {
         onEvent: (evt) => {
           const e: any = evt as any;
           const t = e?.type as string | undefined;
-          const isUserEvt =
-            !!t &&
-            (t.startsWith("input_audio_buffer") ||
-              t.startsWith("conversation.item.input_audio_transcription"));
           if (
             debugEvents &&
             (t === "input_audio_buffer.transcript.completed" ||

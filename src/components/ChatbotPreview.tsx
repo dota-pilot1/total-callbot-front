@@ -57,6 +57,8 @@ const ChatbotPreview: React.FC<ChatbotPreviewProps> = ({ chatbot }) => {
     
     try {
       const newRoom = await chatApi.getOrCreateChatRoom({
+        chatbotId: chatbot.id,
+        chatbotName: chatbot.name,
         botType: chatbot.id,
         name: `${chatbot.name}와의 대화`
       });

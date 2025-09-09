@@ -3,8 +3,11 @@ export interface ChatRoom {
   userId: number;
   chatbotId: string;
   chatbotName: string;
+  name?: string;
+  botType?: string;
   lastMessage?: string;
   lastMessageTime?: string;
+  lastMessageAt?: string;
   createdAt: string;
   updatedAt: string;
   isActive: boolean;
@@ -21,6 +24,8 @@ export interface ChatMessage {
 export interface CreateChatRoomRequest {
   chatbotId: string;
   chatbotName: string;
+  botType?: string;
+  name?: string;
 }
 
 export interface CreateChatRoomResponse {

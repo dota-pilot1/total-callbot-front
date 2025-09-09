@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useChatStore } from '../features/chat/model/chatStore';
-import { chatApi } from '../features/chat/api/chat';
 import { ChevronLeftIcon } from '@heroicons/react/24/outline';
 import { categories } from './data/categories';
 import { chatbots } from './data/chatbots';
