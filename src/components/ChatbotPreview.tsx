@@ -25,7 +25,7 @@ const ChatbotPreview: React.FC<ChatbotPreviewProps> = ({ chatbot }) => {
     if (chatbot) {
       loadBotChatRooms();
     }
-  }, [chatbot]);
+  }, []); // 한 번만 호출되도록 빈 의존성 배열 사용
 
   const loadBotChatRooms = async () => {
     if (!chatbot) return;

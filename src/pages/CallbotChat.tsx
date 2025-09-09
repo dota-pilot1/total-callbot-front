@@ -202,12 +202,12 @@ export default function CallbotChat() {
     } catch {}
   }, [messages]);
 
-  // 챗봇이 로드되면 채팅방 목록 불러오기
+  // 챗봇이 로드되면 채팅방 목록 불러오기 (한 번만)
   useEffect(() => {
     if (chatbot && !isConnected) {
       loadBotChatRooms();
     }
-  }, [chatbot, isConnected]);
+  }, []); // 한 번만 호출되도록 빈 의존성 배열 사용
 
   const loadBotChatRooms = async () => {
     if (!chatbot) return;
