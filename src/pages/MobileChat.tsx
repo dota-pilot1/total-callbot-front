@@ -40,9 +40,9 @@ export default function MobileChat() {
 
   // 기본 챗봇 설정 (선택 없이 바로 연결)
   const defaultChatbot = {
-    id: "backend",
-    name: "백엔드 전문가",
-    description: "서버 개발, API 설계, 데이터베이스 최적화 전문",
+    id: "total-callbot",
+    name: "Total Callbot",
+    description: "AI 음성 대화 전문 어시스턴트",
     color: "from-indigo-500 to-purple-600",
   };
 
@@ -344,7 +344,7 @@ export default function MobileChat() {
       {/* 챗봇 정보 및 연결 상태 */}
       <div className="bg-white border-b border-gray-200 p-4 flex-shrink-0">
         <div className="text-center">
-          <p className="text-sm text-gray-600 mb-3">{defaultChatbot.description}</p>
+          {/* <p className="text-sm text-gray-600 mb-3">{defaultChatbot.description}</p> */}
           
           {/* 연결 상태 */}
           <div className={`inline-flex items-center px-3 py-2 rounded-full text-sm font-medium mb-3 ${
@@ -360,33 +360,47 @@ export default function MobileChat() {
             {isConnecting ? "연결중..." : isConnected ? "연결됨" : "연결 대기중"}
           </div>
 
-          {/* 연결 버튼 */}
-          <div className="flex justify-center space-x-3">
-            <Button
-              onClick={toggleConnection}
-              variant={isConnected ? "destructive" : "default"}
-              className="px-6"
-              disabled={isConnecting}
-            >
-              {isConnecting ? "연결중..." : isConnected ? "연결 해제" : "연결하기"}
-            </Button>
-            
-            {/* 음성 모드 토글 */}
-            {isConnected && (
+          {/* 음성 시작 버튼 또는 파동 표시 */}
+          <div className="flex justify-center">
+            {voiceEnabled && isRecording ? (
+              /* 음성 파동 표시 */
+              <div className="bg-white rounded-full p-4 shadow-lg border border-gray-200">
+                <VoicePulse active={isListening || isResponding} size={48} />
+              </div>
+            ) : (
+              /* Start 버튼 */
               <Button
-                onClick={() => {
-                  const next = !voiceEnabled;
-                  setVoiceEnabled(next);
-                  if (next && !isRecording) {
-                    startVoice();
-                  } else if (!next && isRecording) {
-                    stopVoice();
+                onClick={async () => {
+                  if (!isConnected) {
+                    // 먼저 연결
+                    setIsConnecting(true);
+                    try {
+                      const chatRoomData = await chatApi.getOrCreateChatRoom({
+                        chatbotId: defaultChatbot.id,
+                        chatbotName: defaultChatbot.name,
+                      });
+                      await chatApi.joinChatRoom(chatRoomData.id);
+                      setIsConnected(true);
+                    } catch (error) {
+                      console.error("방 참여 실패:", error);
+                      alert("채팅방 참여에 실패했습니다.");
+                      setIsConnecting(false);
+                      return;
+                    }
+                    setIsConnecting(false);
+                  }
+                  
+                  // 음성 시작
+                  if (!voiceEnabled) {
+                    setVoiceEnabled(true);
+                    await startVoice();
                   }
                 }}
-                variant={voiceEnabled ? "default" : "outline"}
-                className="px-4"
+                variant="default"
+                className="px-8 py-3 text-lg"
+                disabled={isConnecting}
               >
-                {voiceEnabled ? "음성 ON" : "음성 OFF"}
+                {isConnecting ? "연결중..." : "Start"}
               </Button>
             )}
           </div>
@@ -417,14 +431,6 @@ export default function MobileChat() {
 
       {/* 채팅 영역 */}
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
-        {/* 음성 인식 시 파동 표시 */}
-        {isRecording && (
-          <div className="flex justify-center mb-4">
-            <div className="bg-white rounded-full p-3 shadow-lg border border-gray-200">
-              <VoicePulse active={true} size={32} />
-            </div>
-          </div>
-        )}
 
         {messages.length === 0 ? (
           <div className="text-center text-gray-400 mt-8">
