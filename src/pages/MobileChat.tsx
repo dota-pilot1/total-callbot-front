@@ -21,23 +21,18 @@ import VoicePulse from "../components/VoicePulse";
 import MobileSettingsDropdown from "../components/MobileSettingsDropdown";
 
 export default function MobileChat() {
-  const { logout } = useAuthStore();
-
-  // 사용자 정보
-  const getUserFromStorage = () => {
-    const userStr = localStorage.getItem("user");
-    if (userStr) {
-      try {
-        return JSON.parse(userStr);
-      } catch (e) {
-        console.error("Failed to parse user:", e);
-        return null;
-      }
+  const { logout, getUser } = useAuthStore();
+  
+  // 사용자 정보 상태
+  const [user, setUser] = useState(getUser());
+  
+  // 컴포넌트 마운트 시 사용자 정보 확인
+  useEffect(() => {
+    const currentUser = getUser();
+    if (currentUser) {
+      setUser(currentUser);
     }
-    return null;
-  };
-
-  const user = getUserFromStorage();
+  }, [getUser]);
 
   // 기본 챗봇 설정 (선택 없이 바로 연결)
   const defaultChatbot = {
@@ -160,38 +155,7 @@ export default function MobileChat() {
     }, 1000);
   };
 
-  // 연결 토글
-  const toggleConnection = async () => {
-    if (isConnected) {
-      setIsConnected(false);
-      try {
-        voiceConn?.stop();
-      } catch {}
-      setVoiceConn(null);
-      setIsRecording(false);
-      setVoiceEnabled(false);
-    } else {
-      setIsConnecting(true);
-      try {
-        const chatRoomData = await chatApi.getOrCreateChatRoom({
-          chatbotId: defaultChatbot.id,
-          chatbotName: defaultChatbot.name,
-        });
-
-        await chatApi.joinChatRoom(chatRoomData.id);
-        setIsConnected(true);
-
-        if (voiceEnabled) {
-          await startVoice();
-        }
-      } catch (error) {
-        console.error("방 참여 실패:", error);
-        alert("채팅방 참여에 실패했습니다.");
-      } finally {
-        setIsConnecting(false);
-      }
-    }
-  };
+  // toggleConnection 함수 제거됨 - 더 이상 사용하지 않음
 
   // 음성 시작
   const startVoice = async () => {
@@ -317,7 +281,9 @@ export default function MobileChat() {
                 <h1 className="text-lg font-semibold text-gray-900">
                   {defaultChatbot.name}
                 </h1>
-                <p className="text-xs text-gray-600">{user?.name || user?.email || "게스트"}님</p>
+                <p className="text-xs text-gray-600">
+                  {user?.name ? `${user.name}님` : user?.email ? `${user.email}님` : "로그인된 사용자"}
+                </p>
               </div>
             </div>
             <div className="flex items-center space-x-2">
