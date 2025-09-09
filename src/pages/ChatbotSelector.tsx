@@ -1,11 +1,21 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../features/auth';
 import { Button } from '../components/ui';
 import Sidebar from '../components/Sidebar';
 
 export default function ChatbotSelector() {
   const { logout } = useAuthStore();
+  const navigate = useNavigate();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  // 모바일 디바이스 감지 및 리다이렉트
+  useEffect(() => {
+    const isMobile = window.innerWidth <= 768 || /Mobi|Android/i.test(navigator.userAgent);
+    if (isMobile) {
+      navigate('/mobile');
+    }
+  }, [navigate]);
   
   // localStorage에서 직접 사용자 정보 가져오기
   const getUserFromStorage = () => {

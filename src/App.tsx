@@ -4,6 +4,7 @@ import Login from './pages/Login';
 import Signup from './pages/Signup';
 import ChatbotSelector from './pages/ChatbotSelector';
 import CallbotChat from './pages/CallbotChat';
+import MobileChat from './pages/MobileChat';
 
 function ProtectedApp() {
   const location = useLocation();
@@ -26,6 +27,7 @@ function ProtectedApp() {
       <Route path="/signup" element={<Signup />} />
       <Route path="/welcome" element={<Welcome />} />
       <Route path="/chatbots" element={<ChatbotSelector />} />
+      <Route path="/mobile" element={<MobileChat />} />
       <Route path="/chat/bot/:botId" element={<CallbotChat />} />
       <Route path="/chat/:chatRoomId" element={<CallbotChat />} />
     </Routes>

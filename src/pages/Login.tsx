@@ -14,7 +14,10 @@ export default function Login() {
 
     try {
       await login({ email, password });
-      navigate('/chatbots');
+      
+      // 모바일 디바이스 감지
+      const isMobile = window.innerWidth <= 768 || /Mobi|Android/i.test(navigator.userAgent);
+      navigate(isMobile ? '/mobile' : '/chatbots');
     } catch (error) {
       console.error('Login failed:', error);
     }
