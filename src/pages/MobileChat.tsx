@@ -17,166 +17,7 @@ import {
   type VoiceConnection,
 } from "../features/voice/lib/realtime";
 import VoicePulse from "../components/VoicePulse";
-
-// 모바일 설정 다이얼로그 컴포넌트
-interface MobileSettingsDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
-  voiceEnabled: boolean;
-  onVoiceEnabledChange: (enabled: boolean) => void;
-  speechLang: "auto" | "ko" | "en";
-  onSpeechLangChange: (lang: "auto" | "ko" | "en") => void;
-  echoCancellation: boolean;
-  onEchoCancellationChange: (enabled: boolean) => void;
-  noiseSuppression: boolean;
-  onNoiseSuppressionChange: (enabled: boolean) => void;
-  autoGainControl: boolean;
-  onAutoGainControlChange: (enabled: boolean) => void;
-  onClearChat: () => void;
-}
-
-function MobileSettingsDialog({
-  isOpen,
-  onClose,
-  voiceEnabled,
-  onVoiceEnabledChange,
-  speechLang,
-  onSpeechLangChange,
-  echoCancellation,
-  onEchoCancellationChange,
-  noiseSuppression,
-  onNoiseSuppressionChange,
-  autoGainControl,
-  onAutoGainControlChange,
-  onClearChat,
-}: MobileSettingsDialogProps) {
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-end">
-      <div className="bg-white w-full rounded-t-2xl max-h-[80vh] overflow-y-auto">
-        <div className="p-4 border-b border-gray-200 flex justify-between items-center">
-          <h3 className="text-lg font-semibold text-gray-900">채팅 설정</h3>
-          <button
-            onClick={onClose}
-            className="p-2 rounded-lg hover:bg-gray-100"
-          >
-            ✕
-          </button>
-        </div>
-        
-        <div className="p-4 space-y-6">
-          {/* 음성 인식 설정 */}
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h4 className="font-medium text-gray-900">음성 인식</h4>
-                <p className="text-sm text-gray-600">실시간 음성 대화 기능</p>
-              </div>
-              <button
-                onClick={() => onVoiceEnabledChange(!voiceEnabled)}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                  voiceEnabled ? "bg-indigo-600" : "bg-gray-300"
-                }`}
-              >
-                <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                    voiceEnabled ? "translate-x-6" : "translate-x-1"
-                  }`}
-                />
-              </button>
-            </div>
-          </div>
-
-          {/* 언어 설정 */}
-          <div>
-            <h4 className="font-medium text-gray-900 mb-2">음성 인식 언어</h4>
-            <div className="grid grid-cols-3 gap-2">
-              {[
-                { key: "auto" as const, label: "자동" },
-                { key: "ko" as const, label: "한국어" },
-                { key: "en" as const, label: "English" },
-              ].map((option) => (
-                <button
-                  key={option.key}
-                  onClick={() => onSpeechLangChange(option.key)}
-                  className={`p-2 rounded-lg text-sm font-medium ${
-                    speechLang === option.key
-                      ? "bg-indigo-100 text-indigo-700 border border-indigo-300"
-                      : "bg-gray-100 text-gray-700 border border-gray-300"
-                  }`}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* 오디오 최적화 */}
-          <div className="space-y-4">
-            <h4 className="font-medium text-gray-900">오디오 최적화</h4>
-            
-            {[
-              {
-                key: "echo",
-                label: "에코 제거",
-                description: "스피커 소리가 마이크로 들어가는 것을 방지",
-                value: echoCancellation,
-                onChange: onEchoCancellationChange,
-              },
-              {
-                key: "noise",
-                label: "노이즈 억제",
-                description: "배경 소음을 줄여 음성 품질 향상",
-                value: noiseSuppression,
-                onChange: onNoiseSuppressionChange,
-              },
-              {
-                key: "gain",
-                label: "자동 음량 조절",
-                description: "마이크 입력 음량을 자동으로 조절",
-                value: autoGainControl,
-                onChange: onAutoGainControlChange,
-              },
-            ].map((setting) => (
-              <div key={setting.key} className="flex items-center justify-between">
-                <div className="flex-1">
-                  <div className="font-medium text-gray-900">{setting.label}</div>
-                  <div className="text-sm text-gray-600">{setting.description}</div>
-                </div>
-                <button
-                  onClick={() => setting.onChange(!setting.value)}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                    setting.value ? "bg-indigo-600" : "bg-gray-300"
-                  }`}
-                >
-                  <span
-                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                      setting.value ? "translate-x-6" : "translate-x-1"
-                    }`}
-                  />
-                </button>
-              </div>
-            ))}
-          </div>
-
-          {/* 기타 기능 */}
-          <div className="pt-4 border-t border-gray-200">
-            <button
-              onClick={() => {
-                onClearChat();
-                onClose();
-              }}
-              className="w-full p-3 bg-red-50 text-red-700 rounded-lg font-medium"
-            >
-              대화 기록 지우기
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
+import MobileSettingsDropdown from "../components/MobileSettingsDropdown";
 
 export default function MobileChat() {
   const { logout } = useAuthStore();
@@ -224,6 +65,8 @@ export default function MobileChat() {
   const [echoCancellation, setEchoCancellation] = useState(true);
   const [noiseSuppression, setNoiseSuppression] = useState(true);
   const [autoGainControl, setAutoGainControl] = useState(false);
+  const [coalesceDelayMs, setCoalesceDelayMs] = useState(800);
+  const [debugEvents, setDebugEvents] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
 
   // Refs
@@ -670,8 +513,8 @@ export default function MobileChat() {
         </div>
       )}
 
-      {/* 설정 다이얼로그 */}
-      <MobileSettingsDialog
+      {/* 설정 드롭다운 */}
+      <MobileSettingsDropdown
         isOpen={settingsOpen}
         onClose={() => setSettingsOpen(false)}
         voiceEnabled={voiceEnabled}
@@ -684,6 +527,10 @@ export default function MobileChat() {
         onNoiseSuppressionChange={setNoiseSuppression}
         autoGainControl={autoGainControl}
         onAutoGainControlChange={setAutoGainControl}
+        coalesceDelayMs={coalesceDelayMs}
+        onCoalesceDelayChange={setCoalesceDelayMs}
+        debugEvents={debugEvents}
+        onDebugEventsChange={setDebugEvents}
         onClearChat={handleClearChat}
       />
     </div>
