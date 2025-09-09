@@ -41,6 +41,9 @@ import {
 } from "../features/voice/lib/realtime";
 import VoicePulse from "../components/VoicePulse";
 
+// 통일된 음성 보이스 (3종 중 기본값)
+const DEFAULT_REALTIME_VOICE: 'verse' | 'alloy' | 'sage' = 'verse';
+
 // 아이콘 매핑 함수
 const getIconComponent = (chatbotId: string) => {
   const iconMap: { [key: string]: any } = {
@@ -278,7 +281,7 @@ export default function CallbotChat() {
         voiceConn.dc.send(
           JSON.stringify({
             type: "response.create",
-            response: { modalities: ["audio", "text"], conversation: "auto" },
+            response: { modalities: ["audio", "text"], conversation: "auto", voice: DEFAULT_REALTIME_VOICE },
           }),
         );
         return; // 로컬 목업 응답 생략
@@ -536,11 +539,12 @@ export default function CallbotChat() {
   const startVoice = async () => {
     if (voiceConn) return;
     try {
-      const session = await voiceApi.createSession({ lang: speechLang });
+      const session = await voiceApi.createSession({ lang: speechLang, voice: DEFAULT_REALTIME_VOICE });
       const conn = await connectRealtimeVoice({
         token: session.token,
         model: session.model,
         audioElement: audioRef.current,
+        voice: DEFAULT_REALTIME_VOICE,
         audioConstraints: {
           echoCancellation,
           noiseSuppression,

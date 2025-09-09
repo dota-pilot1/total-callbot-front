@@ -128,7 +128,7 @@ export default function MobileSettingsDropdown({
                 <h4 className="text-md font-medium text-gray-900 border-b border-gray-100 pb-2">
                   캐릭터 선택
                 </h4>
-                <div className="grid grid-cols-5 gap-2">
+                <div className="grid grid-cols-3 gap-2">
                   {characterOptions.map((c) => {
                     const selected = c.id === selectedCharacterId;
                     return (

@@ -7,7 +7,7 @@ export type VoiceConnectOptions = {
   onAssistantText?: (text: string, isFinal: boolean, meta?: { responseId?: string; outputIndex?: number; eventId?: string }) => void;
   onEvent?: (evt: unknown) => void; // raw debug events
   audioConstraints?: MediaTrackConstraints;
-  // Optional: choose output voice for Realtime responses (e.g., 'verse', 'alloy', 'sage', 'opal', 'ember')
+  // Optional: choose output voice for Realtime responses (supported: 'verse', 'alloy', 'sage')
   voice?: string;
   // Optional: system-style instruction to steer assistant persona (not exposed in UI)
   instructions?: string;

@@ -47,8 +47,6 @@ export default function MobileChat() {
     { id: 'buddy', name: '버디', emoji: '🤖', color: 'from-indigo-500 to-purple-600', defaultVoice: 'verse' },
     { id: 'sage', name: '세이지', emoji: '🧠', color: 'from-emerald-500 to-teal-600', defaultVoice: 'sage' },
     { id: 'spark', name: '스파크', emoji: '⚡️', color: 'from-amber-500 to-orange-600', defaultVoice: 'alloy' },
-    { id: 'mentor', name: '멘토', emoji: '🧑‍🏫', color: 'from-sky-500 to-blue-600', defaultVoice: 'sage' },
-    { id: 'jolly', name: '졸리', emoji: '😄', color: 'from-pink-500 to-rose-600', defaultVoice: 'alloy' },
   ] as const;
   const VOICE_OPTIONS = ['verse', 'alloy', 'sage'] as const;
 
@@ -85,6 +83,9 @@ export default function MobileChat() {
     setSelectedVoice(c.defaultVoice);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCharacterId]);
+
+  // 현재 선택된 캐릭터 메타
+  const currentCharacter = (CHARACTER_PRESETS.find(c => c.id === selectedCharacterId) || CHARACTER_PRESETS[0]);
 
   // Refs
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -296,8 +297,10 @@ export default function MobileChat() {
         <div className="p-4">
           <div className="flex justify-between items-center">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center">
-                <PhoneIcon className="h-6 w-6 text-white" />
+              <div className={`w-10 h-10 bg-gradient-to-br ${currentCharacter.color || defaultChatbot.color} rounded-full flex items-center justify-center`}>                
+                <span className="text-xl" aria-label={currentCharacter.name} title={currentCharacter.name}>
+                  {currentCharacter.emoji || '🤖'}
+                </span>
               </div>
               <div>
                 <h1 className="text-lg font-semibold text-gray-900">
