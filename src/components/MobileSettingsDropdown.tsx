@@ -4,6 +4,13 @@ import { XMarkIcon } from '@heroicons/react/24/outline';
 interface MobileSettingsDropdownProps {
   isOpen: boolean;
   onClose: () => void;
+  // 캐릭터/목소리/성격 선택
+  characterOptions: { id: string; name: string; emoji?: string }[];
+  selectedCharacterId: string;
+  onSelectCharacter: (id: string) => void;
+  voiceOptions: string[];
+  selectedVoice: string;
+  onSelectVoice: (v: string) => void;
   voiceEnabled: boolean;
   onVoiceEnabledChange: (enabled: boolean) => void;
   speechLang: "auto" | "ko" | "en";
@@ -24,6 +31,12 @@ interface MobileSettingsDropdownProps {
 export default function MobileSettingsDropdown({
   isOpen,
   onClose,
+  characterOptions,
+  selectedCharacterId,
+  onSelectCharacter,
+  voiceOptions,
+  selectedVoice,
+  onSelectVoice,
   voiceEnabled,
   onVoiceEnabledChange,
   speechLang,
@@ -110,6 +123,55 @@ export default function MobileSettingsDropdown({
             
             {/* 설정 내용 */}
             <div className="p-4 space-y-6">
+              {/* 캐릭터 선택 */}
+              <div className="space-y-2">
+                <h4 className="text-md font-medium text-gray-900 border-b border-gray-100 pb-2">
+                  캐릭터 선택
+                </h4>
+                <div className="grid grid-cols-5 gap-2">
+                  {characterOptions.map((c) => {
+                    const selected = c.id === selectedCharacterId;
+                    return (
+                      <button
+                        key={c.id}
+                        onClick={() => onSelectCharacter(c.id)}
+                        className={`flex flex-col items-center justify-center rounded-md border text-xs py-2 ${
+                          selected ? 'border-indigo-500 bg-indigo-50 text-indigo-700' : 'border-gray-300 bg-gray-50 text-gray-700'
+                        }`}
+                        style={{ aspectRatio: '1 / 1' }}
+                        title={c.name}
+                      >
+                        <div className="text-lg mb-1">{c.emoji || '🤖'}</div>
+                        <div className="truncate max-w-[3.2rem]">{c.name}</div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* 목소리 선택 */}
+              {/* <div className="space-y-2">
+                <h4 className="text-md font-medium text-gray-900 border-b border-gray-100 pb-2">
+                  목소리
+                </h4>
+                <div className="flex flex-wrap gap-2">
+                  {voiceOptions.map((v) => {
+                    const selected = v === selectedVoice;
+                    return (
+                      <button
+                        key={v}
+                        onClick={() => onSelectVoice(v)}
+                        className={`px-3 py-1 rounded-md text-sm border ${selected ? 'bg-indigo-100 text-indigo-700 border-indigo-300' : 'bg-gray-100 text-gray-700 border-gray-300'}`}
+                      >
+                        {v}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div> */}
+
+              {/* 성격 선택 제거됨 (Realtime의 voice만 노출) */}
+
               {/* 음성 인식 기본 설정 */}
               <div className="space-y-2">
                 <h4 className="text-md font-medium text-gray-900 border-b border-gray-100 pb-ㅂ">

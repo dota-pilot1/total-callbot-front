@@ -7,6 +7,10 @@ export type VoiceConnectOptions = {
   onAssistantText?: (text: string, isFinal: boolean, meta?: { responseId?: string; outputIndex?: number; eventId?: string }) => void;
   onEvent?: (evt: unknown) => void; // raw debug events
   audioConstraints?: MediaTrackConstraints;
+  // Optional: choose output voice for Realtime responses (e.g., 'verse', 'alloy', 'sage', 'opal', 'ember')
+  voice?: string;
+  // Optional: system-style instruction to steer assistant persona (not exposed in UI)
+  instructions?: string;
 };
 
 // 음성(WebRTC) 연결 핸들
@@ -52,6 +56,10 @@ export async function connectRealtimeVoice(opts: VoiceConnectOptions): Promise<V
           modalities: ['audio', 'text'],
           // 대화 컨텍스트 자동 유지('true'가 아닌 문자열이어야 함)
           conversation: 'auto',
+          // Apply selected voice if provided
+          ...(opts.voice ? { voice: opts.voice } : {}),
+          // Apply optional persona instructions if provided
+          ...(opts.instructions ? { instructions: opts.instructions } : {}),
         },
       }));
       } catch {}

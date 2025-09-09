@@ -42,6 +42,16 @@ export default function MobileChat() {
     color: "from-indigo-500 to-purple-600",
   };
 
+  // 캐릭터/목소리 프리셋 (목소리만 선택 가능)
+  const CHARACTER_PRESETS = [
+    { id: 'buddy', name: '버디', emoji: '🤖', color: 'from-indigo-500 to-purple-600', defaultVoice: 'verse' },
+    { id: 'sage', name: '세이지', emoji: '🧠', color: 'from-emerald-500 to-teal-600', defaultVoice: 'sage' },
+    { id: 'spark', name: '스파크', emoji: '⚡️', color: 'from-amber-500 to-orange-600', defaultVoice: 'alloy' },
+    { id: 'mentor', name: '멘토', emoji: '🧑‍🏫', color: 'from-sky-500 to-blue-600', defaultVoice: 'opal' },
+    { id: 'jolly', name: '졸리', emoji: '😄', color: 'from-pink-500 to-rose-600', defaultVoice: 'ember' },
+  ] as const;
+  const VOICE_OPTIONS = ['verse', 'alloy', 'ember', 'sage', 'opal'] as const;
+
   // 채팅 관련 상태
   const [messages, setMessages] = useState<any[]>([]);
   const [newMessage, setNewMessage] = useState("");
@@ -64,6 +74,17 @@ export default function MobileChat() {
   const [coalesceDelayMs, setCoalesceDelayMs] = useState(800);
   const [debugEvents, setDebugEvents] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+
+  // 캐릭터/음성 선택 상태
+  const [selectedCharacterId, setSelectedCharacterId] = useState<(typeof CHARACTER_PRESETS)[number]['id']>(CHARACTER_PRESETS[0].id);
+  const [selectedVoice, setSelectedVoice] = useState<string>(CHARACTER_PRESETS[0].defaultVoice);
+
+  // 캐릭터 변경 시 기본 음성 동기화
+  useEffect(() => {
+    const c = CHARACTER_PRESETS.find(c => c.id === selectedCharacterId) || CHARACTER_PRESETS[0];
+    setSelectedVoice(c.defaultVoice);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedCharacterId]);
 
   // Refs
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -130,7 +151,7 @@ export default function MobileChat() {
         voiceConn.dc.send(
           JSON.stringify({
             type: "response.create",
-            response: { modalities: ["audio", "text"], conversation: "auto" },
+            response: { modalities: ["audio", "text"], conversation: "auto", voice: selectedVoice },
           }),
         );
         return;
@@ -161,11 +182,12 @@ export default function MobileChat() {
   const startVoice = async () => {
     if (voiceConn) return;
     try {
-      const session = await voiceApi.createSession({ lang: speechLang });
+      const session = await voiceApi.createSession({ lang: speechLang, voice: selectedVoice });
       const conn = await connectRealtimeVoice({
         token: session.token,
         model: session.model,
         audioElement: audioRef.current,
+        voice: selectedVoice,
         audioConstraints: {
           echoCancellation,
           noiseSuppression,
@@ -505,6 +527,13 @@ export default function MobileChat() {
       <MobileSettingsDropdown
         isOpen={settingsOpen}
         onClose={() => setSettingsOpen(false)}
+        // 캐릭터/목소리 선택 관련
+        characterOptions={CHARACTER_PRESETS.map(c => ({ id: c.id, name: c.name, emoji: c.emoji }))}
+        selectedCharacterId={selectedCharacterId}
+        onSelectCharacter={setSelectedCharacterId}
+        voiceOptions={[...VOICE_OPTIONS]}
+        selectedVoice={selectedVoice}
+        onSelectVoice={setSelectedVoice}
         voiceEnabled={voiceEnabled}
         onVoiceEnabledChange={setVoiceEnabled}
         speechLang={speechLang}
