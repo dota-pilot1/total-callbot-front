@@ -47,10 +47,10 @@ export default function MobileChat() {
     { id: 'buddy', name: '버디', emoji: '🤖', color: 'from-indigo-500 to-purple-600', defaultVoice: 'verse' },
     { id: 'sage', name: '세이지', emoji: '🧠', color: 'from-emerald-500 to-teal-600', defaultVoice: 'sage' },
     { id: 'spark', name: '스파크', emoji: '⚡️', color: 'from-amber-500 to-orange-600', defaultVoice: 'alloy' },
-    { id: 'mentor', name: '멘토', emoji: '🧑‍🏫', color: 'from-sky-500 to-blue-600', defaultVoice: 'opal' },
-    { id: 'jolly', name: '졸리', emoji: '😄', color: 'from-pink-500 to-rose-600', defaultVoice: 'ember' },
+    { id: 'mentor', name: '멘토', emoji: '🧑‍🏫', color: 'from-sky-500 to-blue-600', defaultVoice: 'sage' },
+    { id: 'jolly', name: '졸리', emoji: '😄', color: 'from-pink-500 to-rose-600', defaultVoice: 'alloy' },
   ] as const;
-  const VOICE_OPTIONS = ['verse', 'alloy', 'ember', 'sage', 'opal'] as const;
+  const VOICE_OPTIONS = ['verse', 'alloy', 'sage'] as const;
 
   // 채팅 관련 상태
   const [messages, setMessages] = useState<any[]>([]);

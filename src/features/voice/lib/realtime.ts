@@ -56,8 +56,8 @@ export async function connectRealtimeVoice(opts: VoiceConnectOptions): Promise<V
           modalities: ['audio', 'text'],
           // 대화 컨텍스트 자동 유지('true'가 아닌 문자열이어야 함)
           conversation: 'auto',
-          // Apply selected voice if provided
-          ...(opts.voice ? { voice: opts.voice } : {}),
+          // Apply selected voice if supported, else rely on server/default
+          ...(opts.voice && (ALLOWED_REALTIME_VOICES as readonly string[]).includes(opts.voice) ? { voice: opts.voice } : {}),
           // Apply optional persona instructions if provided
           ...(opts.instructions ? { instructions: opts.instructions } : {}),
         },
@@ -194,3 +194,4 @@ export async function connectRealtimeVoice(opts: VoiceConnectOptions): Promise<V
 
   return { pc, dc, localStream, stop };
 }
+const ALLOWED_REALTIME_VOICES = ['verse', 'alloy', 'sage'] as const;
