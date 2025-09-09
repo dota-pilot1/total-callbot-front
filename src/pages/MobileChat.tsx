@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from "react";
 import { useAuthStore } from "../features/auth";
 import { Button } from "../components/ui";
 import { chatApi } from "../features/chat/api/chat";
-import type { ChatRoom } from "../shared/api/chat-types";
 import {
   MicrophoneIcon,
   PaperAirplaneIcon,
@@ -212,7 +211,6 @@ export default function MobileChat() {
   const [isIMEComposing, setIsIMEComposing] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
-  const [chatRoomId, setChatRoomId] = useState<string | null>(null);
   
   // 음성 관련 상태
   const [voiceEnabled, setVoiceEnabled] = useState(false);
@@ -322,7 +320,6 @@ export default function MobileChat() {
   const toggleConnection = async () => {
     if (isConnected) {
       setIsConnected(false);
-      setChatRoomId(null);
       try {
         voiceConn?.stop();
       } catch {}
@@ -338,7 +335,6 @@ export default function MobileChat() {
         });
 
         await chatApi.joinChatRoom(chatRoomData.id);
-        setChatRoomId(chatRoomData.id);
         setIsConnected(true);
 
         if (voiceEnabled) {
