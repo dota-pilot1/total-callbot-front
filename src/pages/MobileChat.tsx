@@ -7,6 +7,7 @@ import {
   PaperAirplaneIcon,
   CogIcon,
   PhoneIcon,
+  XMarkIcon,
 } from "@heroicons/react/24/outline";
 import {
   MicrophoneIcon as MicrophoneIconSolid,
@@ -361,12 +362,27 @@ export default function MobileChat() {
           </div>
 
           {/* 음성 시작 버튼 또는 파동 표시 */}
-          <div className="flex justify-center">
+          <div className="flex justify-center items-center space-x-4">
             {voiceEnabled && isRecording ? (
-              /* 음성 파동 표시 */
-              <div className="bg-white rounded-full p-4 shadow-lg border border-gray-200">
-                <VoicePulse active={isListening || isResponding} size={48} />
-              </div>
+              <>
+                {/* 음성 파동 표시 */}
+                <div className="bg-white rounded-full p-4 shadow-lg border border-gray-200">
+                  <VoicePulse active={isListening || isResponding} size={48} />
+                </div>
+                
+                {/* 중단 버튼 */}
+                <button
+                  onClick={() => {
+                    stopVoice();
+                    setVoiceEnabled(false);
+                    setIsConnected(false);
+                  }}
+                  className="bg-red-500 hover:bg-red-600 text-white rounded-full p-3 shadow-lg transition-colors"
+                  title="음성 연결 중단"
+                >
+                  <XMarkIcon className="h-6 w-6" />
+                </button>
+              </>
             ) : (
               /* Start 버튼 */
               <Button
