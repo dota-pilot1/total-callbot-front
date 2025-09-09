@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Decide API base URL by environment
 // - Local dev: localhost:8080
-// - Prod (frontend at 3.36.184.159): backend at 54.180.175.85:8080
+// - Prod: backend at https://api.total-callbot.cloud
 // - Override with VITE_API_BASE_URL if provided
 const resolveApiBaseUrl = () => {
   const envUrl = (import.meta as any)?.env?.VITE_API_BASE_URL as string | undefined;
@@ -13,7 +13,7 @@ const resolveApiBaseUrl = () => {
   if (isLocal) return 'http://localhost:8080/api';
 
   // Default prod mapping
-  return 'http://54.180.175.85:8080/api';
+  return 'https://api.total-callbot.cloud/api';
 };
 
 const API_BASE_URL = resolveApiBaseUrl();

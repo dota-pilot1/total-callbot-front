@@ -145,8 +145,15 @@ export async function connectRealtimeVoice(opts: VoiceConnectOptions): Promise<V
   // 우선 우리가 만든 채널을 바인딩
   bindDataChannel(dc);
 
-  // 마이크 캡처 후 피어 연결에 추가
-  const localStream = await navigator.mediaDevices.getUserMedia({
+  // 마이크 캡처 후 피어 연결에 추가 (HTTPS/localhost 필요)
+  const md = (typeof navigator !== 'undefined') ? navigator.mediaDevices : undefined;
+  if (!md || typeof md.getUserMedia !== 'function') {
+    const secureHint = (typeof window !== 'undefined' && (window.isSecureContext || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'))
+      ? ''
+      : ' (HTTPS 또는 localhost 환경에서만 동작)';
+    throw new Error('브라우저에서 마이크 API(getUserMedia)를 사용할 수 없습니다' + secureHint);
+  }
+  const localStream = await md.getUserMedia({
     audio: opts.audioConstraints ?? true,
   });
   for (const track of localStream.getTracks()) {
