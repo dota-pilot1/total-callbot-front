@@ -72,10 +72,9 @@ export default function Login() {
               </Button>
             </form>
 
-            <div className="mt-6 text-center">
-              <Link to="/welcome" className="text-sm text-indigo-500 hover:text-indigo-600">
-                ← 서비스 소개 보기
-              </Link>
+            <div className="mt-6 flex items-center justify-between text-sm">
+              <Link to="/welcome" className="text-indigo-500 hover:text-indigo-600">← 서비스 소개</Link>
+              <Link to="/signup" className="text-indigo-500 hover:text-indigo-600">회원가입 →</Link>
             </div>
 
             <div className="mt-4 p-4 bg-gray-50 rounded-lg">
