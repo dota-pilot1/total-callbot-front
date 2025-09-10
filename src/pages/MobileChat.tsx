@@ -269,51 +269,75 @@ export default function MobileChat() {
 
   // 시험 주제 목록 (영/한)
   const EXAM_TOPICS = [
-    { id: 1, en: 'Daily conversation', ko: '일상 대화' },
-    { id: 2, en: 'Background probing', ko: '호구 조사(기본 프로필/배경 파악)' },
-    { id: 3, en: 'Office role-play', ko: '사무실 상황극(동료/상사/회의)' },
-    { id: 4, en: 'Restaurant role-play', ko: '음식점 상황극(주문/추천/불만 처리)' },
-    { id: 5, en: 'Dev interview', ko: '개발 면접(기술 질문 위주)' },
-    { id: 6, en: 'History/trivia/dev quiz', ko: '역사·상식·개발 퀴즈(혼합)' },
-    { id: 7, en: 'Bucket list', ko: '버킷 리스트 말하게 하기' },
-    { id: 8, en: 'Family introduction', ko: '가족 소개 시키기' },
-    { id: 9, en: 'Self introduction', ko: '자기 소개 시키기' },
-    { id: 10, en: 'Favorite frameworks/skills', ko: '잘 다루는 개발 프레임워크·기술 소개' },
+    { id: 1,  en: 'Personal statement & career goals',            ko: '개인 소개와 진로 목표' },
+    { id: 2,  en: 'Job interview (behavioral & technical)',       ko: '면접(행동/기술)' },
+    { id: 3,  en: 'Project explanation & trade-offs',             ko: '프로젝트 설명과 트레이드오프' },
+    { id: 4,  en: 'Technical troubleshooting & root cause',       ko: '기술 트러블슈팅과 원인 분석' },
+    { id: 5,  en: 'Data interpretation (charts/tables)',          ko: '데이터 해석(차트/표 설명)' },
+    { id: 6,  en: 'Product pitch & sales',                        ko: '제품 피치/세일즈' },
+    { id: 7,  en: 'Customer support escalation',                  ko: '고객 지원/에스컬레이션' },
+    { id: 8,  en: 'Negotiation & compromise',                     ko: '협상과 타협' },
+    { id: 9,  en: 'Meeting facilitation & action items',          ko: '회의 진행과 액션아이템 정리' },
+    { id: 10, en: 'Cross-cultural communication',                 ko: '다문화 커뮤니케이션' },
+    { id: 11, en: 'Ethical dilemma discussion',                   ko: '윤리적 딜레마 토론' },
+    { id: 12, en: 'Crisis communication & apology',               ko: '위기 커뮤니케이션/사과' },
+    { id: 13, en: 'Email etiquette & drafting',                   ko: '이메일 에티켓/작성' },
+    { id: 14, en: 'Presentation Q&A handling',                    ko: '발표 질의응답 대응' },
+    { id: 15, en: 'Travel & immigration interview',               ko: '여행/출입국 인터뷰' },
+    { id: 16, en: 'Healthcare/doctor consultation',               ko: '병원/의료 상담' },
+    { id: 17, en: 'Banking & finance appointment',                ko: '은행/금융 상담' },
+    { id: 18, en: 'Academic discussion & summarization',          ko: '학술 토론과 요약' },
+    { id: 19, en: 'News summary & opinion',                       ko: '뉴스 요약과 의견' },
+    { id: 20, en: 'Remote collaboration tools & process',         ko: '원격 협업 도구/프로세스' },
   ] as const;
 
   // Exam sequence: instruct assistant to run a 5-question quiz and scoring (bilingual questions)
   const buildExamPrompt = (topic: typeof EXAM_TOPICS[number]) => {
-    const isSelfIntro = topic.id === 9;
     const header = [
       `[KO] 이번 시험 주제: ${topic.ko}`,
       `[EN] Selected topic: ${topic.en}`,
       '',
-      '[EN] This is an English academy entrance exam. Strict grading applies.',
-      '[KO] 영어학원 입학 시험입니다. 엄격하게 채점합니다.',
+      '[EN] This is an English academy oral placement test. Strict grading applies.',
+      '[KO] 영어학원 입학 구술 시험입니다. 매우 엄격하게 채점합니다.',
       '',
     ];
-    const commonRules = [
-      'Rules / 규칙:',
-      '- Each question must be bilingual: first in English, then a clear Korean translation on the next line.',
-      '  (예: [EN] Question text...\\n       [KO] 질문 한국어 번역...)',
-      '- Wait for the user answer each time, then give a short immediate score and rationale.',
-      '- Strict grading: deduct points for grammar mistakes, pronunciation issues, unnatural phrasing, limited vocabulary, weak content, or poor task response.',
-      '- Evaluation criteria: Fluency, Pronunciation, Grammar, Vocabulary range, Comprehension/Task response.',
+    const format = [
+      'Format / 형식:',
+      '- Ask exactly 5 questions.',
+      '- Each question MUST be bilingual on two lines: first [EN] then [KO] (clear Korean translation).',
+      '  예:',
+      '  [EN] Describe a time you resolved a conflict in a team.',
+      '  [KO] 팀 내 갈등을 해결했던 경험을 설명해 주세요.',
+      '',
+      'After each user answer, reply with:',
+      'Score: X/10',
+      'Rationale: very short reason (1–2 lines) for the score.',
+      '',
     ];
-    const countRule = isSelfIntro
-      ? ['- Ask exactly 1 comprehensive question for this topic (Self introduction).', '- Scoring: 0–100 points total.']
-      : ['- Ask exactly 5 questions.', '- Scoring: 0–20 points per answer, total 100 points.'];
+    const grading = [
+      'Grading / 채점 기준:',
+      '- Per question: 1–10 points (no 0), total 50 points for 5 questions.',
+      '- Deduct points for grammar errors, pronunciation issues, unnatural phrasing, limited vocabulary, weak content, or poor task response.',
+      '- Criteria: Fluency, Pronunciation, Grammar, Vocabulary range, Comprehension/Task response.',
+      '',
+    ];
     const closing = [
-      '- After the last question: summarize the total score out of 100, assign a level from Level 1 to Level 10, and then suggest 8–12 key English phrases to study plus brief references (docs/links/keywords).',
-      '- Level scale (anchor examples):',
+      'Final summary / 최종 요약:',
+      '- Total: NN/50',
+      '- Level: Level 1–10 (examples)',
       '  • Level 1: 초등학생 수준',
       '  • Level 5: 일상 대화 기본 가능',
       '  • Level 7: 업무 커뮤니케이션 가능',
       '  • Level 9: 원어민 수준',
       '  • Level 10: 동시통역사 수준',
+      '- Key phrases to study (8–12): list with "- " bullets, each on a new line.',
+      '- References: brief docs/links/keywords as "- " bullets.',
+      '',
+      'Formatting / 가독성:',
+      '- Use clear paragraph breaks: insert a blank line between question, score, rationale, and next question.',
       '- Keep responses concise in voice mode; focus on essentials.',
     ];
-    return [...header, ...commonRules, ...countRule, ...closing].join('\\n');
+    return [...header, ...format, ...grading, ...closing].join('\\n');
   };
 
   const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
