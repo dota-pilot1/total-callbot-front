@@ -267,6 +267,140 @@ export default function MobileChat() {
     setIsRecording(false);
   };
 
+  // 시험 주제 목록 (영/한)
+  const EXAM_TOPICS = [
+    { id: 1, en: 'Daily conversation', ko: '일상 대화' },
+    { id: 2, en: 'Background probing', ko: '호구 조사(기본 프로필/배경 파악)' },
+    { id: 3, en: 'Office role-play', ko: '사무실 상황극(동료/상사/회의)' },
+    { id: 4, en: 'Restaurant role-play', ko: '음식점 상황극(주문/추천/불만 처리)' },
+    { id: 5, en: 'Dev interview', ko: '개발 면접(기술 질문 위주)' },
+    { id: 6, en: 'History/trivia/dev quiz', ko: '역사·상식·개발 퀴즈(혼합)' },
+    { id: 7, en: 'Bucket list', ko: '버킷 리스트 말하게 하기' },
+    { id: 8, en: 'Family introduction', ko: '가족 소개 시키기' },
+    { id: 9, en: 'Self introduction', ko: '자기 소개 시키기' },
+    { id: 10, en: 'Favorite frameworks/skills', ko: '잘 다루는 개발 프레임워크·기술 소개' },
+  ] as const;
+
+  // Exam sequence: instruct assistant to run a 5-question quiz and scoring (bilingual questions)
+  const buildExamPrompt = (topic: typeof EXAM_TOPICS[number]) => {
+    const isSelfIntro = topic.id === 9;
+    const header = [
+      `[KO] 이번 시험 주제: ${topic.ko}`,
+      `[EN] Selected topic: ${topic.en}`,
+      '',
+      '[EN] This is an English academy entrance exam. Strict grading applies.',
+      '[KO] 영어학원 입학 시험입니다. 엄격하게 채점합니다.',
+      '',
+    ];
+    const commonRules = [
+      'Rules / 규칙:',
+      '- Each question must be bilingual: first in English, then a clear Korean translation on the next line.',
+      '  (예: [EN] Question text...\\n       [KO] 질문 한국어 번역...)',
+      '- Wait for the user answer each time, then give a short immediate score and rationale.',
+      '- Strict grading: deduct points for grammar mistakes, pronunciation issues, unnatural phrasing, limited vocabulary, weak content, or poor task response.',
+      '- Evaluation criteria: Fluency, Pronunciation, Grammar, Vocabulary range, Comprehension/Task response.',
+    ];
+    const countRule = isSelfIntro
+      ? ['- Ask exactly 1 comprehensive question for this topic (Self introduction).', '- Scoring: 0–100 points total.']
+      : ['- Ask exactly 5 questions.', '- Scoring: 0–20 points per answer, total 100 points.'];
+    const closing = [
+      '- After the last question: summarize the total score out of 100, assign a level from Level 1 to Level 10, and then suggest 8–12 key English phrases to study plus brief references (docs/links/keywords).',
+      '- Level scale (anchor examples):',
+      '  • Level 1: 초등학생 수준',
+      '  • Level 5: 일상 대화 기본 가능',
+      '  • Level 7: 업무 커뮤니케이션 가능',
+      '  • Level 9: 원어민 수준',
+      '  • Level 10: 동시통역사 수준',
+      '- Keep responses concise in voice mode; focus on essentials.',
+    ];
+    return [...header, ...commonRules, ...countRule, ...closing].join('\\n');
+  };
+
+  const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+  const ensureConnectedAndReady = async () => {
+    // Ensure chat room joined
+    if (!isConnected) {
+      setIsConnecting(true);
+      try {
+        const chatRoomData = await chatApi.getOrCreateChatRoom({
+          chatbotId: defaultChatbot.id,
+          chatbotName: defaultChatbot.name,
+        });
+        await chatApi.joinChatRoom(chatRoomData.id);
+        setIsConnected(true);
+      } catch (e) {
+        console.error('방 참여 실패:', e);
+        setIsConnecting(false);
+        throw e;
+      }
+      setIsConnecting(false);
+    }
+
+    // Ensure voice connection
+    if (!voiceEnabled || !voiceConn) {
+      setVoiceEnabled(true);
+      await startVoice();
+    }
+
+    // Wait for data channel open
+    for (let i = 0; i < 20; i++) {
+      if (voiceConn?.dc && voiceConn.dc.readyState === 'open') return;
+      await sleep(200);
+    }
+    // last attempt if state lagged
+    if (!(voiceConn?.dc && voiceConn.dc.readyState === 'open')) {
+      throw new Error('데이터 채널이 준비되지 않았습니다');
+    }
+  };
+
+  const triggerExam = async () => {
+    try {
+      await ensureConnectedAndReady();
+    } catch (e) {
+      alert('연결에 실패했습니다. 마이크 권한 또는 네트워크 상태를 확인해주세요.');
+      return;
+    }
+
+    const topic = EXAM_TOPICS[Math.floor(Math.random() * EXAM_TOPICS.length)];
+    const prompt = buildExamPrompt(topic);
+    try {
+      setMessages((prev) => ([
+        ...prev,
+        {
+          id: prev.length + 1,
+          sender: 'callbot' as const,
+          message: `이번 시험 주제: ${topic.ko}`,
+          timestamp: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }),
+          type: 'text' as const,
+        },
+      ]));
+    } catch {}
+    try {
+      // Add user instruction into the conversation for traceability
+      voiceConn!.dc.send(
+        JSON.stringify({
+          type: 'conversation.item.create',
+          item: {
+            type: 'message',
+            role: 'user',
+            content: [{ type: 'input_text', text: prompt }],
+          },
+        })
+      );
+      // Ask assistant to respond (audio + text) using current voice
+      voiceConn!.dc.send(
+        JSON.stringify({
+          type: 'response.create',
+          response: { modalities: ['audio', 'text'], conversation: 'auto', voice: selectedVoice },
+        })
+      );
+    } catch (e) {
+      console.error('Exam 트리거 실패:', e);
+      alert('Exam 지시를 전송하지 못했습니다. 다시 시도해주세요.');
+    }
+  };
+
   // 녹음 토글
   const toggleRecording = () => {
     if (!isConnected || !voiceEnabled) return;
@@ -372,9 +506,19 @@ export default function MobileChat() {
                 >
                   <XMarkIcon className="h-6 w-6" />
                 </button>
+
+                {/* Exam 버튼 (녹음 중에도 가능) */}
+                <Button
+                  onClick={triggerExam}
+                  variant="outline"
+                  className="px-5 py-3"
+                >
+                  Exam
+                </Button>
               </>
             ) : (
-              /* Start 버튼 */
+              <>
+              {/* Start 버튼 */}
               <Button
                 onClick={async () => {
                   if (!isConnected) {
@@ -408,6 +552,7 @@ export default function MobileChat() {
               >
                 {isConnecting ? "연결중..." : "Start"}
               </Button>
+              </>
             )}
           </div>
 
