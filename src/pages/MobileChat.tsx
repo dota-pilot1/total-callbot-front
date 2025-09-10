@@ -521,16 +521,7 @@ export default function MobileChat() {
               </div>
             </div>
             <div className="flex items-center space-x-2">
-              {/* 휴지통 버튼 (대화 내용 클리어) */}
-              <button
-                onClick={handleClearChat}
-                className="p-2 rounded-lg hover:bg-gray-100"
-                title="대화 내용 지우기"
-              >
-                <TrashIcon className="h-5 w-5 text-gray-600" />
-              </button>
-              
-              {/* 설정 버튼 (개선된 아이콘) */}
+              {/* 설정 버튼 */}
               <button
                 onClick={() => setSettingsOpen(true)}
                 className="p-2 rounded-lg hover:bg-gray-100"
@@ -606,6 +597,15 @@ export default function MobileChat() {
                 >
                   {examSending ? 'Sending...' : 'Exam'}
                 </Button>
+
+                {/* 대화 내용 클리어 버튼 */}
+                <button
+                  onClick={handleClearChat}
+                  className="p-3 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 transition-colors"
+                  title="대화 내용 지우기"
+                >
+                  <TrashIcon className="h-5 w-5" />
+                </button>
               </>
             ) : (
               <>
@@ -643,6 +643,15 @@ export default function MobileChat() {
               >
                 {isConnecting ? "연결중..." : "Start"}
               </Button>
+
+              {/* 대화 내용 클리어 버튼 (Start 상태에서도 표시) */}
+              <button
+                onClick={handleClearChat}
+                className="p-3 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 transition-colors"
+                title="대화 내용 지우기"
+              >
+                <TrashIcon className="h-5 w-5" />
+              </button>
               </>
             )}
           </div>
