@@ -299,6 +299,8 @@ export default function MobileChat() {
       '',
       '[EN] This is an English academy oral placement test. Strict grading applies.',
       '[KO] 영어학원 입학 구술 시험입니다. 매우 엄격하게 채점합니다.',
+      '[EN] You will receive a total of 5 questions.',
+      '[KO] 총 5문항으로 진행됩니다.',
       '',
     ];
     const format = [
@@ -306,8 +308,11 @@ export default function MobileChat() {
       '- Ask exactly 5 questions.',
       '- Each question MUST be bilingual on two lines: first [EN] then [KO] (clear Korean translation).',
       '  예:',
+      '  Q1/5:',
       '  [EN] Describe a time you resolved a conflict in a team.',
       '  [KO] 팀 내 갈등을 해결했던 경험을 설명해 주세요.',
+      '',
+      '- At the beginning of every question, prefix with "QX/5:" (e.g., "Q1/5:").',
       '',
       'After each user answer, reply with:',
       'Score: X/10',
@@ -319,6 +324,10 @@ export default function MobileChat() {
       '- Per question: 1–10 points (no 0), total 50 points for 5 questions.',
       '- Deduct points for grammar errors, pronunciation issues, unnatural phrasing, limited vocabulary, weak content, or poor task response.',
       '- Criteria: Fluency, Pronunciation, Grammar, Vocabulary range, Comprehension/Task response.',
+      '',
+      'Silence handling / 무응답 처리:',
+      '- If the user provides no answer for 20 seconds, politely move to the next question and assign a low score for that item.',
+      '- 사용자가 20초 내에 아무 대답도 하지 않으면 정중히 다음 문제로 넘어가고, 해당 문항은 낮은 점수로 처리하세요.',
       '',
     ];
     const closing = [
@@ -394,7 +403,7 @@ export default function MobileChat() {
         {
           id: prev.length + 1,
           sender: 'callbot' as const,
-          message: `이번 시험 주제: ${topic.ko}`,
+          message: `이번 시험 주제: ${topic.ko}\n총 5문항으로 진행됩니다.`,
           timestamp: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }),
           type: 'text' as const,
         },
