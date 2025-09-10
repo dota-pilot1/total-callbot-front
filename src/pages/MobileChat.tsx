@@ -2,15 +2,8 @@ import { useState, useEffect, useRef } from "react";
 import { useAuthStore } from "../features/auth";
 import { Button } from "../components/ui";
 import { chatApi } from "../features/chat/api/chat";
-import {
-  MicrophoneIcon,
-  PaperAirplaneIcon,
-  CogIcon,
-  XMarkIcon,
-} from "@heroicons/react/24/outline";
-import {
-  MicrophoneIcon as MicrophoneIconSolid,
-} from "@heroicons/react/24/solid";
+import { PaperAirplaneIcon, CogIcon, XMarkIcon, SparklesIcon } from "@heroicons/react/24/outline";
+// no solid icons needed currently
 import { voiceApi } from "../features/voice/api/voice";
 import {
   connectRealtimeVoice,
@@ -18,6 +11,7 @@ import {
 } from "../features/voice/lib/realtime";
 import VoicePulse from "../components/VoicePulse";
 import MobileSettingsDropdown from "../components/MobileSettingsDropdown";
+import { examApi } from "../features/exam/api/exam";
 import MobileModelAnswerDialog from "../components/MobileModelAnswerDialog";
 
 export default function MobileChat() {
@@ -73,6 +67,7 @@ export default function MobileChat() {
   const [debugEvents, setDebugEvents] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [examSending, setExamSending] = useState(false);
+  const [suggestLoading, setSuggestLoading] = useState(false);
   // Model answers dialog state (mobile)
   const [answersOpen, setAnswersOpen] = useState(false);
   const [answersQuestion, setAnswersQuestion] = useState<string>("");
@@ -469,6 +464,26 @@ export default function MobileChat() {
     assistantPartialRef.current = "";
     userPartialRef.current = "";
   };
+  // AI 제안: 모범답안 엔진을 이용해 1개 제안을 받아 인풋에 채우기
+  const handleSuggestReply = async () => {
+    if (suggestLoading) return;
+    const rev = [...messages].reverse();
+    const lastBot = rev.find(m => m.sender === 'callbot')?.message || '';
+    const lastUsr = rev.find(m => m.sender === 'user')?.message || '';
+    if (!lastBot && !lastUsr) return;
+    try {
+      setSuggestLoading(true);
+      setNewMessage('');
+      const question = (lastBot || lastUsr || '').trim();
+      const resp = await examApi.getSampleAnswers({ question, topic: 'conversation', level: 'intermediate', count: 1, englishOnly: true });
+      const text = (resp.samples?.[0]?.text || '').trim();
+      if (text) setNewMessage(text);
+    } catch (e) {
+      console.error('Suggest reply failed (sample-answers):', e);
+    } finally {
+      setSuggestLoading(false);
+    }
+  };
   const openModelAnswers = (questionText: string) => {
     setAnswersQuestion(questionText);
     setAnswersOpen(true);
@@ -665,27 +680,20 @@ export default function MobileChat() {
       {isConnected && (
         <div className="bg-white border-t border-gray-200 p-4 flex-shrink-0">
           <div className="flex items-center space-x-3">
-            {/* 음성 버튼 */}
+            {/* 챗봇 제안 버튼 (마이크 대신) */}
             <button
-              onClick={toggleRecording}
-              className={`p-3 rounded-full transition-colors ${
-                isRecording
-                  ? "bg-red-500 text-white animate-pulse"
-                  : "bg-gray-100 hover:bg-gray-200 text-gray-600"
-              }`}
-              disabled={!voiceEnabled}
+              onClick={handleSuggestReply}
+              className={`p-3 rounded-full transition-colors ${suggestLoading ? 'bg-indigo-500 text-white animate-pulse' : 'bg-gray-100 hover:bg-gray-200 text-gray-600'}`}
+              title="AI가 다음 답변을 제안합니다"
+              disabled={suggestLoading}
             >
-              {isRecording ? (
-                <MicrophoneIconSolid className="h-5 w-5" />
-              ) : (
-                <MicrophoneIcon className="h-5 w-5" />
-              )}
+              <SparklesIcon className="h-5 w-5" />
             </button>
 
             {/* 텍스트 입력 */}
             <div className="flex-1 flex items-center space-x-2">
-              <input
-                type="text"
+              <textarea
+                rows={3}
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
                 onCompositionStart={() => setIsIMEComposing(true)}
@@ -694,11 +702,13 @@ export default function MobileChat() {
                   const anyEvt = e.nativeEvent as any;
                   const composing = isIMEComposing || anyEvt?.isComposing || anyEvt?.keyCode === 229;
                   if (e.key === "Enter" && !e.shiftKey && !composing) {
+                    e.preventDefault();
                     handleSendMessage();
                   }
                 }}
-                placeholder="메시지를 입력하세요..."
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                placeholder={suggestLoading ? "AI 응답 생성 중…" : "메시지를 입력하세요..."}
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+                style={{ minHeight: '4.5rem' }}
               />
               <Button
                 onClick={handleSendMessage}

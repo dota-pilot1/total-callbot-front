@@ -73,7 +73,7 @@ export default function MobileModelAnswerDialog({ open, onClose, question, topic
 
               {/* Loading / Error */}
               {loading && (
-                <div className="text-center text-gray-500 py-6">모범 답변 생성 중...</div>
+                <div className="text-center text-gray-500 py-6">예시 답변 생성 중...</div>
               )}
               {error && (
                 <div className="text-center text-red-600 py-6">{error}</div>
