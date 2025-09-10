@@ -13,6 +13,9 @@ import VoicePulse from "../components/VoicePulse";
 import MobileSettingsDropdown from "../components/MobileSettingsDropdown";
 import { examApi } from "../features/exam/api/exam";
 import MobileModelAnswerDialog from "../components/MobileModelAnswerDialog";
+import MobileCharacterDialog, { type GenderOption } from "../components/MobileCharacterDialog";
+import { CHARACTER_LIST } from "../features/character/characters";
+import { useCharacterStore } from "../features/character/store";
 import MobileTranslationDialog from "../components/MobileTranslationDialog";
 
 export default function MobileChat() {
@@ -94,6 +97,30 @@ export default function MobileChat() {
 
   // 현재 선택된 캐릭터 메타
   const currentCharacter = (CHARACTER_PRESETS.find(c => c.id === selectedCharacterId) || CHARACTER_PRESETS[0]);
+
+  // zustand store에서 캐릭터 상태 가져오기
+  const { personaCharacter, personaScenario, personaGender, selectedVoice: storeVoice, setCharacterSettings } = useCharacterStore();
+  const [characterDialogOpen, setCharacterDialogOpen] = useState(false);
+
+  const buildPersonaInstructions = () => {
+    // 캐릭터에 따른 대표 상황(설명)
+    const meta = CHARACTER_LIST.find(c => c.id === personaCharacter.id);
+    const genderNote = personaGender === 'male' ? "Use a subtly masculine persona. " : "Use a subtly feminine persona. ";
+    const voiceNote = selectedVoice ? `Voice: ${selectedVoice}. ` : '';
+    const persona = meta ? `${meta.personality}\n${meta.background}` : '';
+    
+    // 한국 캐릭터들은 한국어 우선 사용
+    const isKoreanCharacter = ['sejong', 'yi_sunsin', 'yu_gwansun', 'honggildong', 'songkh_detective'].includes(personaCharacter.id);
+    const languageNote = isKoreanCharacter 
+      ? "Respond primarily in Korean. Use formal, respectful language appropriate to your historical period and social status. " 
+      : "Keep replies to 1–3 sentences of natural English, model better phrasing implicitly, and ask one brief follow-up. ";
+    
+    return (
+      `You are ${personaCharacter.name} (${personaCharacter.emoji}). ${genderNote}${voiceNote}` +
+      languageNote +
+      `Stay in character at all times. Avoid meta talk.\n\nPersona notes:\n${persona}`
+    );
+  };
 
   // Refs
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -272,14 +299,72 @@ export default function MobileChat() {
       setVoiceConn(conn);
       try { micStream = conn.localStream; } catch {}
       setIsRecording(true);
-      // 연결 직후 1회 인사말 (영어, 사용자명 포함) — 데이터채널 open 시점 보장
+      // 세션 기본 퍼소나 업데이트
+      try {
+        if (conn.dc && conn.dc.readyState === 'open') {
+          conn.dc.send(JSON.stringify({
+            type: 'session.update',
+            session: {
+              instructions: buildPersonaInstructions(),
+            },
+          }));
+        } else {
+          conn.dc?.addEventListener('open', () => {
+            try {
+              conn.dc?.send(JSON.stringify({
+                type: 'session.update',
+                session: { instructions: buildPersonaInstructions() },
+              }));
+            } catch {}
+          });
+        }
+      } catch {}
+      // 연결 직후 1회 인사말 (캐릭터에 따라 다르게) — 데이터채널 open 시점 보장
       const sendGreeting = () => {
         try {
           if (didGreet) return;
           const displayName = (user?.name && String(user.name).trim().length > 0)
             ? String(user.name).trim()
             : (user?.email ? String(user.email).split('@')[0] : 'there');
-          const greet = `Hi ${displayName}, what would you like to talk about?`;
+          
+          // 캐릭터별 인사말
+          let greet = `Hi ${displayName}, what would you like to talk about?`; // 기본 인사말
+          
+          if (personaCharacter.id !== 'gpt') { // 캐릭터가 선택된 경우
+            // 캐릭터별 기본 인사말
+            switch (personaCharacter.id) {
+              case 'sejong':
+                greet = `안녕하십니까, ${displayName}님. 세종이옵니다. 무엇을 함께 논의해볼까요?`;
+                break;
+              case 'yi_sunsin':
+                greet = `${displayName}님, 이순신입니다. 어떤 전략을 세워볼까요?`;
+                break;
+              case 'yu_gwansun':
+                greet = `안녕하세요 ${displayName}님! 유관순입니다. 무엇을 도와드릴까요?`;
+                break;
+              case 'honggildong':
+                greet = `안녕하세요 ${displayName}님, 홍길동입니다. 무엇을 도와드릴까요?`;
+                break;
+              case 'songkh_detective':
+                greet = `${displayName}님, 형사 송강호입니다. 무슨 사건이 있나요?`;
+                break;
+              case 'einstein':
+                greet = `Hello ${displayName}! Albert Einstein here. What fascinating question shall we explore today?`;
+                break;
+              case 'edison':
+                greet = `Hello ${displayName}, Thomas Edison speaking. What shall we invent today?`;
+                break;
+              case 'musk':
+                greet = `Hey ${displayName}, Elon here. Ready to think big and move fast?`;
+                break;
+              case 'davinci':
+                greet = `Salve ${displayName}! Leonardo da Vinci at your service. What shall we create or discover?`;
+                break;
+              default:
+                greet = `Hi ${displayName}, I'm ${personaCharacter.name}. What would you like to talk about?`;
+            }
+          }
+          
           conn.dc?.send(JSON.stringify({
             type: 'response.create',
             response: { modalities: ['audio','text'], conversation: 'auto', voice: selectedVoice, instructions: greet }
@@ -538,12 +623,7 @@ export default function MobileChat() {
       <div className="bg-white shadow-sm border-b flex-shrink-0 sticky top-0 z-40">
         <div className="p-4">
           <div className="flex justify-between items-center">
-            <div className="flex items-center space-x-3">
-              <div className={`w-10 h-10 bg-gradient-to-br ${currentCharacter.color || defaultChatbot.color} rounded-full flex items-center justify-center`}>                
-                <span className="text-xl" aria-label={currentCharacter.name} title={currentCharacter.name}>
-                  {currentCharacter.emoji || '🤖'}
-                </span>
-              </div>
+            <div className="flex items-center">
               <div>
                 <h1 className="text-lg font-semibold text-gray-900">
                   {defaultChatbot.name}
@@ -590,6 +670,12 @@ export default function MobileChat() {
           <div className="flex justify-center items-center space-x-3">
             {voiceEnabled && isRecording ? (
               <>
+                {/* 캐릭터 아바타 (역할극용) */}
+                <button onClick={() => setCharacterDialogOpen(true)}
+                  className="w-9 h-9 rounded-full bg-gradient-to-br from-amber-400 to-yellow-500 flex items-center justify-center border border-amber-300 shadow-sm"
+                  title={`${personaCharacter.name} (role-play)`}>
+                  <span className="text-base">{personaCharacter.emoji}</span>
+                </button>
                 {/* 음성 파동 + 상태 점 오버레이 (compact) */}
                 <div className="relative">
                   <div className="bg-white rounded-full p-3 shadow-lg border border-gray-200">
@@ -640,7 +726,12 @@ export default function MobileChat() {
               </>
             ) : (
               <>
-              {/* Start 버튼 + 상태 점 오버레이 */}
+              {/* 캐릭터 아바타 + Start 버튼 + 상태 점 오버레이 */}
+              <button onClick={() => setCharacterDialogOpen(true)}
+                className="w-9 h-9 rounded-full bg-gradient-to-br from-amber-400 to-yellow-500 flex items-center justify-center border border-amber-300 shadow-sm"
+                title={`${personaCharacter.name} (role-play)`}>
+                <span className="text-base">{personaCharacter.emoji}</span>
+              </button>
               <div className="relative inline-block">
               <Button
                 onClick={async () => {
@@ -832,6 +923,37 @@ export default function MobileChat() {
         question={answersQuestion}
         topic={answersTopic}
         level={answersLevel}
+      />
+
+      {/* Character/Scenario/Gender Dialog */}
+      <MobileCharacterDialog
+        open={characterDialogOpen}
+        onClose={() => setCharacterDialogOpen(false)}
+        value={{ characterId: personaCharacter.id, scenarioId: personaScenario, gender: personaGender, voice: selectedVoice as any }}
+        onConfirm={(v) => {
+          console.log('Setting new character via store:', v);
+          
+          // zustand store를 통해 캐릭터 설정 업데이트
+          setCharacterSettings({
+            characterId: v.characterId,
+            scenarioId: v.scenarioId || '',
+            gender: v.gender,
+            voice: v.voice,
+          });
+          
+          // 기존 selectedVoice 상태도 업데이트
+          setSelectedVoice(v.voice);
+          
+          // 세션에 즉시 반영 - 더 확실하게 하기 위해 연결 재시작
+          if (voiceConn && isRecording) {
+            // 현재 연결을 끊고 새로 시작
+            stopVoice();
+            setTimeout(async () => {
+              setVoiceEnabled(true);
+              await startVoice();
+            }, 500);
+          }
+        }}
       />
 
       {/* Translation Dialog (mobile) */}
