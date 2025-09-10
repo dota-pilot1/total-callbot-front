@@ -583,27 +583,23 @@ export default function MobileChat() {
         <div className="text-center">
           {/* <p className="text-sm text-gray-600 mb-3">{defaultChatbot.description}</p> */}
           
-          {/* 연결 상태 */}
-          <div className={`inline-flex items-center px-3 py-2 rounded-full text-sm font-medium mb-3 ${
-            isConnected 
-              ? "bg-green-100 text-green-800 border border-green-200" 
-              : isConnecting 
-                ? "bg-yellow-100 text-yellow-800 border border-yellow-200 animate-pulse" 
-                : "bg-gray-100 text-gray-600 border border-gray-200"
-          }`}>
-            <div className={`w-2 h-2 rounded-full mr-2 ${
-              isConnected ? "bg-green-500" : isConnecting ? "bg-yellow-500" : "bg-gray-400"
-            }`}></div>
-            {isConnecting ? "연결중..." : isConnected ? "연결됨" : "연결 대기중"}
-          </div>
+          {/* 상단 배지는 제거하고, 마이크/버튼에 상태 점을 오버레이로 표시 */}
+          <div className="mb-2" />
 
           {/* 음성 시작 버튼 또는 파동 표시 */}
-          <div className="flex justify-center items-center space-x-4">
+          <div className="flex justify-center items-center space-x-3">
             {voiceEnabled && isRecording ? (
               <>
-                {/* 음성 파동 표시 */}
-                <div className="bg-white rounded-full p-4 shadow-lg border border-gray-200">
-                  <VoicePulse active={isListening || isResponding} size={48} />
+                {/* 음성 파동 + 상태 점 오버레이 (compact) */}
+                <div className="relative">
+                  <div className="bg-white rounded-full p-3 shadow-lg border border-gray-200">
+                    <VoicePulse active={isListening || isResponding} size={36} />
+                  </div>
+                  <span
+                    className={`absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full ring-2 ring-white ${
+                      isConnecting ? 'bg-yellow-500' : isListening ? 'bg-red-500 animate-pulse' : isResponding ? 'bg-blue-500 animate-pulse' : isConnected ? 'bg-green-500' : 'bg-gray-400'
+                    }`}
+                  />
                 </div>
                 
                 {/* 중단 버튼 */}
@@ -615,17 +611,17 @@ export default function MobileChat() {
                     // 연결 끊을 때 대화 내용 초기화
                     handleClearChat();
                   }}
-                  className="bg-red-500 hover:bg-red-600 text-white rounded-full p-3 shadow-lg transition-colors"
+                  className="bg-red-500 hover:bg-red-600 text-white rounded-full p-2.5 shadow-lg transition-colors"
                   title="음성 연결 중단"
                 >
-                  <XMarkIcon className="h-6 w-6" />
+                  <XMarkIcon className="h-5 w-5" />
                 </button>
 
                 {/* Exam 버튼 (녹음 중에도 가능) */}
                 <Button
                   onClick={triggerExam}
                   variant="outline"
-                  className="px-5 py-3"
+                  className="h-10 px-6 text-sm rounded-full"
                   disabled={isConnecting || examSending}
                 >
                   {examSending ? 'Sending...' : 'Exam'}
@@ -644,7 +640,8 @@ export default function MobileChat() {
               </>
             ) : (
               <>
-              {/* Start 버튼 */}
+              {/* Start 버튼 + 상태 점 오버레이 */}
+              <div className="relative inline-block">
               <Button
                 onClick={async () => {
                   if (!isConnected) {
@@ -673,11 +670,17 @@ export default function MobileChat() {
                   }
                 }}
                 variant="default"
-                className="px-8 py-3 text-lg"
+                className="h-10 px-6 text-sm rounded-full"
                 disabled={isConnecting}
               >
                 {isConnecting ? "연결중..." : "Start"}
               </Button>
+              <span
+                className={`absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full ring-2 ring-white ${
+                  isConnecting ? 'bg-yellow-500' : isListening ? 'bg-red-500 animate-pulse' : isResponding ? 'bg-blue-500 animate-pulse' : isConnected ? 'bg-green-500' : 'bg-gray-400'
+                }`}
+              />
+              </div>
 
               </>
             )}
