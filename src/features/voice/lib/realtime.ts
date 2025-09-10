@@ -48,21 +48,7 @@ export async function connectRealtimeVoice(opts: VoiceConnectOptions): Promise<V
     console.debug('[realtime] datachannel created:', dc.label);
     dc.onopen = () => {
       console.debug('[realtime] datachannel open');
-      // 오디오와 함께 텍스트도 생성되도록 요청
-      try {
-      dc.send(JSON.stringify({
-        type: 'response.create',
-        response: {
-          modalities: ['audio', 'text'],
-          // 대화 컨텍스트 자동 유지('true'가 아닌 문자열이어야 함)
-          conversation: 'auto',
-          // Apply selected voice if supported, else rely on server/default
-          ...(opts.voice && (ALLOWED_REALTIME_VOICES as readonly string[]).includes(opts.voice) ? { voice: opts.voice } : {}),
-          // Apply optional persona instructions if provided
-          ...(opts.instructions ? { instructions: opts.instructions } : {}),
-        },
-      }));
-      } catch {}
+      // 자동 응답을 시작하지 않습니다. (사용자 입력/지시 시에만 response.create 전송)
     };
     dc.onmessage = (ev) => {
       // UTF-8 텍스트 인코딩 명시적 처리
