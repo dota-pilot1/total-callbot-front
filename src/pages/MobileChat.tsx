@@ -467,7 +467,12 @@ export default function MobileChat() {
       setSuggestLoading(true);
       setNewMessage('');
       const question = (lastBot || lastUsr || '').trim();
-      const resp = await examApi.getSampleAnswers({ question, topic: 'conversation', level: 'intermediate', count: 1, englishOnly: true });
+      const tail = messages.slice(-5).map(m => {
+        const role = m.sender === 'user' ? 'USER' : 'ASSISTANT';
+        const text = String(m.message || '').replace(/\s+/g, ' ').trim();
+        return `- ${role}: ${text}`;
+      }).join('\n');
+      const resp = await examApi.getSampleAnswers({ question, topic: 'conversation', level: 'intermediate', count: 1, englishOnly: true, context: tail });
       const text = (resp.samples?.[0]?.text || '').trim();
       if (text) setNewMessage(text);
     } catch (e) {
