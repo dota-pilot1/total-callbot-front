@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useAuthStore } from "../features/auth";
 import { Button } from "../components/ui";
 import { chatApi } from "../features/chat/api/chat";
-import { PaperAirplaneIcon, CogIcon, XMarkIcon, SparklesIcon } from "@heroicons/react/24/outline";
+import { PaperAirplaneIcon, TrashIcon, XMarkIcon, SparklesIcon, Cog6ToothIcon } from "@heroicons/react/24/outline";
 // no solid icons needed currently
 import { voiceApi } from "../features/voice/api/voice";
 import {
@@ -511,12 +511,24 @@ export default function MobileChat() {
               </div>
             </div>
             <div className="flex items-center space-x-2">
+              {/* 휴지통 버튼 (대화 내용 클리어) */}
+              <button
+                onClick={handleClearChat}
+                className="p-2 rounded-lg hover:bg-gray-100"
+                title="대화 내용 지우기"
+              >
+                <TrashIcon className="h-5 w-5 text-gray-600" />
+              </button>
+              
+              {/* 설정 버튼 (개선된 아이콘) */}
               <button
                 onClick={() => setSettingsOpen(true)}
                 className="p-2 rounded-lg hover:bg-gray-100"
+                title="설정"
               >
-                <CogIcon className="h-5 w-5 text-gray-600" />
+                <Cog6ToothIcon className="h-5 w-5 text-gray-600" />
               </button>
+              
               <Button
                 variant="outline"
                 size="sm"
@@ -566,6 +578,8 @@ export default function MobileChat() {
                     stopVoice();
                     setVoiceEnabled(false);
                     setIsConnected(false);
+                    // 연결 끊을 때 대화 내용 초기화
+                    handleClearChat();
                   }}
                   className="bg-red-500 hover:bg-red-600 text-white rounded-full p-3 shadow-lg transition-colors"
                   title="음성 연결 중단"
