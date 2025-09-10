@@ -272,20 +272,26 @@ export default function MobileChat() {
       setVoiceConn(conn);
       try { micStream = conn.localStream; } catch {}
       setIsRecording(true);
-      // 연결 직후 1회 인사말 (영어, 사용자명 포함)
-      try {
-        if (!didGreet && conn.dc && conn.dc.readyState === 'open') {
+      // 연결 직후 1회 인사말 (영어, 사용자명 포함) — 데이터채널 open 시점 보장
+      const sendGreeting = () => {
+        try {
+          if (didGreet) return;
           const displayName = (user?.name && String(user.name).trim().length > 0)
             ? String(user.name).trim()
             : (user?.email ? String(user.email).split('@')[0] : 'there');
           const greet = `Hi ${displayName}, what would you like to talk about?`;
-          conn.dc.send(JSON.stringify({
+          conn.dc?.send(JSON.stringify({
             type: 'response.create',
             response: { modalities: ['audio','text'], conversation: 'auto', voice: selectedVoice, instructions: greet }
           }));
           setDidGreet(true);
-        }
-      } catch {}
+        } catch {}
+      };
+      if (conn.dc && conn.dc.readyState === 'open') {
+        sendGreeting();
+      } else {
+        try { conn.dc?.addEventListener('open', sendGreeting as any); } catch {}
+      }
     } catch (e) {
       console.error("음성 연결 실패:", e);
     }
@@ -677,8 +683,8 @@ export default function MobileChat() {
             )}
           </div>
 
-          {/* 음성 상태 표시 */}
-          {voiceEnabled && isRecording && (
+          {/* 음성 상태 표시: 활성 상태에서만 노출 (idle 시 숨김) */}
+          {voiceEnabled && isRecording && (isListening || isResponding) && (
             <div className={`flex items-center justify-center space-x-2 text-sm mt-3 ${
               isListening 
                 ? "text-red-600" 
@@ -693,9 +699,7 @@ export default function MobileChat() {
                     ? "bg-blue-500 animate-pulse" 
                     : "bg-gray-400"
               }`}></div>
-              <span>
-                {isListening ? "듣는 중..." : isResponding ? "응답 중..." : "대기 중"}
-              </span>
+              <span>{isListening ? "듣는 중..." : "응답 중..."}</span>
             </div>
           )}
         </div>
