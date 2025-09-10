@@ -18,6 +18,7 @@ import {
 } from "../features/voice/lib/realtime";
 import VoicePulse from "../components/VoicePulse";
 import MobileSettingsDropdown from "../components/MobileSettingsDropdown";
+import MobileModelAnswerDialog from "../components/MobileModelAnswerDialog";
 
 export default function MobileChat() {
   const { logout, getUser } = useAuthStore();
@@ -71,6 +72,12 @@ export default function MobileChat() {
   const [coalesceDelayMs, setCoalesceDelayMs] = useState(800);
   const [debugEvents, setDebugEvents] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [examSending, setExamSending] = useState(false);
+  // Model answers dialog state (mobile)
+  const [answersOpen, setAnswersOpen] = useState(false);
+  const [answersQuestion, setAnswersQuestion] = useState<string>("");
+  const [answersTopic, setAnswersTopic] = useState<string | undefined>(undefined);
+  const [answersLevel, setAnswersLevel] = useState<string | undefined>(undefined);
 
   // 캐릭터/음성 선택 상태
   const [selectedCharacterId, setSelectedCharacterId] = useState<(typeof CHARACTER_PRESETS)[number]['id']>(CHARACTER_PRESETS[0].id);
@@ -315,8 +322,8 @@ export default function MobileChat() {
       '- At the beginning of every question, prefix with "QX/5:" (e.g., "Q1/5:").',
       '',
       'Level selection / 난이도 선택:',
-      '- BEFORE Q1/5, ask the tester to choose their level among: Elementary(초등학교), Middle School(중학교), Working Adult(직장인), Absolute Beginner(완전 초보), Beginner(초급), Intermediate(중급), Advanced(고수), or Level 1–10.',
-      '- Wait for their answer; if no reply within 20 seconds, default to Level 5.',
+      '- BEFORE Q1/5, ask the tester to choose their level among exactly THREE options: Absolute Beginner(완전 초보), Beginner(초보), Intermediate(중급).',
+      '- Wait for their answer; if no reply within 20 seconds, default to Beginner(초보).',
       '- Confirm the chosen level and ADAPT the question difficulty accordingly (vocabulary/structures/examples).',
       '',
       'After each user answer, reply with:',
@@ -394,6 +401,8 @@ export default function MobileChat() {
 
   const triggerExam = async () => {
     try {
+      if (examSending) return;
+      setExamSending(true);
       await ensureConnectedAndReady();
     } catch (e) {
       alert('연결에 실패했습니다. 마이크 권한 또는 네트워크 상태를 확인해주세요.');
@@ -408,7 +417,7 @@ export default function MobileChat() {
         {
           id: prev.length + 1,
           sender: 'callbot' as const,
-          message: `이번 시험 주제: ${topic.ko}\n총 5문항으로 진행됩니다.\n먼저 본인의 수준(초등학교/중학교/직장인/완전 초보/초급/중급/고수 또는 레벨 1–10)을 선택해 주세요.`,
+          message: `이번 시험 주제: ${topic.ko}\n총 5문항으로 진행됩니다.`,
           timestamp: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }),
           type: 'text' as const,
         },
@@ -436,6 +445,8 @@ export default function MobileChat() {
     } catch (e) {
       console.error('Exam 트리거 실패:', e);
       alert('Exam 지시를 전송하지 못했습니다. 다시 시도해주세요.');
+    } finally {
+      setExamSending(false);
     }
   };
 
@@ -456,6 +467,10 @@ export default function MobileChat() {
     lastAssistantFinalRef.current = "";
     assistantPartialRef.current = "";
     userPartialRef.current = "";
+  };
+  const openModelAnswers = (questionText: string) => {
+    setAnswersQuestion(questionText);
+    setAnswersOpen(true);
   };
 
   return (
@@ -550,8 +565,9 @@ export default function MobileChat() {
                   onClick={triggerExam}
                   variant="outline"
                   className="px-5 py-3"
+                  disabled={isConnecting || examSending}
                 >
-                  Exam
+                  {examSending ? 'Sending...' : 'Exam'}
                 </Button>
               </>
             ) : (
@@ -628,27 +644,15 @@ export default function MobileChat() {
           </div>
         ) : (
           messages.map((message) => (
-            <div
-              key={message.id}
-              className={`flex ${message.sender === "user" ? "justify-end" : "justify-start"}`}
-            >
-              <div
-                className={`max-w-[80%] px-3 py-2 rounded-lg ${
-                  message.sender === "user"
-                    ? "bg-indigo-500 text-white"
-                    : "bg-white border border-gray-200 text-gray-900"
-                }`}
-              >
-                <p className="text-sm leading-relaxed">{message.message}</p>
-                <p
-                  className={`text-xs mt-1 ${
-                    message.sender === "user"
-                      ? "text-indigo-100"
-                      : "text-gray-500"
-                  }`}
-                >
-                  {message.timestamp}
-                </p>
+            <div key={message.id} className={`flex ${message.sender === "user" ? "justify-end" : "justify-start"}`}>
+              <div className={`max-w-[80%] px-3 py-2 rounded-lg ${message.sender === "user" ? "bg-indigo-500 text-white" : "bg-white border border-gray-200 text-gray-900"}`}>
+                <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.message}</p>
+                <div className="mt-1 flex items-center justify-between">
+                  <p className={`text-xs ${message.sender === "user" ? "text-indigo-100" : "text-gray-500"}`}>{message.timestamp}</p>
+                  {message.sender !== 'user' && (
+                    <button onClick={() => openModelAnswers(message.message)} className="ml-3 text-xs px-2 py-0.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-50" title="답변 예시 보기">답변 예시</button>
+                  )}
+                </div>
               </div>
             </div>
           ))
@@ -734,6 +738,15 @@ export default function MobileChat() {
         debugEvents={debugEvents}
         onDebugEventsChange={setDebugEvents}
         onClearChat={handleClearChat}
+      />
+
+      {/* Model Answers Dialog (mobile) */}
+      <MobileModelAnswerDialog
+        open={answersOpen}
+        onClose={() => setAnswersOpen(false)}
+        question={answersQuestion}
+        topic={answersTopic}
+        level={answersLevel}
       />
     </div>
   );
