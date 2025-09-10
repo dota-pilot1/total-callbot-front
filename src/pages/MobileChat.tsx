@@ -598,14 +598,16 @@ export default function MobileChat() {
                   {examSending ? 'Sending...' : 'Exam'}
                 </Button>
 
-                {/* 대화 내용 클리어 버튼 */}
-                <button
-                  onClick={handleClearChat}
-                  className="p-3 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 transition-colors"
-                  title="대화 내용 지우기"
-                >
-                  <TrashIcon className="h-5 w-5" />
-                </button>
+                {/* 대화 내용 클리어 버튼 (연결된 상태에서만) */}
+                {isConnected && (
+                  <button
+                    onClick={handleClearChat}
+                    className="p-3 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 transition-colors"
+                    title="대화 내용 지우기"
+                  >
+                    <TrashIcon className="h-5 w-5" />
+                  </button>
+                )}
               </>
             ) : (
               <>
@@ -644,14 +646,6 @@ export default function MobileChat() {
                 {isConnecting ? "연결중..." : "Start"}
               </Button>
 
-              {/* 대화 내용 클리어 버튼 (Start 상태에서도 표시) */}
-              <button
-                onClick={handleClearChat}
-                className="p-3 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 transition-colors"
-                title="대화 내용 지우기"
-              >
-                <TrashIcon className="h-5 w-5" />
-              </button>
               </>
             )}
           </div>
