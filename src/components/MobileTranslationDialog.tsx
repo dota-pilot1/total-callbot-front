@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Dialog } from '@headlessui/react';
-import { XMarkIcon, LanguageIcon } from '@heroicons/react/24/outline';
+import { XMarkIcon, ArrowsRightLeftIcon } from '@heroicons/react/24/outline';
 import { examApi } from '../features/exam/api/exam';
 
 interface MobileTranslationDialogProps {
@@ -96,9 +96,9 @@ Please respond in this exact JSON format:
           {/* 헤더 */}
           <div className="flex items-center justify-between p-4 border-b border-gray-200">
             <div className="flex items-center space-x-2">
-              <LanguageIcon className="h-5 w-5 text-blue-600" />
+              <ArrowsRightLeftIcon className="h-5 w-5 text-blue-600" />
               <Dialog.Title className="text-lg font-semibold text-gray-900">
-                번역 결과
+                해석 결과
               </Dialog.Title>
             </div>
             <button
