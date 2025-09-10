@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useAuthStore } from "../features/auth";
 import { Button } from "../components/ui";
 import { chatApi } from "../features/chat/api/chat";
-import { PaperAirplaneIcon, TrashIcon, XMarkIcon, SparklesIcon, Cog6ToothIcon } from "@heroicons/react/24/outline";
+import { PaperAirplaneIcon, TrashIcon, XMarkIcon, SparklesIcon, Cog6ToothIcon, LanguageIcon } from "@heroicons/react/24/outline";
 // no solid icons needed currently
 import { voiceApi } from "../features/voice/api/voice";
 import {
@@ -13,6 +13,7 @@ import VoicePulse from "../components/VoicePulse";
 import MobileSettingsDropdown from "../components/MobileSettingsDropdown";
 import { examApi } from "../features/exam/api/exam";
 import MobileModelAnswerDialog from "../components/MobileModelAnswerDialog";
+import MobileTranslationDialog from "../components/MobileTranslationDialog";
 
 export default function MobileChat() {
   const { logout, getUser } = useAuthStore();
@@ -73,6 +74,10 @@ export default function MobileChat() {
   const [answersQuestion, setAnswersQuestion] = useState<string>("");
   const [answersTopic, _setAnswersTopic] = useState<string | undefined>(undefined);
   const [answersLevel, _setAnswersLevel] = useState<string | undefined>(undefined);
+  
+  // Translation dialog state (mobile)
+  const [translationOpen, setTranslationOpen] = useState(false);
+  const [translationText, setTranslationText] = useState<string>("");
 
   // 캐릭터/음성 선택 상태
   const [selectedCharacterId, setSelectedCharacterId] = useState<(typeof CHARACTER_PRESETS)[number]['id']>(CHARACTER_PRESETS[0].id);
@@ -486,6 +491,11 @@ export default function MobileChat() {
     setAnswersOpen(true);
   };
 
+  const openTranslation = (text: string) => {
+    setTranslationText(text);
+    setTranslationOpen(true);
+  };
+
   return (
     <div className="h-screen bg-gray-50 flex flex-col">
       {/* Hidden audio sink for AI voice */}
@@ -721,6 +731,17 @@ export default function MobileChat() {
                 className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
                 style={{ minHeight: '4.5rem' }}
               />
+              {/* 번역 버튼 */}
+              <button
+                onClick={() => openTranslation(newMessage)}
+                disabled={!newMessage.trim()}
+                className="p-2 rounded-lg bg-green-100 hover:bg-green-200 text-green-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                title="입력 텍스트 번역하기"
+              >
+                <LanguageIcon className="h-4 w-4" />
+              </button>
+              
+              {/* 전송 버튼 */}
               <Button
                 onClick={handleSendMessage}
                 disabled={!newMessage.trim()}
@@ -769,6 +790,13 @@ export default function MobileChat() {
         question={answersQuestion}
         topic={answersTopic}
         level={answersLevel}
+      />
+
+      {/* Translation Dialog (mobile) */}
+      <MobileTranslationDialog
+        open={translationOpen}
+        onClose={() => setTranslationOpen(false)}
+        text={translationText}
       />
     </div>
   );
