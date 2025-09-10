@@ -180,4 +180,3 @@ export async function connectRealtimeVoice(opts: VoiceConnectOptions): Promise<V
 
   return { pc, dc, localStream, stop };
 }
-const ALLOWED_REALTIME_VOICES = ['verse', 'alloy', 'sage'] as const;
