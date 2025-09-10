@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useAuthStore } from "../features/auth";
 import { Button } from "../components/ui";
 import { chatApi } from "../features/chat/api/chat";
-import { PaperAirplaneIcon, TrashIcon, XMarkIcon, SparklesIcon, Cog6ToothIcon, LanguageIcon } from "@heroicons/react/24/outline";
+import { PaperAirplaneIcon, TrashIcon, XMarkIcon, SparklesIcon, Cog6ToothIcon, LanguageIcon, ArrowsRightLeftIcon } from "@heroicons/react/24/outline";
 // no solid icons needed currently
 import { voiceApi } from "../features/voice/api/voice";
 import {
@@ -687,7 +687,12 @@ export default function MobileChat() {
                 <div className="mt-1 flex items-center justify-between">
                   <p className={`text-xs ${message.sender === "user" ? "text-indigo-100" : "text-gray-500"}`}>{message.timestamp}</p>
                   {message.sender !== 'user' && (
-                    <button onClick={() => openModelAnswers(message.message)} className="ml-3 text-xs px-2 py-0.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-50" title="답변 예시 보기">답변 예시</button>
+                    <div className="flex items-center space-x-2 ml-3">
+                      <button onClick={() => openModelAnswers(message.message)} className="text-xs px-2 py-0.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-50" title="답변 예시 보기">답변 예시</button>
+                      <button onClick={() => openTranslation(message.message)} className="text-xs p-1 rounded border border-green-300 text-green-600 hover:bg-green-50" title="번역하기">
+                        <ArrowsRightLeftIcon className="h-3 w-3" />
+                      </button>
+                    </div>
                   )}
                 </div>
               </div>
