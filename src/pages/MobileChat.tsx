@@ -76,8 +76,8 @@ export default function MobileChat() {
   // Model answers dialog state (mobile)
   const [answersOpen, setAnswersOpen] = useState(false);
   const [answersQuestion, setAnswersQuestion] = useState<string>("");
-  const [answersTopic, setAnswersTopic] = useState<string | undefined>(undefined);
-  const [answersLevel, setAnswersLevel] = useState<string | undefined>(undefined);
+  const [answersTopic, _setAnswersTopic] = useState<string | undefined>(undefined);
+  const [answersLevel, _setAnswersLevel] = useState<string | undefined>(undefined);
 
   // 캐릭터/음성 선택 상태
   const [selectedCharacterId, setSelectedCharacterId] = useState<(typeof CHARACTER_PRESETS)[number]['id']>(CHARACTER_PRESETS[0].id);
