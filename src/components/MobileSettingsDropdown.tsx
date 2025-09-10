@@ -13,8 +13,8 @@ interface MobileSettingsDropdownProps {
   onSelectVoice: (v: string) => void;
   voiceEnabled: boolean;
   onVoiceEnabledChange: (enabled: boolean) => void;
-  speechLang: "auto" | "ko" | "en";
-  onSpeechLangChange: (lang: "auto" | "ko" | "en") => void;
+  speechLang: "ko" | "en";
+  onSpeechLangChange: (lang: "ko" | "en") => void;
   echoCancellation: boolean;
   onEchoCancellationChange: (enabled: boolean) => void;
   noiseSuppression: boolean;
@@ -182,7 +182,6 @@ export default function MobileSettingsDropdown({
                 <div className="flex items-center justify-between">
                   <div className="flex space-x-1">
                     {[
-                      { key: "auto" as const, label: "자동" },
                       { key: "ko" as const, label: "한국어" },
                       { key: "en" as const, label: "English" },
                     ].map((option) => (

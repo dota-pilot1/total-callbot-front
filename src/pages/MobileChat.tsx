@@ -58,9 +58,10 @@ export default function MobileChat() {
   const [voiceConn, setVoiceConn] = useState<VoiceConnection | null>(null);
   const [isListening, setIsListening] = useState(false);
   const [isResponding, setIsResponding] = useState(false);
+  const isRespondingRef = useRef(false);
   
   // 설정 관련 상태
-  const [speechLang, setSpeechLang] = useState<"auto" | "ko" | "en">("auto");
+  const [speechLang, setSpeechLang] = useState<"ko" | "en">("en");
   const [echoCancellation, setEchoCancellation] = useState(true);
   const [noiseSuppression, setNoiseSuppression] = useState(true);
   const [autoGainControl, setAutoGainControl] = useState(false);
@@ -69,6 +70,7 @@ export default function MobileChat() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [examSending, setExamSending] = useState(false);
   const [suggestLoading, setSuggestLoading] = useState(false);
+  const [didGreet, setDidGreet] = useState(false);
   // Model answers dialog state (mobile)
   const [answersOpen, setAnswersOpen] = useState(false);
   const [answersQuestion, setAnswersQuestion] = useState<string>("");
@@ -190,6 +192,7 @@ export default function MobileChat() {
     if (voiceConn) return;
     try {
       const session = await voiceApi.createSession({ lang: speechLang, voice: selectedVoice });
+      let micStream: MediaStream | null = null;
       const conn = await connectRealtimeVoice({
         token: session.token,
         model: session.model,
@@ -206,11 +209,19 @@ export default function MobileChat() {
           const t = e?.type as string | undefined;
           if (t === "input_audio_buffer.speech_started") setIsListening(true);
           if (t === "input_audio_buffer.speech_stopped") setIsListening(false);
-          if (t === "output_audio_buffer.started") setIsResponding(true);
-          if (t === "response.done" || t === "output_audio_buffer.stopped")
+          if (t === "output_audio_buffer.started") {
+            setIsResponding(true);
+            isRespondingRef.current = true;
+            try { micStream?.getAudioTracks()?.forEach(tr => tr.enabled = false); } catch {}
+          }
+          if (t === "response.done" || t === "output_audio_buffer.stopped") {
             setIsResponding(false);
+            isRespondingRef.current = false;
+            try { micStream?.getAudioTracks()?.forEach(tr => tr.enabled = true); } catch {}
+          }
         },
         onUserTranscript: (text, isFinal) => {
+          if (isRespondingRef.current) return; // 어시스턴트 발화 중 전사 무시
           if (isFinal) {
             const finalText = normalizeText(text.trim());
             if (finalText && finalText !== normalizeText(lastUserFinalRef.current)) {
@@ -259,7 +270,22 @@ export default function MobileChat() {
         },
       });
       setVoiceConn(conn);
+      try { micStream = conn.localStream; } catch {}
       setIsRecording(true);
+      // 연결 직후 1회 인사말 (영어, 사용자명 포함)
+      try {
+        if (!didGreet && conn.dc && conn.dc.readyState === 'open') {
+          const displayName = (user?.name && String(user.name).trim().length > 0)
+            ? String(user.name).trim()
+            : (user?.email ? String(user.email).split('@')[0] : 'there');
+          const greet = `Hi ${displayName}, what would you like to talk about?`;
+          conn.dc.send(JSON.stringify({
+            type: 'response.create',
+            response: { modalities: ['audio','text'], conversation: 'auto', voice: selectedVoice, instructions: greet }
+          }));
+          setDidGreet(true);
+        }
+      } catch {}
     } catch (e) {
       console.error("음성 연결 실패:", e);
     }
@@ -272,6 +298,7 @@ export default function MobileChat() {
     } catch {}
     setVoiceConn(null);
     setIsRecording(false);
+    setDidGreet(false);
   };
 
   // 시험 주제 목록 (영/한)
