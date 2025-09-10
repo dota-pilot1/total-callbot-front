@@ -446,15 +446,7 @@ export default function MobileChat() {
     }
   };
 
-  // 녹음 토글
-  const toggleRecording = () => {
-    if (!isConnected || !voiceEnabled) return;
-    if (isRecording) {
-      stopVoice();
-    } else {
-      startVoice();
-    }
-  };
+  // toggleRecording 함수 제거됨 - 더 이상 사용하지 않음
 
   // 채팅 지우기
   const handleClearChat = () => {
