@@ -312,7 +312,7 @@ export default function MobileChat() {
     ];
     const format = [
       'Format / 형식:',
-      '- Ask exactly 5 questions.',
+      '- Ask exactly 5 questions SEQUENTIALLY.',
       '- Each question MUST be bilingual on two lines: first [EN] then [KO] (clear Korean translation).',
       '  예:',
       '  Q1/5:',
@@ -320,30 +320,31 @@ export default function MobileChat() {
       '  [KO] 팀 내 갈등을 해결했던 경험을 설명해 주세요.',
       '',
       '- At the beginning of every question, prefix with "QX/5:" (e.g., "Q1/5:").',
+      '- DO NOT include any evaluation text (e.g., Score/Rationale/feedback) during the questions.',
+      '- After the user answers Q1, send only Q2 (no evaluation). Repeat until Q5 is completed.',
+      '- Keep a clear separation between messages so that a question is never merged with evaluation content.',
       '',
       'Level selection / 난이도 선택:',
       '- BEFORE Q1/5, ask the tester to choose their level among exactly THREE options: Absolute Beginner(완전 초보), Beginner(초보), Intermediate(중급).',
       '- Wait for their answer; if no reply within 20 seconds, default to Beginner(초보).',
       '- Confirm the chosen level and ADAPT the question difficulty accordingly (vocabulary/structures/examples).',
       '',
-      'After each user answer, reply with:',
-      'Score: X/10',
-      'Rationale: very short reason (1–2 lines) for the score.',
-      '',
     ];
     const grading = [
       'Grading / 채점 기준:',
-      '- Per question: 1–10 points (no 0), total 50 points for 5 questions.',
+      '- Scoring is performed ONLY AFTER all 5 answers are received.',
+      '- Provide a final evaluation with per-question scores (1–10 each, no 0) and a total out of 50.',
       '- Deduct points for grammar errors, pronunciation issues, unnatural phrasing, limited vocabulary, weak content, or poor task response.',
       '- Criteria: Fluency, Pronunciation, Grammar, Vocabulary range, Comprehension/Task response.',
       '',
       'Silence handling / 무응답 처리:',
-      '- If the user provides no answer for 20 seconds, politely move to the next question and assign a low score for that item.',
-      '- 사용자가 20초 내에 아무 대답도 하지 않으면 정중히 다음 문제로 넘어가고, 해당 문항은 낮은 점수로 처리하세요.',
+      '- If the user provides no answer for 20 seconds, politely move to the next question; mark that question low in the final evaluation.',
+      '- 사용자가 20초 내에 아무 대답도 하지 않으면 정중히 다음 문제로 넘어가고, 최종 평가에서 해당 문항은 낮은 점수로 처리하세요.',
       '',
     ];
     const closing = [
-      'Final summary / 최종 요약:',
+      'Final summary / 최종 요약 (only after Q5 answer):',
+      '- Scores by question: Q1 X/10, Q2 X/10, Q3 X/10, Q4 X/10, Q5 X/10',
       '- Total: NN/50',
       '- Level: Level 1–10 (examples)',
       '  • Level 1: 초등학생 수준',
@@ -355,7 +356,7 @@ export default function MobileChat() {
       '- References: brief docs/links/keywords as "- " bullets.',
       '',
       'Formatting / 가독성:',
-      '- Use clear paragraph breaks: insert a blank line between question, score, rationale, and next question.',
+      '- Use clear paragraph breaks: questions are separate from the final evaluation. Do NOT merge them into one message.',
       '- Keep responses concise in voice mode; focus on essentials.',
     ];
     return [...header, ...format, ...grading, ...closing].join('\\n');
