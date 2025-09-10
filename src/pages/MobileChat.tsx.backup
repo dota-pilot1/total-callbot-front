@@ -9,7 +9,6 @@ import {
   SparklesIcon,
   Cog6ToothIcon,
   LanguageIcon,
-  ArrowsRightLeftIcon,
 } from "@heroicons/react/24/outline";
 // no solid icons needed currently
 import { voiceApi } from "../features/voice/api/voice";
@@ -25,6 +24,8 @@ import MobileCharacterDialog from "../components/MobileCharacterDialog";
 import { CHARACTER_LIST } from "../features/character/characters";
 import { useCharacterStore } from "../features/character/store";
 import MobileTranslationDialog from "../components/MobileTranslationDialog";
+
+import CardForChattingMessageWithTranslation from "../components/CardForChattingMessageWithTranslation";
 
 export default function MobileChat() {
   const { logout, getUser } = useAuthStore();
@@ -85,6 +86,7 @@ export default function MobileChat() {
   // 채팅 관련 상태
   const [messages, setMessages] = useState<any[]>([]);
   const [newMessage, setNewMessage] = useState("");
+
   const [isIMEComposing, setIsIMEComposing] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
@@ -107,7 +109,7 @@ export default function MobileChat() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [examSending, setExamSending] = useState(false);
   const [suggestLoading, setSuggestLoading] = useState(false);
-
+  const [didGreet, setDidGreet] = useState(false);
   // Model answers dialog state (mobile)
   const [answersOpen, setAnswersOpen] = useState(false);
   const [answersQuestion, setAnswersQuestion] = useState<string>("");
@@ -130,16 +132,107 @@ export default function MobileChat() {
     CHARACTER_PRESETS[0].defaultVoice,
   );
 
-  // 캐릭터 변경 시 기본 음성 동기화
+  // 캐릭터 변경 시 기본 음성 동기화 및 음성 연결 재시작
   useEffect(() => {
     const c =
       CHARACTER_PRESETS.find((c) => c.id === selectedCharacterId) ||
       CHARACTER_PRESETS[0];
     setSelectedVoice(c.defaultVoice);
+
+    // 음성 연결이 되어있다면 재시작해서 새로운 instructions 적용
+    if (voiceConn && voiceEnabled) {
+      console.log("캐릭터 변경으로 인한 음성 연결 재시작");
+      // 기존 연결 종료
+      voiceConn.disconnect();
+      setVoiceConn(null);
+      setVoiceEnabled(false);
+      setIsRecording(false);
+      setIsListening(false);
+      setIsResponding(false);
+
+      // 잠시 후 새로 연결
+      setTimeout(async () => {
+        try {
+          await startVoice();
+        } catch (error) {
+          console.error("음성 재연결 실패:", error);
+        }
+      }, 1000);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedCharacterId]);
+  }, [selectedCharacterId, personaCharacter.id]);
 
   const [characterDialogOpen, setCharacterDialogOpen] = useState(false);
+
+  // 메시지 클리어 함수
+  const clearMessages = () => {
+    setMessages([]);
+  };
+
+  // 메시지 번역 함수
+  const translateMessage = async (messageId: number, text: string) => {
+    if (translatedMessages.has(messageId)) {
+      return; // 이미 번역된 경우
+    }
+
+    try {
+      // GPT를 사용한 번역 (examApi 활용)
+      const translationPrompt = `Translate the following English text to Korean. Only return the Korean translation, nothing else:\n\n"${text}"`;
+
+      const response = await examApi.getSampleAnswers({
+        question,
+        topic: "conversation",
+        level: "intermediate",
+        count: 1,
+        englishOnly: true,
+        context: `Please provide a natural response for this conversation.`
+      });
+        messages: [
+          {
+            id: 1,
+            sender: "user",
+            message: translationPrompt,
+            timestamp: "",
+            type: "text",
+          },
+        ],
+        character: "translator",
+      });
+
+      const translation = response.answer || `[번역] ${text}`;
+
+      setTranslatedMessages((prev) =>
+        new Map(prev).set(messageId, translation),
+      );
+    } catch (error) {
+      console.error("번역 실패:", error);
+      // 오류 시 기본 번역 메시지
+      setTranslatedMessages((prev) =>
+        new Map(prev).set(messageId, `[번역 오류] ${text}`),
+      );
+    }
+  };
+
+  // 메시지 클릭 핸들러 (카드 뒤집기)
+  const handleMessageClick = async (messageId: number, text: string) => {
+    const isCurrentlyFlipped = flippedMessages.has(messageId);
+
+    if (!isCurrentlyFlipped) {
+      // 번역 시작
+      await translateMessage(messageId, text);
+    }
+
+    // 뒤집기 상태 토글
+    setFlippedMessages((prev) => {
+      const newSet = new Set(prev);
+      if (isCurrentlyFlipped) {
+        newSet.delete(messageId);
+      } else {
+        newSet.add(messageId);
+      }
+      return newSet;
+    });
+  };
 
   const buildPersonaInstructions = () => {
     // 캐릭터에 따른 대표 상황(설명)
@@ -151,15 +244,36 @@ export default function MobileChat() {
     const voiceNote = selectedVoice ? `Voice: ${selectedVoice}. ` : "";
     const persona = meta ? `${meta.personality}\n${meta.background}` : "";
 
-    // 기본적으로 영어로 답변, 한국어 요청 시에만 한국어 사용
-    const languageNote =
-      "Be direct and straightforward. Keep replies to 1-2 sentences maximum. No unnecessary explanations or elaboration. Respond primarily in English. If the user specifically requests Korean (한국어로 답변해줘, 한글로 말해줘, etc.), then respond in Korean using formal, respectful language. ";
-
-    return (
-      `I am ${personaCharacter.name} (${personaCharacter.emoji}). ${genderNote}${voiceNote}` +
-      languageNote +
-      `I stay in character at all times. I avoid meta talk.\n\nMy persona notes:\n${persona}`
-    );
+    return [
+      "*** CRITICAL ROLE ASSIGNMENT ***",
+      `YOU ARE: ${personaCharacter.name}`,
+      `THE USER IS: A regular person (NOT ${personaCharacter.name})`,
+      "",
+      "*** MANDATORY LANGUAGE RULE: RESPOND IN ENGLISH ONLY ***",
+      "- You are an English conversation partner",
+      "- ALWAYS respond in English, even if user writes in Korean",
+      "- NEVER use Korean words or phrases unless user explicitly says '한국어로 말해줘' or '한글로 답변해줘'",
+      "",
+      "*** ABSOLUTE RULE: NEVER CONFUSE ROLES ***",
+      `- YOU are ${personaCharacter.name}, the user is NOT`,
+      `- NEVER say "Hello ${personaCharacter.name}" to the user`,
+      `- NEVER address the user as ${personaCharacter.name}`,
+      "- The user is talking TO you, not AS you",
+      "- Say 'Hello!' or 'Hi there!' instead",
+      "",
+      "COMMUNICATION STYLE:",
+      "- Keep replies to 1-3 sentences of natural, conversational English",
+      "- Ask follow-up questions to continue the conversation",
+      "- Stay in character but be helpful and engaging",
+      "",
+      "YOUR CHARACTER DETAILS:",
+      persona,
+      "",
+      `GENDER: ${genderNote}`,
+      `VOICE: ${voiceNote}`,
+      "",
+      "Remember: YOU are the character, USER is talking to you.",
+    ].join("\n");
   };
 
   // Refs
@@ -383,6 +497,77 @@ export default function MobileChat() {
           });
         }
       } catch {}
+      // 연결 직후 1회 인사말 (캐릭터에 따라 다르게) — 데이터채널 open 시점 보장
+      const sendGreeting = () => {
+        try {
+          if (didGreet) return;
+          const displayName =
+            user?.name && String(user.name).trim().length > 0
+              ? String(user.name).trim()
+              : user?.email
+                ? String(user.email).split("@")[0]
+                : "there";
+
+          // 캐릭터별 인사말
+          let greet = `Hi ${displayName}, what would you like to talk about?`; // 기본 인사말
+
+          if (personaCharacter.id !== "gpt") {
+            // 캐릭터가 선택된 경우
+            // 캐릭터별 기본 인사말
+            switch (personaCharacter.id) {
+              case "sejong":
+                greet = `안녕하십니까, ${displayName}님. 세종이옵니다. 무엇을 함께 논의해볼까요?`;
+                break;
+              case "yi_sunsin":
+                greet = `${displayName}님, 이순신입니다. 어떤 전략을 세워볼까요?`;
+                break;
+              case "yu_gwansun":
+                greet = `안녕하세요 ${displayName}님! 유관순입니다. 무엇을 도와드릴까요?`;
+                break;
+              case "honggildong":
+                greet = `안녕하세요 ${displayName}님, 홍길동입니다. 무엇을 도와드릴까요?`;
+                break;
+              case "songkh_detective":
+                greet = `${displayName}님, 형사 송강호입니다. 무슨 사건이 있나요?`;
+                break;
+              case "einstein":
+                greet = `Hello ${displayName}! Albert Einstein here. What fascinating question shall we explore today?`;
+                break;
+              case "edison":
+                greet = `Hello ${displayName}, Thomas Edison speaking. What shall we invent today?`;
+                break;
+              case "musk":
+                greet = `Hey ${displayName}, Elon here. Ready to think big and move fast?`;
+                break;
+              case "davinci":
+                greet = `Salve ${displayName}! Leonardo da Vinci at your service. What shall we create or discover?`;
+                break;
+              default:
+                greet = `Hi ${displayName}, I'm ${personaCharacter.name}. What would you like to talk about?`;
+            }
+          }
+
+          conn.dc?.send(
+            JSON.stringify({
+              type: "response.create",
+              response: {
+                modalities: ["audio", "text"],
+                conversation: "auto",
+                voice: selectedVoice,
+                instructions: greet,
+              },
+            }),
+          );
+          setDidGreet(true);
+        } catch {}
+      };
+      if (conn.dc && conn.dc.readyState === "open") {
+        sendGreeting();
+      } else {
+        try {
+          conn.dc?.addEventListener("open", sendGreeting as any);
+        } catch {}
+      }
     } catch (e) {
       console.error("음성 연결 실패:", e);
     }
@@ -395,6 +580,7 @@ export default function MobileChat() {
     } catch {}
     setVoiceConn(null);
     setIsRecording(false);
+    setDidGreet(false);
   };
 
   // 시험 주제 목록 (영/한)
@@ -638,6 +824,7 @@ export default function MobileChat() {
     if (!lastBot && !lastUsr) return;
     try {
       setSuggestLoading(true);
+      setNewMessage("");
       const question = (lastBot || lastUsr || "").trim();
       const tail = messages
         .slice(-5)
@@ -902,43 +1089,11 @@ export default function MobileChat() {
           </div>
         ) : (
           messages.map((message) => (
-            <div
+            <CardForChattingMessageWithTranslation
               key={message.id}
-              className={`flex ${message.sender === "user" ? "justify-end" : "justify-start"}`}
-            >
-              <div
-                className={`max-w-[80%] px-3 py-2 rounded-lg ${message.sender === "user" ? "bg-indigo-500 text-white" : "bg-white border border-gray-200 text-gray-900"}`}
-              >
-                <p className="text-sm leading-relaxed whitespace-pre-wrap">
-                  {message.message}
-                </p>
-                <div className="mt-1 flex items-center justify-between">
-                  <p
-                    className={`text-xs ${message.sender === "user" ? "text-indigo-100" : "text-gray-500"}`}
-                  >
-                    {message.timestamp}
-                  </p>
-                  {message.sender !== "user" && (
-                    <div className="flex items-center space-x-2 ml-3">
-                      <button
-                        onClick={() => openModelAnswers(message.message)}
-                        className="text-xs px-2 py-0.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-50"
-                        title="답변 예시 보기"
-                      >
-                        답변 예시
-                      </button>
-                      <button
-                        onClick={() => openTranslation(message.message)}
-                        className="text-xs p-1 rounded border border-green-300 text-green-600 hover:bg-green-50"
-                        title="번역하기"
-                      >
-                        <ArrowsRightLeftIcon className="h-3 w-3" />
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
+              message={message}
+              isUser={message.sender === "user"}
+            />
           ))
         )}
         <div ref={messagesEndRef} />
@@ -972,13 +1127,7 @@ export default function MobileChat() {
                     isIMEComposing ||
                     anyEvt?.isComposing ||
                     anyEvt?.keyCode === 229;
-                  if (
-                    e.key === "Enter" &&
-                    !e.shiftKey &&
-                    !composing &&
-                    !examSending &&
-                    !suggestLoading
-                  ) {
+                  if (e.key === "Enter" && !e.shiftKey && !composing) {
                     e.preventDefault();
                     handleSendMessage();
                   }
@@ -1002,7 +1151,7 @@ export default function MobileChat() {
               {/* 전송 버튼 */}
               <Button
                 onClick={handleSendMessage}
-                disabled={!newMessage.trim() || examSending || suggestLoading}
+                disabled={!newMessage.trim()}
                 size="sm"
                 className="px-3"
               >
