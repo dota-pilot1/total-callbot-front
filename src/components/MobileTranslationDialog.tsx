@@ -95,12 +95,23 @@ export default function MobileTranslationDialog({
 
       // 백엔드에서 OpenAI API 키 받기
       const token = localStorage.getItem("accessToken");
+      alert(`토큰: ${token ? "있음" : "없음"}`);
+
       const keyResponse = await fetch("/api/config/openai-key", {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
       });
+
+      alert(`API 응답 상태: ${keyResponse.status} ${keyResponse.statusText}`);
+
+      if (!keyResponse.ok) {
+        const errorText = await keyResponse.text();
+        alert(`API 에러 응답: ${errorText.substring(0, 200)}`);
+        throw new Error(`API 요청 실패: ${keyResponse.status}`);
+      }
+
       const { key } = await keyResponse.json();
 
       // OpenAI TTS API 직접 호출
