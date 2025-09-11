@@ -103,7 +103,7 @@ export default function MobileChat() {
   const [noiseSuppression, setNoiseSuppression] = useState(true);
   const [autoGainControl, setAutoGainControl] = useState(false);
   const [coalesceDelayMs, setCoalesceDelayMs] = useState(800);
-  const [responseDelayMs, setResponseDelayMs] = useState(2000); // 기본값 2초
+  const [responseDelayMs, setResponseDelayMs] = useState(3000); // 기본값 3초
   const [debugEvents, setDebugEvents] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [examSending, setExamSending] = useState(false);
@@ -232,12 +232,12 @@ export default function MobileChat() {
       console.error("Realtime 텍스트 전송 실패:", e);
     }
 
-    // 시뮬레이션 응답 - 약간의 딜레이로 안전하게 처리
+    // 시뮬레이션 응답 - 간단한 setTimeout으로 처리
     setTimeout(() => {
       const botResponse = {
-        id: Date.now() + 1, // 고유 ID 사용
+        id: Date.now() + 1,
         sender: "callbot" as const,
-        message: `"${messageContent}"에 대해 답변드리겠습니다. 백엔드 개발 관점에서 도움을 드릴 수 있습니다.`,
+        message: `"${messageContent}"에 대해 답변드리겠습니다.`,
         timestamp: new Date().toLocaleTimeString("ko-KR", {
           hour: "2-digit",
           minute: "2-digit",
@@ -245,7 +245,7 @@ export default function MobileChat() {
         type: "text" as const,
       };
       setMessages((prev) => [...prev, botResponse]);
-    }, responseDelayMs); // 설정된 응답 딜레이 사용
+    }, responseDelayMs);
   };
 
   // toggleConnection 함수 제거됨 - 더 이상 사용하지 않음
@@ -1072,6 +1072,8 @@ Please suggest an appropriate question or response that:
         open={translationOpen}
         onClose={() => setTranslationOpen(false)}
         text={translationText}
+        onInsertText={(text: string) => setNewMessage(text)}
+        onClearInput={() => setNewMessage("")}
       />
     </div>
   );

@@ -1,12 +1,20 @@
-import { useState, useEffect } from 'react';
-import { Dialog } from '@headlessui/react';
-import { XMarkIcon, ArrowsRightLeftIcon } from '@heroicons/react/24/outline';
-import { examApi } from '../features/exam/api/exam';
+import { useState, useEffect, useRef } from "react";
+import { Dialog } from "@headlessui/react";
+import {
+  XMarkIcon,
+  ArrowsRightLeftIcon,
+  PlayIcon,
+  PauseIcon,
+  DocumentTextIcon,
+} from "@heroicons/react/24/outline";
+import { examApi } from "../features/exam/api/exam";
 
 interface MobileTranslationDialogProps {
   open: boolean;
   onClose: () => void;
   text: string;
+  onInsertText?: (text: string) => void; // 텍스트를 인풋에 삽입하는 함수
+  onClearInput?: () => void; // 인풋을 초기화하는 함수
 }
 
 interface TranslationResponse {
@@ -15,14 +23,21 @@ interface TranslationResponse {
   language: string;
 }
 
-export default function MobileTranslationDialog({ 
-  open, 
-  onClose, 
-  text 
+export default function MobileTranslationDialog({
+  open,
+  onClose,
+  text,
+  onInsertText,
+  onClearInput,
 }: MobileTranslationDialogProps) {
   const [loading, setLoading] = useState(false);
-  const [translation, setTranslation] = useState<TranslationResponse | null>(null);
-  const [error, setError] = useState<string>('');
+  const [translation, setTranslation] = useState<TranslationResponse | null>(
+    null,
+  );
+  const [error, setError] = useState<string>("");
+  const [playingOriginal, setPlayingOriginal] = useState(false);
+  const [playingTranslation, setPlayingTranslation] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   // 다이얼로그가 열릴 때 번역 요청
   useEffect(() => {
@@ -31,11 +46,119 @@ export default function MobileTranslationDialog({
     }
   }, [open, text]);
 
+  // TTS 기능 (OpenAI TTS API 직접 호출)
+  const playText = async (text: string, isOriginal: boolean) => {
+    try {
+      // 이전 오디오 중지
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+      }
+
+      // 플레이 상태 설정
+      if (isOriginal) {
+        setPlayingOriginal(true);
+      } else {
+        setPlayingTranslation(true);
+      }
+
+      // 백엔드에서 OpenAI API 키 받기
+      const token = localStorage.getItem("accessToken");
+      const keyResponse = await fetch(
+        "http://localhost:8080/api/config/openai-key",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        },
+      );
+      const { key } = await keyResponse.json();
+
+      // OpenAI TTS API 직접 호출
+      const ttsResponse = await fetch(
+        "https://api.openai.com/v1/audio/speech",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${key}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "tts-1",
+            input: text,
+            voice: isOriginal ? "alloy" : "nova",
+            speed: 1.0,
+          }),
+        },
+      );
+
+      if (ttsResponse.ok) {
+        const audioBlob = await ttsResponse.blob();
+        const audioUrl = URL.createObjectURL(audioBlob);
+
+        // 새로운 오디오 객체 생성
+        audioRef.current = new Audio(audioUrl);
+
+        // 오디오 이벤트 핸들러
+        audioRef.current.onended = () => {
+          if (isOriginal) {
+            setPlayingOriginal(false);
+          } else {
+            setPlayingTranslation(false);
+          }
+          URL.revokeObjectURL(audioUrl); // 메모리 정리
+        };
+
+        audioRef.current.onerror = () => {
+          if (isOriginal) {
+            setPlayingOriginal(false);
+          } else {
+            setPlayingTranslation(false);
+          }
+          URL.revokeObjectURL(audioUrl);
+          console.error("Audio playback failed");
+        };
+
+        // 오디오 재생
+        await audioRef.current.play();
+      } else {
+        throw new Error(`TTS API request failed: ${ttsResponse.status}`);
+      }
+    } catch (error) {
+      console.error("TTS API failed:", error);
+      // 에러 시 상태 리셋
+      if (isOriginal) {
+        setPlayingOriginal(false);
+      } else {
+        setPlayingTranslation(false);
+      }
+    }
+  };
+
+  // 음성 중지
+  const stopSpeech = () => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+    setPlayingOriginal(false);
+    setPlayingTranslation(false);
+  };
+
+  // 텍스트 입력
+  const insertText = (textToInsert: string) => {
+    if (onInsertText) {
+      onInsertText(textToInsert);
+      onClose();
+    }
+  };
+
   const requestTranslation = async (textToTranslate: string) => {
     if (!textToTranslate || loading) return;
-    
+
     setLoading(true);
-    setError('');
+    setError("");
     setTranslation(null);
 
     try {
@@ -51,35 +174,35 @@ Please respond in this exact JSON format:
   "language": "detected language (English/Korean/etc)"
 }`;
 
-      const response = await examApi.getSampleAnswers({ 
-        question: prompt, 
-        topic: 'translation', 
-        level: 'intermediate', 
+      const response = await examApi.getSampleAnswers({
+        question: prompt,
+        topic: "translation",
+        level: "intermediate",
         count: 1,
-        englishOnly: false 
+        englishOnly: false,
       });
 
-      const result = response.samples?.[0]?.text || '';
-      
+      const result = response.samples?.[0]?.text || "";
+
       try {
         // JSON 파싱 시도
         const parsedResult = JSON.parse(result);
         setTranslation({
           original: parsedResult.original || textToTranslate,
-          translation: parsedResult.translation || '번역을 생성할 수 없습니다.',
-          language: parsedResult.language || 'Unknown'
+          translation: parsedResult.translation || "번역을 생성할 수 없습니다.",
+          language: parsedResult.language || "Unknown",
         });
       } catch (parseError) {
         // JSON 파싱 실패 시 간단한 처리
         setTranslation({
           original: textToTranslate,
-          translation: result || '번역을 생성할 수 없습니다.',
-          language: 'Unknown'
+          translation: result || "번역을 생성할 수 없습니다.",
+          language: "Unknown",
         });
       }
     } catch (err) {
-      console.error('Translation request failed:', err);
-      setError('번역 요청에 실패했습니다. 다시 시도해주세요.');
+      console.error("Translation request failed:", err);
+      setError("번역 요청에 실패했습니다. 다시 시도해주세요.");
     } finally {
       setLoading(false);
     }
@@ -89,7 +212,7 @@ Please respond in this exact JSON format:
     <Dialog open={open} onClose={onClose} className="relative z-50">
       {/* 배경 오버레이 */}
       <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
-      
+
       {/* 다이얼로그 컨테이너 */}
       <div className="fixed inset-0 flex items-center justify-center p-4">
         <Dialog.Panel className="mx-auto max-w-lg w-full bg-white rounded-lg shadow-xl">
@@ -130,24 +253,85 @@ Please respond in this exact JSON format:
             ) : translation ? (
               <div className="space-y-4">
                 {/* 원문 */}
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-2">
+                <div className="bg-gray-50 rounded-lg p-4 relative overflow-hidden">
+                  <div className="mb-2">
                     <h3 className="text-sm font-medium text-gray-700">원문</h3>
-                    <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
-                      {translation.language}
-                    </span>
                   </div>
-                  <p className="text-gray-900 leading-relaxed">
+                  <p className="text-gray-900 leading-relaxed pr-20">
                     {translation.original}
                   </p>
+
+                  {/* 우측 상단 버튼들 */}
+                  <div
+                    className="absolute top-2 right-2 flex space-x-1"
+                    style={{ zIndex: 50 }}
+                  >
+                    <button
+                      onClick={() =>
+                        playingOriginal
+                          ? stopSpeech()
+                          : playText(translation.original, true)
+                      }
+                      className="p-2 rounded-full bg-white shadow-lg hover:shadow-xl transition-all duration-200 border border-gray-300"
+                      style={{ zIndex: 51 }}
+                      title={playingOriginal ? "재생 중지" : "원문 읽기"}
+                    >
+                      {playingOriginal ? (
+                        <PauseIcon className="h-4 w-4 text-red-500" />
+                      ) : (
+                        <PlayIcon className="h-4 w-4 text-blue-500" />
+                      )}
+                    </button>
+                    <button
+                      onClick={() => insertText(translation.original)}
+                      className="p-2 rounded-full bg-white shadow-lg hover:shadow-xl transition-all duration-200 border border-gray-300"
+                      style={{ zIndex: 51 }}
+                      title="원문 입력"
+                    >
+                      <DocumentTextIcon className="h-4 w-4 text-green-500" />
+                    </button>
+                  </div>
                 </div>
 
                 {/* 번역 */}
-                <div className="bg-blue-50 rounded-lg p-4">
-                  <h3 className="text-sm font-medium text-blue-700 mb-2">번역</h3>
-                  <p className="text-blue-900 leading-relaxed">
+                <div className="bg-blue-50 rounded-lg p-4 relative overflow-hidden">
+                  <h3 className="text-sm font-medium text-blue-700 mb-2">
+                    번역
+                  </h3>
+                  <p className="text-blue-900 leading-relaxed pr-20">
                     {translation.translation}
                   </p>
+
+                  {/* 우측 상단 버튼들 */}
+                  <div
+                    className="absolute top-2 right-2 flex space-x-1"
+                    style={{ zIndex: 50 }}
+                  >
+                    <button
+                      onClick={() =>
+                        playingTranslation
+                          ? stopSpeech()
+                          : playText(translation.translation, false)
+                      }
+                      className="p-2 rounded-full bg-white shadow-lg hover:shadow-xl transition-all duration-200 border border-gray-300"
+                      style={{ zIndex: 51 }}
+                      title={playingTranslation ? "재생 중지" : "번역문 읽기"}
+                    >
+                      {playingTranslation ? (
+                        <PauseIcon className="h-4 w-4 text-red-500" />
+                      ) : (
+                        <PlayIcon className="h-4 w-4 text-blue-500" />
+                      )}
+                    </button>
+                    <button
+                      onClick={() => insertText(translation.translation)}
+                      className="p-2 rounded-full bg-white shadow-lg hover:shadow-xl transition-all duration-200 border border-gray-300"
+                      style={{ zIndex: 51 }}
+                      title="번역문 입력"
+                    >
+                      <DocumentTextIcon className="h-4 w-4 text-green-500" />
+                    </button>
+                  </div>
                 </div>
               </div>
             ) : (
