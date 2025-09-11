@@ -1,5 +1,5 @@
-import { motion, AnimatePresence } from 'framer-motion';
-import { XMarkIcon } from '@heroicons/react/24/outline';
+import { motion, AnimatePresence } from "framer-motion";
+import { XMarkIcon } from "@heroicons/react/24/outline";
 
 interface MobileSettingsDropdownProps {
   isOpen: boolean;
@@ -23,6 +23,8 @@ interface MobileSettingsDropdownProps {
   onAutoGainControlChange: (enabled: boolean) => void;
   coalesceDelayMs: number;
   onCoalesceDelayChange: (ms: number) => void;
+  responseDelayMs: number;
+  onResponseDelayChange: (ms: number) => void;
   debugEvents: boolean;
   onDebugEventsChange: (enabled: boolean) => void;
   onClearChat: () => void;
@@ -49,24 +51,27 @@ export default function MobileSettingsDropdown({
   onAutoGainControlChange,
   coalesceDelayMs,
   onCoalesceDelayChange,
+  responseDelayMs,
+  onResponseDelayChange,
   debugEvents: _debugEvents,
   onDebugEventsChange: _onDebugEventsChange,
   onClearChat: _onClearChat,
 }: MobileSettingsDropdownProps) {
   // 토글 스위치 컴포넌트
-  const ToggleSwitch = ({ 
-    enabled, 
-    onChange, 
-    size = 'normal' 
-  }: { 
-    enabled: boolean; 
+  const ToggleSwitch = ({
+    enabled,
+    onChange,
+    size = "normal",
+  }: {
+    enabled: boolean;
     onChange: (enabled: boolean) => void;
-    size?: 'small' | 'normal';
+    size?: "small" | "normal";
   }) => {
-    const switchSize = size === 'small' ? 'h-5 w-9' : 'h-6 w-11';
-    const circleSize = size === 'small' ? 'h-3 w-3' : 'h-4 w-4';
-    const translateDistance = size === 'small' ? 'translate-x-5' : 'translate-x-6';
-    
+    const switchSize = size === "small" ? "h-5 w-9" : "h-6 w-11";
+    const circleSize = size === "small" ? "h-3 w-3" : "h-4 w-4";
+    const translateDistance =
+      size === "small" ? "translate-x-5" : "translate-x-6";
+
     return (
       <button
         onClick={() => onChange(!enabled)}
@@ -96,17 +101,17 @@ export default function MobileSettingsDropdown({
             className="fixed inset-0 bg-black bg-opacity-25 z-40"
             onClick={onClose}
           />
-          
+
           {/* 설정 드롭다운 패널 */}
           <motion.div
-            initial={{ y: '-100%', opacity: 0 }}
+            initial={{ y: "-100%", opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            exit={{ y: '-100%', opacity: 0 }}
-            transition={{ 
+            exit={{ y: "-100%", opacity: 0 }}
+            transition={{
               type: "spring",
               damping: 25,
               stiffness: 200,
-              duration: 0.3
+              duration: 0.3,
             }}
             className="fixed top-0 left-0 right-0 bg-white shadow-lg z-50 max-h-[80vh] overflow-y-auto"
           >
@@ -120,7 +125,7 @@ export default function MobileSettingsDropdown({
                 <XMarkIcon className="h-5 w-5 text-gray-600" />
               </button>
             </div>
-            
+
             {/* 설정 내용 */}
             <div className="p-4 space-y-6">
               {/* 캐릭터 선택 */}
@@ -136,12 +141,14 @@ export default function MobileSettingsDropdown({
                         key={c.id}
                         onClick={() => onSelectCharacter(c.id)}
                         className={`flex flex-col items-center justify-center rounded-md border text-xs py-2 ${
-                          selected ? 'border-indigo-500 bg-indigo-50 text-indigo-700' : 'border-gray-300 bg-gray-50 text-gray-700'
+                          selected
+                            ? "border-indigo-500 bg-indigo-50 text-indigo-700"
+                            : "border-gray-300 bg-gray-50 text-gray-700"
                         }`}
-                        style={{ aspectRatio: '1 / 1' }}
+                        style={{ aspectRatio: "1 / 1" }}
                         title={c.name}
                       >
-                        <div className="text-lg mb-1">{c.emoji || '🤖'}</div>
+                        <div className="text-lg mb-1">{c.emoji || "🤖"}</div>
                         <div className="truncate max-w-[3.2rem]">{c.name}</div>
                       </button>
                     );
@@ -176,7 +183,7 @@ export default function MobileSettingsDropdown({
               <div className="space-y-2">
                 <h4 className="text-md font-medium text-gray-900 border-b border-gray-100 pb-ㅂ">
                   인식 언어
-                </h4>                
+                </h4>
 
                 {/* 언어 설정 */}
                 <div className="flex items-center justify-between">
@@ -206,7 +213,7 @@ export default function MobileSettingsDropdown({
                 <h4 className="text-md font-medium text-gray-900 border-b border-gray-100 pb-2">
                   🔊 오디오 최적화
                 </h4>
-                
+
                 {[
                   {
                     key: "echo",
@@ -230,10 +237,17 @@ export default function MobileSettingsDropdown({
                     onChange: onAutoGainControlChange,
                   },
                 ].map((setting) => (
-                  <div key={setting.key} className="flex items-center justify-between py-2">
+                  <div
+                    key={setting.key}
+                    className="flex items-center justify-between py-2"
+                  >
                     <div className="flex-1">
-                      <div className="font-medium text-gray-900">{setting.label}</div>
-                      <div className="text-sm text-gray-600">{setting.description}</div>
+                      <div className="font-medium text-gray-900">
+                        {setting.label}
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        {setting.description}
+                      </div>
                     </div>
                     <ToggleSwitch
                       enabled={setting.value}
@@ -245,16 +259,20 @@ export default function MobileSettingsDropdown({
               </div>
 
               {/* 고급 설정 */}
-              <div className="space-y-4">
+              <div className="space-y-4 bg-white">
                 <h4 className="text-md font-medium text-gray-900 border-b border-gray-100 pb-2">
                   ⚙️ 고급 설정
                 </h4>
-                
+
                 {/* 문장 병합 지연 */}
                 <div className="flex items-center justify-between py-2">
                   <div className="flex-1">
-                    <div className="font-medium text-gray-900">응답 지연시간</div>
-                    <div className="text-sm text-gray-600">음성 인식 후 응답까지의 지연시간</div>
+                    <div className="font-medium text-gray-900">
+                      음성 응답 지연시간
+                    </div>
+                    <div className="text-sm text-gray-600">
+                      음성 인식 후 응답까지의 지연시간
+                    </div>
                   </div>
                   <div className="flex items-center space-x-2">
                     <input
@@ -263,16 +281,45 @@ export default function MobileSettingsDropdown({
                       max="2000"
                       step="100"
                       value={coalesceDelayMs}
-                      onChange={(e) => onCoalesceDelayChange(Number(e.target.value))}
+                      onChange={(e) =>
+                        onCoalesceDelayChange(Number(e.target.value))
+                      }
                       className="w-20"
                     />
-                    <span className="text-sm text-gray-600 w-12">{coalesceDelayMs}ms</span>
+                    <span className="text-sm text-gray-600 w-12">
+                      {coalesceDelayMs}ms
+                    </span>
                   </div>
                 </div>
 
+                {/* 채팅 응답 지연 */}
+                <div className="flex items-center justify-between py-2">
+                  <div className="flex-1">
+                    <div className="font-medium text-gray-900">
+                      채팅 응답 속도
+                    </div>
+                    <div className="text-sm text-gray-600">
+                      텍스트 채팅 응답이 나타나는 지연시간
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="range"
+                      min="500"
+                      max="5000"
+                      step="500"
+                      value={responseDelayMs}
+                      onChange={(e) =>
+                        onResponseDelayChange(Number(e.target.value))
+                      }
+                      className="w-20"
+                    />
+                    <span className="text-sm text-gray-600 w-12">
+                      {responseDelayMs}ms
+                    </span>
+                  </div>
+                </div>
               </div>
-
-
 
               {/* 하단 여백 */}
               <div className="h-4" />

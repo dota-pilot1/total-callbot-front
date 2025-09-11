@@ -103,6 +103,7 @@ export default function MobileChat() {
   const [noiseSuppression, setNoiseSuppression] = useState(true);
   const [autoGainControl, setAutoGainControl] = useState(false);
   const [coalesceDelayMs, setCoalesceDelayMs] = useState(800);
+  const [responseDelayMs, setResponseDelayMs] = useState(2000); // 기본값 2초
   const [debugEvents, setDebugEvents] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [examSending, setExamSending] = useState(false);
@@ -189,7 +190,7 @@ export default function MobileChat() {
     setNewMessage("");
 
     const userMessage = {
-      id: messages.length + 1,
+      id: Date.now(), // 고유 ID 사용
       sender: "user" as const,
       message: normalizeText(messageContent),
       timestamp: new Date().toLocaleTimeString("ko-KR", {
@@ -199,6 +200,7 @@ export default function MobileChat() {
       type: "text" as const,
     };
 
+    // 사용자 메시지를 먼저 추가
     setMessages((prev) => [...prev, userMessage]);
 
     // 실시간 음성 연결이 있으면 전송
@@ -230,10 +232,10 @@ export default function MobileChat() {
       console.error("Realtime 텍스트 전송 실패:", e);
     }
 
-    // 시뮬레이션 응답
+    // 시뮬레이션 응답 - 약간의 딜레이로 안전하게 처리
     setTimeout(() => {
       const botResponse = {
-        id: messages.length + 2,
+        id: Date.now() + 1, // 고유 ID 사용
         sender: "callbot" as const,
         message: `"${messageContent}"에 대해 답변드리겠습니다. 백엔드 개발 관점에서 도움을 드릴 수 있습니다.`,
         timestamp: new Date().toLocaleTimeString("ko-KR", {
@@ -243,7 +245,7 @@ export default function MobileChat() {
         type: "text" as const,
       };
       setMessages((prev) => [...prev, botResponse]);
-    }, 1000);
+    }, responseDelayMs); // 설정된 응답 딜레이 사용
   };
 
   // toggleConnection 함수 제거됨 - 더 이상 사용하지 않음
@@ -294,14 +296,17 @@ export default function MobileChat() {
           if (isRespondingRef.current) return; // 어시스턴트 발화 중 전사 무시
           if (isFinal) {
             const finalText = normalizeText(text.trim());
-            if (
-              finalText &&
-              finalText !== normalizeText(lastUserFinalRef.current)
-            ) {
+            console.log("[음성 디버그] 최종 텍스트:", finalText);
+            console.log("[음성 디버그] 이전 텍스트:", lastUserFinalRef.current);
+
+            // 텍스트가 있으면 무조건 추가 (중복 체크 완화)
+            if (finalText && finalText.length > 0) {
+              console.log("[음성 디버그] 사용자 메시지 추가 중:", finalText);
+              // 사용자 메시지를 즉시 추가
               setMessages((prev) => [
                 ...prev,
                 {
-                  id: prev.length + 1,
+                  id: Date.now(),
                   sender: "user" as const,
                   message: finalText,
                   timestamp: new Date().toLocaleTimeString("ko-KR", {
@@ -311,7 +316,10 @@ export default function MobileChat() {
                   type: "text" as const,
                 },
               ]);
+              console.log("[음성 디버그] 메시지 배열에 추가 완료");
               lastUserFinalRef.current = finalText;
+            } else {
+              console.log("[음성 디버그] 텍스트가 비어있어서 스킵");
             }
           }
         },
@@ -1014,6 +1022,8 @@ Please suggest an appropriate question or response that:
         onAutoGainControlChange={setAutoGainControl}
         coalesceDelayMs={coalesceDelayMs}
         onCoalesceDelayChange={setCoalesceDelayMs}
+        responseDelayMs={responseDelayMs}
+        onResponseDelayChange={setResponseDelayMs}
         debugEvents={debugEvents}
         onDebugEventsChange={setDebugEvents}
         onClearChat={handleClearChat}
