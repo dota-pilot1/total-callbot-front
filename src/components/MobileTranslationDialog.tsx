@@ -95,15 +95,12 @@ export default function MobileTranslationDialog({
 
       // 백엔드에서 OpenAI API 키 받기
       const token = localStorage.getItem("accessToken");
-      const keyResponse = await fetch(
-        "http://localhost:8080/api/config/openai-key",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
+      const keyResponse = await fetch("/api/config/openai-key", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
         },
-      );
+      });
       const { key } = await keyResponse.json();
 
       // OpenAI TTS API 직접 호출
