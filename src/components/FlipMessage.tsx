@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { examApi } from "../features/exam/api/exam";
+import { examApi } from "../features/chatbot/exam/api/exam";
 
 interface FlipMessageProps {
   message: {

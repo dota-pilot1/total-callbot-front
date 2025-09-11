@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { chatApi } from '../api/chat';
-import type { ChatRoom, ChatMessage } from '../../../shared/api/chat-types';
+import type { ChatRoom, ChatMessage } from '../../../../shared/api/chat-types';
 
 interface ChatState {
   chatRooms: ChatRoom[];

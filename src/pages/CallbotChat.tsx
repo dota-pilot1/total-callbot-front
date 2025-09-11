@@ -4,7 +4,7 @@ import { useAuthStore } from "../features/auth";
 import { Button } from "../components/ui";
 import Sidebar from "../components/Sidebar";
 import ChatSettingsPanel from "../components/ChatSettingsPanel";
-import { chatApi } from "../features/chat/api/chat";
+import { chatApi } from "../features/chatbot/messaging/api/chat";
 import type { ChatRoom } from "../shared/api/chat-types";
 import {
   MicrophoneIcon,
@@ -34,11 +34,11 @@ import {
 import {
   MicrophoneIcon as MicrophoneIconSolid,
 } from "@heroicons/react/24/solid";
-import { voiceApi } from "../features/voice/api/voice";
+import { voiceApi } from "../features/chatbot/voice/api/voice";
 import {
   connectRealtimeVoice,
   type VoiceConnection,
-} from "../features/voice/lib/realtime";
+} from "../features/chatbot/voice/lib/realtime";
 import VoicePulse from "../components/VoicePulse";
 
 // 통일된 음성 보이스 (3종 중 기본값)

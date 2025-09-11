@@ -1,11 +1,10 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useChatStore } from '../features/chat/model/chatStore';
-import { ChevronLeftIcon } from '@heroicons/react/24/outline';
-import { categories } from './data/categories';
-import { chatbots } from './data/chatbots';
-
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
+import { useChatStore } from "../features/chatbot/messaging/model/chatStore";
+import { ChevronLeftIcon } from "@heroicons/react/24/outline";
+import { categories } from "./data/categories";
+import { chatbots } from "./data/chatbots";
 
 interface SidebarProps {
   collapsed: boolean;
@@ -25,19 +24,20 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
       setOpenCategories([categoryId]); // 해당 카테고리만 열기
       return;
     }
-    
+
     // 펼쳐진 상태에서는 클릭한 카테고리만 열리고 나머지는 닫기
-    setOpenCategories(prev => 
-      prev.includes(categoryId) 
-        ? [] // 이미 열린 카테고리를 클릭하면 모두 닫기
-        : [categoryId] // 새로운 카테고리만 열기
+    setOpenCategories(
+      (prev) =>
+        prev.includes(categoryId)
+          ? [] // 이미 열린 카테고리를 클릭하면 모두 닫기
+          : [categoryId], // 새로운 카테고리만 열기
     );
     // 카테고리는 단순 토글 역할만 함 - 봇 선택 상태는 유지
   };
 
-  const groupedChatbots = categories.map(category => ({
+  const groupedChatbots = categories.map((category) => ({
     ...category,
-    bots: chatbots.filter(bot => bot.category === category.id)
+    bots: chatbots.filter((bot) => bot.category === category.id),
   }));
 
   return (
@@ -62,8 +62,8 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
             </motion.div>
           )}
         </AnimatePresence>
-        
-        <button 
+
+        <button
           onClick={onToggle}
           className="p-1 rounded-md hover:bg-gray-100 transition-colors"
         >
@@ -79,7 +79,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
             <div className="space-y-2">
               {categories.map((category) => {
                 const CategoryIcon = category.icon;
-                
+
                 return (
                   <button
                     key={category.id}
@@ -90,7 +90,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                     className="relative group flex items-center justify-center w-full px-3 py-3 rounded-lg transition-all duration-200 text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                   >
                     <CategoryIcon className="h-5 w-5 flex-shrink-0 text-gray-500" />
-                    
+
                     {/* 간단한 카테고리 툴팁 */}
                     <div className="absolute left-full ml-3 px-3 py-2 bg-gray-900 text-white text-sm rounded-md shadow-xl opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none whitespace-nowrap z-[99999] top-1/2 transform -translate-y-1/2">
                       {category.name} - {category.description}
@@ -108,32 +108,38 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
               const isOpen = openCategories.includes(category.id);
               // 카테고리 하이라이트 효과 완전 제거
               const shouldHighlight = false;
-              
+
               return (
                 <div key={category.id}>
                   {/* 카테고리 헤더 */}
-                  <motion.button 
+                  <motion.button
                     onClick={() => toggleCategory(category.id)}
                     className={`flex items-center justify-between w-full px-3 py-2 text-left text-sm font-medium rounded-lg hover:bg-gray-100 transition-colors relative group ${
-                      shouldHighlight 
-                        ? 'bg-indigo-100 text-indigo-700' 
-                        : 'text-gray-700'
+                      shouldHighlight
+                        ? "bg-indigo-100 text-indigo-700"
+                        : "text-gray-700"
                     }`}
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                   >
                     <div className="flex items-center space-x-3 w-full">
-                      <CategoryIcon className={`h-5 w-5 flex-shrink-0 ${
-                        shouldHighlight ? 'text-indigo-600' : 'text-gray-500'
-                      }`} />
+                      <CategoryIcon
+                        className={`h-5 w-5 flex-shrink-0 ${
+                          shouldHighlight ? "text-indigo-600" : "text-gray-500"
+                        }`}
+                      />
                       <span className="truncate flex-1">{category.name}</span>
-                      <span className={`text-xs px-2 py-0.5 rounded-full ${
-                        shouldHighlight ? 'text-indigo-700 bg-indigo-100' : 'text-gray-400 bg-gray-100'
-                      }`}>
+                      <span
+                        className={`text-xs px-2 py-0.5 rounded-full ${
+                          shouldHighlight
+                            ? "text-indigo-700 bg-indigo-100"
+                            : "text-gray-400 bg-gray-100"
+                        }`}
+                      >
                         {category.bots.length}
                       </span>
                     </div>
-                    
+
                     {/* 간단한 텍스트 툴팁 */}
                     <div className="absolute left-full ml-3 px-3 py-2 bg-gray-900 text-white text-sm rounded-md shadow-xl opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none whitespace-nowrap z-[99999] top-1/2 transform -translate-y-1/2">
                       {category.description}
@@ -155,36 +161,36 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                         {category.bots.map((bot) => {
                           const BotIcon = bot.icon;
                           const isActive = selectedBot === bot.id;
-                          
+
                           const handleBotClick = (e: React.MouseEvent) => {
                             e.preventDefault();
                             e.stopPropagation();
-                            
+
                             // 봇 선택 및 채팅 페이지로 이동
                             setSelectedBot(bot.id);
-                            navigate(`/chat/bot/${bot.id}`, { 
-                              state: { 
+                            navigate(`/chat/bot/${bot.id}`, {
+                              state: {
                                 chatbot: {
                                   ...bot,
-                                  icon: undefined // 컴포넌트 아이콘 제외
-                                }
-                              } 
+                                  icon: undefined, // 컴포넌트 아이콘 제외
+                                },
+                              },
                             });
                           };
-                          
+
                           return (
                             <button
                               key={bot.id}
                               onClick={handleBotClick}
                               className={`relative group flex items-center space-x-3 w-full px-3 py-2 text-sm rounded-md transition-all duration-200 text-left ${
                                 isActive
-                                  ? 'bg-blue-200 text-blue-900 font-bold border-2 border-blue-400'
-                                  : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                                  ? "bg-blue-200 text-blue-900 font-bold border-2 border-blue-400"
+                                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                               }`}
                             >
                               <BotIcon className="h-4 w-4 flex-shrink-0" />
                               <span className="truncate">{bot.name}</span>
-                              
+
                               {/* 간단한 봇 툴팁 */}
                               <div className="absolute left-full ml-3 px-3 py-2 bg-gray-900 text-white text-sm rounded-md shadow-xl opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none whitespace-nowrap z-[99999] top-1/2 transform -translate-y-1/2">
                                 {bot.description}

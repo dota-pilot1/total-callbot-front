@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useAuthStore } from "../features/auth";
 import { Button } from "../components/ui";
-import { chatApi } from "../features/chat/api/chat";
+import { chatApi } from "../features/chatbot/messaging/api/chat";
 import {
   PaperAirplaneIcon,
   TrashIcon,
@@ -11,20 +11,25 @@ import {
   LanguageIcon,
 } from "@heroicons/react/24/outline";
 // no solid icons needed currently
-import { voiceApi } from "../features/voice/api/voice";
+import { voiceApi } from "../features/chatbot/voice/api/voice";
 import {
   connectRealtimeVoice,
   type VoiceConnection,
-} from "../features/voice/lib/realtime";
+} from "../features/chatbot/voice/lib/realtime";
 import VoicePulse from "../components/VoicePulse";
 import MobileSettingsDropdown from "../components/MobileSettingsDropdown";
-import { examApi } from "../features/exam/api/exam";
+import { examApi } from "../features/chatbot/exam/api/exam";
 
 import MobileCharacterDialog from "../components/MobileCharacterDialog";
-import { CHARACTER_LIST } from "../features/character/characters";
-import { useCharacterStore } from "../features/character/store";
+import { CHARACTER_LIST } from "../features/chatbot/character/characters";
+import {
+  useCharacterStore,
+  CHARACTER_PRESETS,
+  VOICE_OPTIONS,
+} from "../features/chatbot/character";
 import MobileTranslationDialog from "../components/MobileTranslationDialog";
 import CardForChattingMessageWithTranslation from "../components/CardForChattingMessageWithTranslation";
+import { getRandomExamTopic, buildExamPrompt } from "../features/chatbot/exam";
 
 export default function MobileChat() {
   const { logout, getUser } = useAuthStore();
@@ -47,32 +52,6 @@ export default function MobileChat() {
     description: "AI 음성 대화 전문 어시스턴트",
     color: "from-indigo-500 to-purple-600",
   };
-
-  // 캐릭터/목소리 프리셋 (목소리만 선택 가능)
-  const CHARACTER_PRESETS = [
-    {
-      id: "buddy",
-      name: "버디",
-      emoji: "🤖",
-      color: "from-indigo-500 to-purple-600",
-      defaultVoice: "verse",
-    },
-    {
-      id: "sage",
-      name: "세이지",
-      emoji: "🧠",
-      color: "from-emerald-500 to-teal-600",
-      defaultVoice: "sage",
-    },
-    {
-      id: "spark",
-      name: "스파크",
-      emoji: "⚡️",
-      color: "from-amber-500 to-orange-600",
-      defaultVoice: "alloy",
-    },
-  ] as const;
-  const VOICE_OPTIONS = ["verse", "alloy", "sage"] as const;
 
   // zustand store에서 캐릭터 상태 가져오기
   const {
@@ -395,130 +374,6 @@ export default function MobileChat() {
     setIsRecording(false);
   };
 
-  // 시험 주제 목록 (영/한)
-  const EXAM_TOPICS = [
-    {
-      id: 1,
-      en: "Personal statement & career goals",
-      ko: "개인 소개와 진로 목표",
-    },
-    {
-      id: 2,
-      en: "Job interview (behavioral & technical)",
-      ko: "면접(행동/기술)",
-    },
-    {
-      id: 3,
-      en: "Project explanation & trade-offs",
-      ko: "프로젝트 설명과 트레이드오프",
-    },
-    {
-      id: 4,
-      en: "Technical troubleshooting & root cause",
-      ko: "기술 트러블슈팅과 원인 분석",
-    },
-    {
-      id: 5,
-      en: "Data interpretation (charts/tables)",
-      ko: "데이터 해석(차트/표 설명)",
-    },
-    { id: 6, en: "Product pitch & sales", ko: "제품 피치/세일즈" },
-    { id: 7, en: "Customer support escalation", ko: "고객 지원/에스컬레이션" },
-    { id: 8, en: "Negotiation & compromise", ko: "협상과 타협" },
-    {
-      id: 9,
-      en: "Meeting facilitation & action items",
-      ko: "회의 진행과 액션아이템 정리",
-    },
-    { id: 10, en: "Cross-cultural communication", ko: "다문화 커뮤니케이션" },
-    { id: 11, en: "Ethical dilemma discussion", ko: "윤리적 딜레마 토론" },
-    {
-      id: 12,
-      en: "Crisis communication & apology",
-      ko: "위기 커뮤니케이션/사과",
-    },
-    { id: 13, en: "Email etiquette & drafting", ko: "이메일 에티켓/작성" },
-    { id: 14, en: "Presentation Q&A handling", ko: "발표 질의응답 대응" },
-    { id: 15, en: "Travel & immigration interview", ko: "여행/출입국 인터뷰" },
-    { id: 16, en: "Healthcare/doctor consultation", ko: "병원/의료 상담" },
-    { id: 17, en: "Banking & finance appointment", ko: "은행/금융 상담" },
-    {
-      id: 18,
-      en: "Academic discussion & summarization",
-      ko: "학술 토론과 요약",
-    },
-    { id: 19, en: "News summary & opinion", ko: "뉴스 요약과 의견" },
-    {
-      id: 20,
-      en: "Remote collaboration tools & process",
-      ko: "원격 협업 도구/프로세스",
-    },
-  ] as const;
-
-  // Exam sequence: instruct assistant to run a 5-question quiz and scoring (bilingual questions)
-  const buildExamPrompt = (topic: (typeof EXAM_TOPICS)[number]) => {
-    const header = [
-      `[KO] 이번 시험 주제: ${topic.ko}`,
-      `[EN] Selected topic: ${topic.en}`,
-      "",
-      "[EN] This is an English academy oral placement test. Strict grading applies.",
-      "[KO] 영어학원 입학 구술 시험입니다. 매우 엄격하게 채점합니다.",
-      "[EN] You will receive a total of 5 questions.",
-      "[KO] 총 5문항으로 진행됩니다.",
-      "",
-    ];
-    const format = [
-      "Format / 형식:",
-      "- Ask exactly 5 questions SEQUENTIALLY.",
-      "- Each question MUST be bilingual on two lines: first [EN] then [KO] (clear Korean translation).",
-      "  예:",
-      "  Q1/5:",
-      "  [EN] Describe a time you resolved a conflict in a team.",
-      "  [KO] 팀 내 갈등을 해결했던 경험을 설명해 주세요.",
-      "",
-      '- At the beginning of every question, prefix with "QX/5:" (e.g., "Q1/5:").',
-      "- DO NOT include any evaluation text (e.g., Score/Rationale/feedback) during the questions.",
-      "- After the user answers Q1, send only Q2 (no evaluation). Repeat until Q5 is completed.",
-      "- Keep a clear separation between messages so that a question is never merged with evaluation content.",
-      "",
-      "Level selection / 난이도 선택:",
-      "- BEFORE Q1/5, ask the tester to choose their level among exactly THREE options: Absolute Beginner(완전 초보), Beginner(초보), Intermediate(중급).",
-      "- Wait for their answer; if no reply within 20 seconds, default to Beginner(초보).",
-      "- Confirm the chosen level and ADAPT the question difficulty accordingly (vocabulary/structures/examples).",
-      "",
-    ];
-    const grading = [
-      "Grading / 채점 기준:",
-      "- Scoring is performed ONLY AFTER all 5 answers are received.",
-      "- Provide a final evaluation with per-question scores (1–10 each, no 0) and a total out of 50.",
-      "- Deduct points for grammar errors, pronunciation issues, unnatural phrasing, limited vocabulary, weak content, or poor task response.",
-      "- Criteria: Fluency, Pronunciation, Grammar, Vocabulary range, Comprehension/Task response.",
-      "",
-      "Silence handling / 무응답 처리:",
-      "- If the user provides no answer for 20 seconds, politely move to the next question; mark that question low in the final evaluation.",
-      "- 사용자가 20초 내에 아무 대답도 하지 않으면 정중히 다음 문제로 넘어가고, 최종 평가에서 해당 문항은 낮은 점수로 처리하세요.",
-      "",
-    ];
-    const closing = [
-      "Final summary / 최종 요약 (only after Q5 answer):",
-      "- Scores by question: Q1 X/10, Q2 X/10, Q3 X/10, Q4 X/10, Q5 X/10",
-      "- Total: NN/50",
-      "- Level: Level 1–10 (examples)",
-      "  • Level 1: 초등학생 수준",
-      "  • Level 5: 일상 대화 기본 가능",
-      "  • Level 7: 업무 커뮤니케이션 가능",
-      "  • Level 9: 원어민 수준",
-      "  • Level 10: 동시통역사 수준",
-      '- Key phrases to study (8–12): list with "- " bullets, each on a new line.',
-      '- References: brief docs/links/keywords as "- " bullets.',
-      "",
-      "Formatting / 가독성:",
-      "- Use clear paragraph breaks: questions are separate from the final evaluation. Do NOT merge them into one message.",
-      "- Keep responses concise in voice mode; focus on essentials.",
-    ];
-    return [...header, ...format, ...grading, ...closing].join("\\n");
-  };
-
   const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
   const ensureConnectedAndReady = async () => {
@@ -569,7 +424,7 @@ export default function MobileChat() {
       return;
     }
 
-    const topic = EXAM_TOPICS[Math.floor(Math.random() * EXAM_TOPICS.length)];
+    const topic = getRandomExamTopic();
     const prompt = buildExamPrompt(topic);
     try {
       setMessages((prev) => [
@@ -795,16 +650,6 @@ Please suggest an appropriate question or response that:
                   <XMarkIcon className="h-5 w-5" />
                 </button>
 
-                {/* Exam 버튼 (녹음 중에도 가능) */}
-                <Button
-                  onClick={triggerExam}
-                  variant="outline"
-                  className="h-10 px-6 text-sm rounded-full"
-                  disabled={isConnecting || examSending}
-                >
-                  {examSending ? "Sending..." : "Exam"}
-                </Button>
-
                 {/* 대화 내용 클리어 버튼 (연결된 상태에서만) */}
                 {isConnected && (
                   <button
@@ -815,6 +660,15 @@ Please suggest an appropriate question or response that:
                     <TrashIcon className="h-5 w-5" />
                   </button>
                 )}
+                {/* Exam 버튼 (제일 오른쪽으로 이동) */}
+                <button
+                  onClick={triggerExam}
+                  className="w-10 h-10 rounded-full bg-white border border-gray-300 hover:bg-gray-50 text-gray-900 transition-colors flex items-center justify-center text-xs font-medium"
+                  disabled={isConnecting || examSending}
+                  title="시험 모드 시작"
+                >
+                  {examSending ? "..." : "E"}
+                </button>
               </>
             ) : (
               <>

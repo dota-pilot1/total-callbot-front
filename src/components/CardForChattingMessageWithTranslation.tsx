@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { examApi } from "../features/exam/api/exam";
+import { examApi } from "../features/chatbot/exam/api/exam";
 import { LanguageIcon, PlayIcon, PauseIcon } from "@heroicons/react/24/outline";
 
 interface Message {

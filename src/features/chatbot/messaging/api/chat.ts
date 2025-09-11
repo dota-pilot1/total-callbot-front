@@ -1,4 +1,4 @@
-import { apiClient } from '../../../shared/api/client';
+import { apiClient } from '../../../../shared/api/client';
 import type { 
   ChatRoom, 
   ChatMessage, 
@@ -6,7 +6,7 @@ import type {
   CreateChatRoomResponse, 
   SendMessageRequest, 
   SendMessageResponse 
-} from '../../../shared/api/chat-types';
+} from '../../../../shared/api/chat-types';
 
 export const chatApi = {
   // 채팅방 목록 조회

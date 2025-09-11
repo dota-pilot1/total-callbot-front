@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { chatApi } from '../features/chat/api/chat';
-import type { ChatRoom } from '../shared/api/chat-types';
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { chatApi } from "../features/chatbot/messaging/api/chat";
+import type { ChatRoom } from "../shared/api/chat-types";
 
 interface ChatbotInfo {
   id: string;
@@ -29,15 +29,15 @@ const ChatbotPreview: React.FC<ChatbotPreviewProps> = ({ chatbot }) => {
 
   const loadBotChatRooms = async () => {
     if (!chatbot) return;
-    
+
     try {
       setLoading(true);
       const allRooms = await chatApi.getChatRooms();
       // 선택한 챗봇과 관련된 채팅방만 필터링
-      const botRooms = allRooms.filter(room => room.botType === chatbot.id);
+      const botRooms = allRooms.filter((room) => room.botType === chatbot.id);
       setChatRooms(botRooms);
     } catch (err) {
-      console.error('Error loading bot chat rooms:', err);
+      console.error("Error loading bot chat rooms:", err);
     } finally {
       setLoading(false);
     }
@@ -48,23 +48,23 @@ const ChatbotPreview: React.FC<ChatbotPreviewProps> = ({ chatbot }) => {
       await chatApi.joinChatRoom(room.id);
       navigate(`/chat/${room.id}`);
     } catch (err) {
-      console.error('Error joining chat room:', err);
+      console.error("Error joining chat room:", err);
     }
   };
 
   const handleCreateNewChat = async () => {
     if (!chatbot) return;
-    
+
     try {
       const newRoom = await chatApi.getOrCreateChatRoom({
         chatbotId: chatbot.id,
         chatbotName: chatbot.name,
         botType: chatbot.id,
-        name: `${chatbot.name}와의 대화`
+        name: `${chatbot.name}와의 대화`,
       });
       navigate(`/chat/${newRoom.id}`);
     } catch (err) {
-      console.error('Error creating new chat:', err);
+      console.error("Error creating new chat:", err);
     }
   };
 
@@ -74,11 +74,20 @@ const ChatbotPreview: React.FC<ChatbotPreviewProps> = ({ chatbot }) => {
         <div className="text-center text-gray-500">
           <div className="w-16 h-16 mx-auto mb-4 text-gray-300">
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={1.5}
+                d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+              />
             </svg>
           </div>
-          <p className="text-lg font-medium text-gray-400">왼쪽에서 챗봇을 선택해주세요</p>
-          <p className="text-sm text-gray-400 mt-1">선택한 챗봇과의 기존 대화 목록을 보여드립니다</p>
+          <p className="text-lg font-medium text-gray-400">
+            왼쪽에서 챗봇을 선택해주세요
+          </p>
+          <p className="text-sm text-gray-400 mt-1">
+            선택한 챗봇과의 기존 대화 목록을 보여드립니다
+          </p>
         </div>
       </div>
     );
@@ -90,21 +99,28 @@ const ChatbotPreview: React.FC<ChatbotPreviewProps> = ({ chatbot }) => {
         {/* 챗봇 정보 헤더 */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
           <div className="flex items-center space-x-4 mb-4">
-            <div className={`w-16 h-16 rounded-full bg-gradient-to-br ${chatbot.color} flex items-center justify-center text-white text-2xl font-bold`}>
+            <div
+              className={`w-16 h-16 rounded-full bg-gradient-to-br ${chatbot.color} flex items-center justify-center text-white text-2xl font-bold`}
+            >
               {chatbot.name.charAt(0)}
             </div>
             <div className="flex-1">
-              <h2 className="text-2xl font-bold text-gray-900">{chatbot.name}</h2>
+              <h2 className="text-2xl font-bold text-gray-900">
+                {chatbot.name}
+              </h2>
               <p className="text-gray-600 mt-1">{chatbot.description}</p>
             </div>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <h4 className="font-medium text-gray-900 mb-2">💡 전문 분야</h4>
               <div className="flex flex-wrap gap-2">
                 {chatbot.expertise.map((skill, index) => (
-                  <span key={index} className="px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full">
+                  <span
+                    key={index}
+                    className="px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full"
+                  >
                     {skill}
                   </span>
                 ))}
@@ -123,9 +139,7 @@ const ChatbotPreview: React.FC<ChatbotPreviewProps> = ({ chatbot }) => {
             <h3 className="text-xl font-semibold text-gray-900 mb-4">
               {chatbot.name}와 대화하기
             </h3>
-            <p className="text-gray-600 mb-6">
-              {chatbot.greeting}
-            </p>
+            <p className="text-gray-600 mb-6">{chatbot.greeting}</p>
             <button
               onClick={handleCreateNewChat}
               className="bg-blue-500 hover:bg-blue-600 text-white px-8 py-3 rounded-lg font-medium text-lg transition-colors"
@@ -151,12 +165,23 @@ const ChatbotPreview: React.FC<ChatbotPreviewProps> = ({ chatbot }) => {
           ) : chatRooms.length === 0 ? (
             <div className="p-8 text-center">
               <div className="text-gray-400 mb-4">
-                <svg className="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                <svg
+                  className="w-12 h-12 mx-auto"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={1.5}
+                    d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                  />
                 </svg>
               </div>
               <p className="text-gray-500">
-                {chatbot.name}와 아직 대화한 기록이 없습니다.<br/>
+                {chatbot.name}와 아직 대화한 기록이 없습니다.
+                <br />
                 위의 "연결하기" 버튼을 눌러 첫 대화를 시작해보세요!
               </p>
             </div>
@@ -174,12 +199,23 @@ const ChatbotPreview: React.FC<ChatbotPreviewProps> = ({ chatbot }) => {
                         {room.name || `${chatbot.name}와의 대화`}
                       </h4>
                       <p className="text-sm text-gray-500 mt-1">
-                        {room.lastMessageAt && `마지막 활동: ${new Date(room.lastMessageAt).toLocaleDateString()}`}
+                        {room.lastMessageAt &&
+                          `마지막 활동: ${new Date(room.lastMessageAt).toLocaleDateString()}`}
                       </p>
                     </div>
                     <div className="flex items-center text-gray-400">
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      <svg
+                        className="w-5 h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 5l7 7-7 7"
+                        />
                       </svg>
                     </div>
                   </div>

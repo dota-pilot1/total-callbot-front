@@ -7,7 +7,7 @@ import {
   PauseIcon,
   DocumentTextIcon,
 } from "@heroicons/react/24/outline";
-import { examApi } from "../features/exam/api/exam";
+import { examApi } from "../features/chatbot/exam/api/exam";
 
 interface MobileTranslationDialogProps {
   open: boolean;

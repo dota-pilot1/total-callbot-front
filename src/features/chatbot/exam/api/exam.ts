@@ -1,4 +1,4 @@
-import { apiClient } from '../../../shared/api/client';
+import { apiClient } from '../../../../shared/api/client';
 
 export type SampleAnswer = { title: string; text: string };
 export type SampleAnswerResponse = { samples: SampleAnswer[]; model?: string };
