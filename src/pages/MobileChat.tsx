@@ -712,13 +712,15 @@ Please suggest an appropriate question or response that:
             </div>
             <div className="flex items-center space-x-2">
               {/* 설정 버튼 */}
-              <button
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={() => setSettingsOpen(true)}
-                className="p-2 rounded-lg hover:bg-gray-100"
                 title="설정"
+                className="w-9 px-0"
               >
-                <Cog6ToothIcon className="h-5 w-5 text-gray-600" />
-              </button>
+                <Cog6ToothIcon className="h-4 w-4" />
+              </Button>
 
               <Button
                 variant="outline"
@@ -750,7 +752,7 @@ Please suggest an appropriate question or response that:
                 {/* 캐릭터 아바타 (역할극용) */}
                 <button
                   onClick={() => setCharacterDialogOpen(true)}
-                  className="w-9 h-9 rounded-full bg-gradient-to-br from-amber-400 to-yellow-500 flex items-center justify-center border border-amber-300 shadow-sm"
+                  className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-400 to-yellow-500 flex items-center justify-center border border-amber-300 shadow-sm"
                   title={`${personaCharacter.name} (role-play)`}
                 >
                   <span className="text-base">{personaCharacter.emoji}</span>
@@ -787,7 +789,7 @@ Please suggest an appropriate question or response that:
                     // 연결 끊을 때 대화 내용 초기화
                     handleClearChat();
                   }}
-                  className="bg-red-500 hover:bg-red-600 text-white rounded-full p-2.5 shadow-lg transition-colors"
+                  className="w-10 h-10 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center shadow-lg transition-colors"
                   title="음성 연결 중단"
                 >
                   <XMarkIcon className="h-5 w-5" />
@@ -807,7 +809,7 @@ Please suggest an appropriate question or response that:
                 {isConnected && (
                   <button
                     onClick={handleClearChat}
-                    className="p-3 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 transition-colors"
+                    className="w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 transition-colors flex items-center justify-center"
                     title="대화 내용 지우기"
                   >
                     <TrashIcon className="h-5 w-5" />
@@ -819,7 +821,7 @@ Please suggest an appropriate question or response that:
                 {/* 캐릭터 아바타 + Start 버튼 + 상태 점 오버레이 */}
                 <button
                   onClick={() => setCharacterDialogOpen(true)}
-                  className="w-9 h-9 rounded-full bg-gradient-to-br from-amber-400 to-yellow-500 flex items-center justify-center border border-amber-300 shadow-sm"
+                  className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-400 to-yellow-500 flex items-center justify-center border border-amber-300 shadow-sm"
                   title={`${personaCharacter.name} (role-play)`}
                 >
                   <span className="text-base">{personaCharacter.emoji}</span>
@@ -931,7 +933,7 @@ Please suggest an appropriate question or response that:
             {/* 챗봇 제안 버튼 (마이크 대신) */}
             <button
               onClick={handleSuggestReply}
-              className={`p-3 rounded-full transition-colors ${suggestLoading ? "bg-indigo-500 text-white animate-pulse" : "bg-gray-100 hover:bg-gray-200 text-gray-600"}`}
+              className={`w-10 h-10 rounded-full transition-colors flex items-center justify-center ${suggestLoading ? "bg-indigo-500 text-white animate-pulse" : "bg-gray-100 hover:bg-gray-200 text-gray-600"}`}
               title="AI가 다음 답변을 제안합니다"
               disabled={suggestLoading}
             >
