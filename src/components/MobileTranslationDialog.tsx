@@ -403,16 +403,44 @@ Please respond in this exact JSON format:
                   {/* 우측 상단 버튼들 */}
                   <div
                     className="absolute top-2 right-2 flex space-x-1"
-                    style={{ zIndex: 50 }}
+                    style={{
+                      zIndex: 9999,
+                      pointerEvents: "auto",
+                    }}
                   >
                     <button
-                      onClick={() =>
-                        playingTranslation
-                          ? stopSpeech()
-                          : playText(translation.translation, false)
-                      }
-                      className="p-2 rounded-full bg-white shadow-lg hover:shadow-xl transition-all duration-200 border border-gray-300"
-                      style={{ zIndex: 51 }}
+                      onClick={async (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        console.log("번역문 재생 버튼 클릭됨");
+
+                        try {
+                          if (playingTranslation) {
+                            stopSpeech();
+                          } else {
+                            // 오디오 권한 먼저 확인
+                            const hasPermission = await checkAudioPermission();
+                            if (!hasPermission) {
+                              // alert(
+                              //   "오디오 재생 권한이 필요합니다. 브라우저 설정에서 오디오를 허용해주세요.",
+                              // );
+                              return;
+                            }
+
+                            await playText(translation.translation, false);
+                          }
+                        } catch (error) {
+                          console.error("번역문 재생 중 에러:", error);
+                          // alert("재생 에러: " + error);
+                        }
+                      }}
+                      onTouchStart={() => {}} // 터치 이벤트 활성화
+                      className="p-3 rounded-full bg-white shadow-lg hover:shadow-xl active:shadow-md transition-all duration-200 border border-gray-300 min-w-[44px] min-h-[44px] flex items-center justify-center"
+                      style={{
+                        zIndex: 51,
+                        touchAction: "manipulation",
+                        WebkitTapHighlightColor: "transparent",
+                      }}
                       title={playingTranslation ? "재생 중지" : "번역문 읽기"}
                     >
                       {playingTranslation ? (
@@ -423,8 +451,12 @@ Please respond in this exact JSON format:
                     </button>
                     <button
                       onClick={() => insertText(translation.translation)}
-                      className="p-2 rounded-full bg-white shadow-lg hover:shadow-xl transition-all duration-200 border border-gray-300"
-                      style={{ zIndex: 51 }}
+                      className="p-3 rounded-full bg-white shadow-lg hover:shadow-xl active:shadow-md transition-all duration-200 border border-gray-300 min-w-[44px] min-h-[44px] flex items-center justify-center"
+                      style={{
+                        zIndex: 51,
+                        touchAction: "manipulation",
+                        WebkitTapHighlightColor: "transparent",
+                      }}
                       title="번역문 입력"
                     >
                       <DocumentTextIcon className="h-4 w-4 text-green-500" />
