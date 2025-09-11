@@ -9,7 +9,6 @@ import {
   SparklesIcon,
   Cog6ToothIcon,
   LanguageIcon,
-  ArrowsRightLeftIcon,
 } from "@heroicons/react/24/outline";
 // no solid icons needed currently
 import { voiceApi } from "../features/voice/api/voice";
@@ -20,11 +19,12 @@ import {
 import VoicePulse from "../components/VoicePulse";
 import MobileSettingsDropdown from "../components/MobileSettingsDropdown";
 import { examApi } from "../features/exam/api/exam";
-import MobileModelAnswerDialog from "../components/MobileModelAnswerDialog";
+
 import MobileCharacterDialog from "../components/MobileCharacterDialog";
 import { CHARACTER_LIST } from "../features/character/characters";
 import { useCharacterStore } from "../features/character/store";
 import MobileTranslationDialog from "../components/MobileTranslationDialog";
+import CardForChattingMessageWithTranslation from "../components/CardForChattingMessageWithTranslation";
 
 export default function MobileChat() {
   const { logout, getUser } = useAuthStore();
@@ -108,16 +108,6 @@ export default function MobileChat() {
   const [examSending, setExamSending] = useState(false);
   const [suggestLoading, setSuggestLoading] = useState(false);
 
-  // Model answers dialog state (mobile)
-  const [answersOpen, setAnswersOpen] = useState(false);
-  const [answersQuestion, setAnswersQuestion] = useState<string>("");
-  const [answersTopic, _setAnswersTopic] = useState<string | undefined>(
-    undefined,
-  );
-  const [answersLevel, _setAnswersLevel] = useState<string | undefined>(
-    undefined,
-  );
-
   // Translation dialog state (mobile)
   const [translationOpen, setTranslationOpen] = useState(false);
   const [translationText, setTranslationText] = useState<string>("");
@@ -153,7 +143,7 @@ export default function MobileChat() {
 
     // 기본적으로 영어로 답변, 한국어 요청 시에만 한국어 사용
     const languageNote =
-      "Be direct and straightforward. Keep replies to 1-2 sentences maximum. No unnecessary explanations or elaboration. Respond primarily in English. If the user specifically requests Korean (한국어로 답변해줘, 한글로 말해줘, etc.), then respond in Korean using formal, respectful language. ";
+      "Be direct and straightforward. Keep replies to 1-2 sentences maximum. No unnecessary explanations or elaboration. Start with a brief self-introduction when first greeting. Respond primarily in English. If the user specifically requests Korean (한국어로 답변해줘, 한글로 말해줘, etc.), then respond in Korean using formal, respectful language. ";
 
     return (
       `I am ${personaCharacter.name} (${personaCharacter.emoji}). ${genderNote}${voiceNote}` +
@@ -665,10 +655,6 @@ export default function MobileChat() {
       setSuggestLoading(false);
     }
   };
-  const openModelAnswers = (questionText: string) => {
-    setAnswersQuestion(questionText);
-    setAnswersOpen(true);
-  };
 
   const openTranslation = (text: string) => {
     setTranslationText(text);
@@ -902,43 +888,11 @@ export default function MobileChat() {
           </div>
         ) : (
           messages.map((message) => (
-            <div
+            <CardForChattingMessageWithTranslation
               key={message.id}
-              className={`flex ${message.sender === "user" ? "justify-end" : "justify-start"}`}
-            >
-              <div
-                className={`max-w-[80%] px-3 py-2 rounded-lg ${message.sender === "user" ? "bg-indigo-500 text-white" : "bg-white border border-gray-200 text-gray-900"}`}
-              >
-                <p className="text-sm leading-relaxed whitespace-pre-wrap">
-                  {message.message}
-                </p>
-                <div className="mt-1 flex items-center justify-between">
-                  <p
-                    className={`text-xs ${message.sender === "user" ? "text-indigo-100" : "text-gray-500"}`}
-                  >
-                    {message.timestamp}
-                  </p>
-                  {message.sender !== "user" && (
-                    <div className="flex items-center space-x-2 ml-3">
-                      <button
-                        onClick={() => openModelAnswers(message.message)}
-                        className="text-xs px-2 py-0.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-50"
-                        title="답변 예시 보기"
-                      >
-                        답변 예시
-                      </button>
-                      <button
-                        onClick={() => openTranslation(message.message)}
-                        className="text-xs p-1 rounded border border-green-300 text-green-600 hover:bg-green-50"
-                        title="번역하기"
-                      >
-                        <ArrowsRightLeftIcon className="h-3 w-3" />
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
+              message={message}
+              isUser={message.sender === "user"}
+            />
           ))
         )}
         <div ref={messagesEndRef} />
@@ -1048,13 +1002,6 @@ export default function MobileChat() {
       />
 
       {/* Model Answers Dialog (mobile) */}
-      <MobileModelAnswerDialog
-        open={answersOpen}
-        onClose={() => setAnswersOpen(false)}
-        question={answersQuestion}
-        topic={answersTopic}
-        level={answersLevel}
-      />
 
       {/* Character/Scenario/Gender Dialog */}
       <MobileCharacterDialog
