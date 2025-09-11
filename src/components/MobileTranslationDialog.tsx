@@ -44,6 +44,39 @@ export default function MobileTranslationDialog({
     }
   }, [open, text]);
 
+  // 오디오 권한 확인 및 요청
+  const checkAudioPermission = async () => {
+    try {
+      // 짧은 무음 오디오로 테스트
+      const audioContext = new (window.AudioContext ||
+        (window as any).webkitAudioContext)();
+      if (audioContext.state === "suspended") {
+        await audioContext.resume();
+      }
+
+      // 간단한 beep 소리로 테스트
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+
+      oscillator.frequency.value = 440;
+      gainNode.gain.value = 0.1;
+
+      oscillator.start();
+      oscillator.stop(audioContext.currentTime + 0.1);
+
+      alert("오디오 권한 확인 성공!");
+      return true;
+    } catch (error) {
+      const errorMsg = `오디오 권한 확인 실패: ${error.message || error}`;
+      console.error("오디오 권한 확인 실패:", error);
+      alert(errorMsg);
+      return false;
+    }
+  };
+
   // TTS 기능 (OpenAI TTS API 직접 호출)
   const playText = async (text: string, isOriginal: boolean) => {
     try {
@@ -145,7 +178,9 @@ export default function MobileTranslationDialog({
         throw new Error(`TTS API request failed: ${ttsResponse.status}`);
       }
     } catch (error) {
+      const errorMsg = `TTS API 실패: ${error.message || error}`;
       console.error("TTS API failed:", error);
+      alert(errorMsg);
       // 에러 시 상태 리셋
       if (isOriginal) {
         setPlayingOriginal(false);
@@ -283,16 +318,49 @@ Please respond in this exact JSON format:
                   {/* 우측 상단 버튼들 */}
                   <div
                     className="absolute top-2 right-2 flex space-x-1"
-                    style={{ zIndex: 50 }}
+                    style={{
+                      zIndex: 9999,
+                      pointerEvents: "auto",
+                    }}
                   >
                     <button
-                      onClick={() =>
-                        playingOriginal
-                          ? stopSpeech()
-                          : playText(translation.original, true)
-                      }
-                      className="p-2 rounded-full bg-white shadow-lg hover:shadow-xl transition-all duration-200 border border-gray-300"
-                      style={{ zIndex: 51 }}
+                      onClick={async (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        console.log("재생 버튼 클릭됨");
+
+                        try {
+                          if (playingOriginal) {
+                            stopSpeech();
+                          } else {
+                            // 오디오 권한 먼저 확인
+                            const hasPermission = await checkAudioPermission();
+                            if (!hasPermission) {
+                              alert(
+                                "오디오 재생 권한이 필요합니다. 브라우저 설정에서 오디오를 허용해주세요.",
+                              );
+                              return;
+                            }
+
+                            await playText(translation.original, true);
+                          }
+                        } catch (error) {
+                          console.error("재생 중 에러:", error);
+                          alert("재생 에러: " + error);
+                        }
+                      }}
+                      onTouchEnd={(e) => {
+                        e.preventDefault();
+                        console.log("재생 버튼 터치됨 (onTouchEnd)");
+                        alert("재생 버튼 터치! (onTouchEnd)");
+                      }}
+                      onTouchStart={() => {}} // 터치 이벤트 활성화
+                      className="p-3 rounded-full bg-white shadow-lg hover:shadow-xl active:shadow-md transition-all duration-200 border border-gray-300 min-w-[44px] min-h-[44px] flex items-center justify-center"
+                      style={{
+                        zIndex: 51,
+                        touchAction: "manipulation",
+                        WebkitTapHighlightColor: "transparent",
+                      }}
                       title={playingOriginal ? "재생 중지" : "원문 읽기"}
                     >
                       {playingOriginal ? (
