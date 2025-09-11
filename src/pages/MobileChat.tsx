@@ -190,7 +190,7 @@ export default function MobileChat() {
     setNewMessage("");
 
     const userMessage = {
-      id: Date.now(), // 고유 ID 사용
+      id: crypto.randomUUID(), // 완전 고유한 ID 사용
       sender: "user" as const,
       message: normalizeText(messageContent),
       timestamp: new Date().toLocaleTimeString("ko-KR", {
@@ -235,7 +235,7 @@ export default function MobileChat() {
     // 시뮬레이션 응답 - 간단한 setTimeout으로 처리
     setTimeout(() => {
       const botResponse = {
-        id: Date.now() + 1,
+        id: crypto.randomUUID(),
         sender: "callbot" as const,
         message: `"${messageContent}"에 대해 답변드리겠습니다.`,
         timestamp: new Date().toLocaleTimeString("ko-KR", {
