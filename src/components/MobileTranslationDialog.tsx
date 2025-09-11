@@ -67,12 +67,9 @@ export default function MobileTranslationDialog({
       oscillator.start();
       oscillator.stop(audioContext.currentTime + 0.1);
 
-      alert("오디오 권한 확인 성공!");
       return true;
     } catch (error) {
-      const errorMsg = `오디오 권한 확인 실패: ${error instanceof Error ? error.message : String(error)}`;
       console.error("오디오 권한 확인 실패:", error);
-      alert(errorMsg);
       return false;
     }
   };
@@ -95,7 +92,7 @@ export default function MobileTranslationDialog({
 
       // 백엔드에서 OpenAI API 키 받기
       const token = localStorage.getItem("accessToken");
-      alert(`토큰: ${token ? "있음" : "없음"}`);
+      // alert(`토큰: ${token ? "있음" : "없음"}`);
 
       // EC2 환경에서는 절대 URL 사용
       const apiUrl =
@@ -110,18 +107,18 @@ export default function MobileTranslationDialog({
         },
       });
 
-      alert(`API 응답 상태: ${keyResponse.status} ${keyResponse.statusText}`);
+      // alert(`API 응답 상태: ${keyResponse.status} ${keyResponse.statusText}`);
 
       if (!keyResponse.ok) {
         const errorText = await keyResponse.text();
-        alert(`API 에러 응답: ${errorText.substring(0, 200)}`);
+        // alert(`API 에러 응답: ${errorText.substring(0, 200)}`);
         throw new Error(`API 요청 실패: ${keyResponse.status}`);
       }
 
       const { key } = await keyResponse.json();
 
       // OpenAI TTS API 직접 호출
-      alert(`OpenAI TTS 요청 시작: ${text.substring(0, 50)}...`);
+      // alert(`OpenAI TTS 요청 시작: ${text.substring(0, 50)}...`);
 
       const ttsResponse = await fetch(
         "https://api.openai.com/v1/audio/speech",
@@ -140,7 +137,7 @@ export default function MobileTranslationDialog({
         },
       );
 
-      alert(`OpenAI TTS 응답: ${ttsResponse.status} ${ttsResponse.statusText}`);
+      // alert(`OpenAI TTS 응답: ${ttsResponse.status} ${ttsResponse.statusText}`);
 
       if (ttsResponse.ok) {
         const audioBlob = await ttsResponse.blob();
@@ -198,7 +195,7 @@ export default function MobileTranslationDialog({
     } catch (error) {
       const errorMsg = `TTS API 실패: ${error instanceof Error ? error.message : String(error)}`;
       console.error("TTS API failed:", error);
-      alert(errorMsg);
+      // alert(errorMsg);
       // 에러 시 상태 리셋
       if (isOriginal) {
         setPlayingOriginal(false);
@@ -354,9 +351,9 @@ Please respond in this exact JSON format:
                             // 오디오 권한 먼저 확인
                             const hasPermission = await checkAudioPermission();
                             if (!hasPermission) {
-                              alert(
-                                "오디오 재생 권한이 필요합니다. 브라우저 설정에서 오디오를 허용해주세요.",
-                              );
+                              // alert(
+                              //   "오디오 재생 권한이 필요합니다. 브라우저 설정에서 오디오를 허용해주세요.",
+                              // );
                               return;
                             }
 
@@ -364,13 +361,13 @@ Please respond in this exact JSON format:
                           }
                         } catch (error) {
                           console.error("재생 중 에러:", error);
-                          alert("재생 에러: " + error);
+                          // alert("재생 에러: " + error);
                         }
                       }}
                       onTouchEnd={(e) => {
                         e.preventDefault();
                         console.log("재생 버튼 터치됨 (onTouchEnd)");
-                        alert("재생 버튼 터치! (onTouchEnd)");
+                        // alert("재생 버튼 터치! (onTouchEnd)");
                       }}
                       onTouchStart={() => {}} // 터치 이벤트 활성화
                       className="p-3 rounded-full bg-white shadow-lg hover:shadow-xl active:shadow-md transition-all duration-200 border border-gray-300 min-w-[44px] min-h-[44px] flex items-center justify-center"
