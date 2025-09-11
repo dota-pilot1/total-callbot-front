@@ -110,8 +110,6 @@ export default function MobileTranslationDialog({
       // alert(`API 응답 상태: ${keyResponse.status} ${keyResponse.statusText}`);
 
       if (!keyResponse.ok) {
-        const errorText = await keyResponse.text();
-        // alert(`API 에러 응답: ${errorText.substring(0, 200)}`);
         throw new Error(`API 요청 실패: ${keyResponse.status}`);
       }
 
@@ -193,9 +191,7 @@ export default function MobileTranslationDialog({
         throw new Error(`TTS API request failed: ${ttsResponse.status}`);
       }
     } catch (error) {
-      const errorMsg = `TTS API 실패: ${error instanceof Error ? error.message : String(error)}`;
       console.error("TTS API failed:", error);
-      // alert(errorMsg);
       // 에러 시 상태 리셋
       if (isOriginal) {
         setPlayingOriginal(false);
