@@ -97,7 +97,13 @@ export default function MobileTranslationDialog({
       const token = localStorage.getItem("accessToken");
       alert(`토큰: ${token ? "있음" : "없음"}`);
 
-      const keyResponse = await fetch("/api/config/openai-key", {
+      // EC2 환경에서는 절대 URL 사용
+      const apiUrl =
+        window.location.hostname === "localhost"
+          ? "/api/config/openai-key"
+          : "https://api.total-callbot.cloud/api/config/openai-key";
+
+      const keyResponse = await fetch(apiUrl, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
@@ -115,6 +121,8 @@ export default function MobileTranslationDialog({
       const { key } = await keyResponse.json();
 
       // OpenAI TTS API 직접 호출
+      alert(`OpenAI TTS 요청 시작: ${text.substring(0, 50)}...`);
+
       const ttsResponse = await fetch(
         "https://api.openai.com/v1/audio/speech",
         {
@@ -131,6 +139,8 @@ export default function MobileTranslationDialog({
           }),
         },
       );
+
+      alert(`OpenAI TTS 응답: ${ttsResponse.status} ${ttsResponse.statusText}`);
 
       if (ttsResponse.ok) {
         const audioBlob = await ttsResponse.blob();
