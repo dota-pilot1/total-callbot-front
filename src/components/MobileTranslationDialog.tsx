@@ -70,7 +70,7 @@ export default function MobileTranslationDialog({
       alert("오디오 권한 확인 성공!");
       return true;
     } catch (error) {
-      const errorMsg = `오디오 권한 확인 실패: ${error.message || error}`;
+      const errorMsg = `오디오 권한 확인 실패: ${error instanceof Error ? error.message : String(error)}`;
       console.error("오디오 권한 확인 실패:", error);
       alert(errorMsg);
       return false;
@@ -178,7 +178,7 @@ export default function MobileTranslationDialog({
         throw new Error(`TTS API request failed: ${ttsResponse.status}`);
       }
     } catch (error) {
-      const errorMsg = `TTS API 실패: ${error.message || error}`;
+      const errorMsg = `TTS API 실패: ${error instanceof Error ? error.message : String(error)}`;
       console.error("TTS API failed:", error);
       alert(errorMsg);
       // 에러 시 상태 리셋
