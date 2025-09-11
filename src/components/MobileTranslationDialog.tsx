@@ -360,11 +360,6 @@ Please respond in this exact JSON format:
                           // alert("재생 에러: " + error);
                         }
                       }}
-                      onTouchEnd={(e) => {
-                        e.preventDefault();
-                        console.log("재생 버튼 터치됨 (onTouchEnd)");
-                        // alert("재생 버튼 터치! (onTouchEnd)");
-                      }}
                       onTouchStart={() => {}} // 터치 이벤트 활성화
                       className="p-3 rounded-full bg-white shadow-lg hover:shadow-xl active:shadow-md transition-all duration-200 border border-gray-300 min-w-[44px] min-h-[44px] flex items-center justify-center"
                       style={{
