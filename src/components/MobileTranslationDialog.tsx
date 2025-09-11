@@ -93,33 +93,54 @@ export default function MobileTranslationDialog({
 
       if (ttsResponse.ok) {
         const audioBlob = await ttsResponse.blob();
-        const audioUrl = URL.createObjectURL(audioBlob);
 
-        // 새로운 오디오 객체 생성
-        audioRef.current = new Audio(audioUrl);
+        // Data URL 방식으로 변환 (모바일 호환성)
+        const reader = new FileReader();
+        reader.onload = async () => {
+          // 새로운 오디오 객체 생성
+          audioRef.current = new Audio(reader.result as string);
 
-        // 오디오 이벤트 핸들러
-        audioRef.current.onended = () => {
+          // 오디오 이벤트 핸들러
+          audioRef.current.onended = () => {
+            if (isOriginal) {
+              setPlayingOriginal(false);
+            } else {
+              setPlayingTranslation(false);
+            }
+          };
+
+          audioRef.current.onerror = () => {
+            if (isOriginal) {
+              setPlayingOriginal(false);
+            } else {
+              setPlayingTranslation(false);
+            }
+            console.error("Audio playback failed");
+          };
+
+          // 오디오 재생
+          try {
+            await audioRef.current.play();
+          } catch (playError) {
+            console.error("Audio play failed:", playError);
+            if (isOriginal) {
+              setPlayingOriginal(false);
+            } else {
+              setPlayingTranslation(false);
+            }
+          }
+        };
+
+        reader.onerror = () => {
+          console.error("FileReader error");
           if (isOriginal) {
             setPlayingOriginal(false);
           } else {
             setPlayingTranslation(false);
           }
-          URL.revokeObjectURL(audioUrl); // 메모리 정리
         };
 
-        audioRef.current.onerror = () => {
-          if (isOriginal) {
-            setPlayingOriginal(false);
-          } else {
-            setPlayingTranslation(false);
-          }
-          URL.revokeObjectURL(audioUrl);
-          console.error("Audio playback failed");
-        };
-
-        // 오디오 재생
-        await audioRef.current.play();
+        reader.readAsDataURL(audioBlob);
       } else {
         throw new Error(`TTS API request failed: ${ttsResponse.status}`);
       }
