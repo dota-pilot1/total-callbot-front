@@ -1073,7 +1073,6 @@ Please suggest an appropriate question or response that:
         onClose={() => setTranslationOpen(false)}
         text={translationText}
         onInsertText={(text: string) => setNewMessage(text)}
-        onClearInput={() => setNewMessage("")}
       />
     </div>
   );

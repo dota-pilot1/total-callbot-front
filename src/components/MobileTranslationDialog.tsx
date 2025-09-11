@@ -14,7 +14,6 @@ interface MobileTranslationDialogProps {
   onClose: () => void;
   text: string;
   onInsertText?: (text: string) => void; // 텍스트를 인풋에 삽입하는 함수
-  onClearInput?: () => void; // 인풋을 초기화하는 함수
 }
 
 interface TranslationResponse {
@@ -28,7 +27,6 @@ export default function MobileTranslationDialog({
   onClose,
   text,
   onInsertText,
-  onClearInput,
 }: MobileTranslationDialogProps) {
   const [loading, setLoading] = useState(false);
   const [translation, setTranslation] = useState<TranslationResponse | null>(
