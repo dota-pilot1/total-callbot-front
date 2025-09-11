@@ -639,13 +639,31 @@ export default function MobileChat() {
           return `- ${role}: ${text}`;
         })
         .join("\n");
+
+      // 선택된 캐릭터 정보 추가
+      const selectedCharacter = selectedCharacterId
+        ? CHARACTER_LIST.find((c) => c.id === selectedCharacterId)
+        : null;
+      const characterInfo = selectedCharacter
+        ? `Selected Character: ${selectedCharacter.name} - ${selectedCharacter.personality || selectedCharacter.background || "A historical figure"}`
+        : "";
+
+      const enhancedContext = `${characterInfo ? characterInfo + "\n\n" : ""}Recent conversation:
+${tail}
+
+Please suggest an appropriate question or response that:
+1. Continues the conversation naturally
+2. Is relevant to the selected character (if any)
+3. Encourages meaningful dialogue
+4. Considers the character's historical background, expertise, or personality`;
+
       const resp = await examApi.getSampleAnswers({
         question,
         topic: "conversation",
         level: "intermediate",
         count: 1,
         englishOnly: true,
-        context: tail,
+        context: enhancedContext,
       });
       const text = (resp.samples?.[0]?.text || "").trim();
       if (text) setNewMessage(text);
