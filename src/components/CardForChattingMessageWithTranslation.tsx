@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
 import { examApi } from "../features/chatbot/exam/api/exam";
 import { LanguageIcon, PlayIcon, PauseIcon } from "@heroicons/react/24/outline";
+import SentenceSplitterDialogButtonWithTranslate from "./SentenceSplitterDialogButtonWithTranslate";
 
 interface Message {
   id: number;
@@ -208,7 +209,7 @@ export default function CardForChattingMessageWithTranslation({
                   : "bg-white border border-gray-200 text-gray-900"
               }`}
             >
-              <p className="text-sm leading-relaxed whitespace-pre-wrap pr-16">
+              <p className="text-sm leading-relaxed whitespace-pre-wrap pr-20">
                 {message.message}
               </p>
               <div className="mt-1">
@@ -221,15 +222,19 @@ export default function CardForChattingMessageWithTranslation({
                 </p>
               </div>
 
-              {/* 버튼 영역 */}
+              {/* 버튼 영역 - 우하단 3버튼 */}
               <div className="absolute bottom-2 right-2 flex gap-1">
+                <SentenceSplitterDialogButtonWithTranslate
+                  message={message.message}
+                  isUser={isUser}
+                />
                 <button
                   onClick={handleTranslateClick}
                   disabled={isTranslating}
-                  className={`p-1.5 rounded-full transition-colors ${
+                  className={`p-1.5 rounded-full border transition-colors ${
                     isUser
-                      ? "hover:bg-indigo-400 text-indigo-100"
-                      : "hover:bg-gray-100 text-gray-600"
+                      ? "hover:bg-indigo-400 text-indigo-100 border-indigo-200"
+                      : "hover:bg-gray-100 text-gray-600 border-gray-300"
                   } ${isTranslating ? "opacity-50" : ""}`}
                   title="번역"
                 >
@@ -238,10 +243,10 @@ export default function CardForChattingMessageWithTranslation({
                 <button
                   onClick={handlePlayClick}
                   disabled={isPlaying}
-                  className={`p-1.5 rounded-full transition-colors ${
+                  className={`p-1.5 rounded-full border transition-colors ${
                     isUser
-                      ? "hover:bg-indigo-400 text-indigo-100"
-                      : "hover:bg-gray-100 text-gray-600"
+                      ? "hover:bg-indigo-400 text-indigo-100 border-indigo-200"
+                      : "hover:bg-gray-100 text-gray-600 border-gray-300"
                   }`}
                   title="음성 재생"
                 >
@@ -264,7 +269,7 @@ export default function CardForChattingMessageWithTranslation({
                   : "bg-emerald-50 text-gray-900 border border-emerald-200"
               }`}
             >
-              <p className="text-sm leading-relaxed whitespace-pre-wrap pr-16">
+              <p className="text-sm leading-relaxed whitespace-pre-wrap pr-20">
                 {isTranslating
                   ? "번역 중..."
                   : translation || "번역을 준비하고 있습니다..."}
@@ -279,14 +284,18 @@ export default function CardForChattingMessageWithTranslation({
                 </p>
               </div>
 
-              {/* 버튼 영역 */}
+              {/* 버튼 영역 - 우하단 3버튼 */}
               <div className="absolute bottom-2 right-2 flex gap-1">
+                <SentenceSplitterDialogButtonWithTranslate
+                  message={message.message}
+                  isUser={isUser}
+                />
                 <button
                   onClick={handleTranslateClick}
-                  className={`p-1.5 rounded-full transition-colors ${
+                  className={`p-1.5 rounded-full border transition-colors ${
                     isUser
-                      ? "hover:bg-emerald-400 text-emerald-100"
-                      : "hover:bg-emerald-100 text-emerald-600"
+                      ? "hover:bg-emerald-400 text-emerald-100 border-emerald-200"
+                      : "hover:bg-emerald-100 text-emerald-600 border-emerald-300"
                   }`}
                   title="원본"
                 >
@@ -295,10 +304,10 @@ export default function CardForChattingMessageWithTranslation({
                 <button
                   onClick={handlePlayClick}
                   disabled={isPlaying}
-                  className={`p-1.5 rounded-full transition-colors ${
+                  className={`p-1.5 rounded-full border transition-colors ${
                     isUser
-                      ? "hover:bg-emerald-400 text-emerald-100"
-                      : "hover:bg-emerald-100 text-emerald-600"
+                      ? "hover:bg-emerald-400 text-emerald-100 border-emerald-200"
+                      : "hover:bg-emerald-100 text-emerald-600 border-emerald-300"
                   }`}
                   title="음성 재생"
                 >

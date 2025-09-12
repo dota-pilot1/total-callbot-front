@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from "react";
 import { Dialog } from "@headlessui/react";
 import {
   XMarkIcon,
-  ArrowsRightLeftIcon,
   PlayIcon,
   PauseIcon,
   DocumentTextIcon,
@@ -35,14 +34,24 @@ export default function MobileTranslationDialog({
   const [error, setError] = useState<string>("");
   const [playingOriginal, setPlayingOriginal] = useState(false);
   const [playingTranslation, setPlayingTranslation] = useState(false);
+  const [editableText, setEditableText] = useState<string>("");
+  const [hasTextChanged, setHasTextChanged] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  // 다이얼로그가 열릴 때 번역 요청
+  // 다이얼로그가 열릴 때 번역 요청 및 텍스트 초기화
   useEffect(() => {
     if (open && text.trim()) {
+      setEditableText(text.trim());
+      setHasTextChanged(false);
       requestTranslation(text.trim());
     }
   }, [open, text]);
+
+  // 텍스트 변경 감지
+  const handleTextChange = (newText: string) => {
+    setEditableText(newText);
+    setHasTextChanged(newText !== text.trim());
+  };
 
   // 오디오 권한 확인 및 요청
   const checkAudioPermission = async () => {
@@ -74,7 +83,21 @@ export default function MobileTranslationDialog({
     }
   };
 
-  // TTS 기능 (OpenAI TTS API 직접 호출)
+  // TTS 기능 및 재번역 (OpenAI TTS API 직접 호출)
+  const playTextAndRetranslate = async (
+    textToPlay: string,
+    isOriginal: boolean,
+  ) => {
+    // 원문이 편집된 경우 재번역 먼저 수행
+    if (isOriginal && hasTextChanged) {
+      await requestTranslation(editableText);
+      setHasTextChanged(false);
+    }
+
+    // TTS 재생
+    await playText(textToPlay, isOriginal);
+  };
+
   const playText = async (text: string, isOriginal: boolean) => {
     try {
       // 이전 오디오 중지
@@ -278,28 +301,22 @@ Please respond in this exact JSON format:
       {/* 배경 오버레이 */}
       <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
 
-      {/* 다이얼로그 컨테이너 */}
-      <div className="fixed inset-0 flex items-center justify-center p-4">
-        <Dialog.Panel className="mx-auto max-w-lg w-full bg-white rounded-lg shadow-xl">
-          {/* 헤더 */}
-          <div className="flex items-center justify-between p-4 border-b border-gray-200">
-            <div className="flex items-center space-x-2">
-              <ArrowsRightLeftIcon className="h-5 w-5 text-blue-600" />
-              <Dialog.Title className="text-lg font-semibold text-gray-900">
-                해석 결과
-              </Dialog.Title>
-            </div>
+      {/* 다이얼로그 컨테이너 - 최상단 위치 */}
+      <div className="fixed top-0 left-0 right-0 flex justify-center pt-4 px-4 z-50">
+        <Dialog.Panel className="max-w-lg w-full bg-white rounded-lg shadow-xl">
+          {/* 헤더 제거하고 닫기 버튼만 우상단에 */}
+          <div className="absolute top-2 right-2 z-10">
             <button
               onClick={onClose}
-              className="p-1 rounded-full hover:bg-gray-100 transition-colors"
+              className="p-1 rounded-full hover:bg-gray-100 transition-colors bg-white shadow-sm"
               title="닫기"
             >
-              <XMarkIcon className="h-5 w-5 text-gray-500" />
+              <XMarkIcon className="h-4 w-4 text-gray-500" />
             </button>
           </div>
 
-          {/* 내용 */}
-          <div className="p-4 space-y-4">
+          {/* 내용 - 패딩 축소 */}
+          <div className="p-3 space-y-3">
             {loading ? (
               <div className="text-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
@@ -316,15 +333,24 @@ Please respond in this exact JSON format:
                 </button>
               </div>
             ) : translation ? (
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {/* 원문 */}
-                <div className="bg-gray-50 rounded-lg p-4 relative overflow-hidden">
+                <div className="bg-gray-50 rounded-lg p-3 relative overflow-hidden">
                   <div className="mb-2">
                     <h3 className="text-sm font-medium text-gray-700">원문</h3>
                   </div>
-                  <p className="text-gray-900 leading-relaxed pr-20">
-                    {translation.original}
-                  </p>
+                  <textarea
+                    value={editableText}
+                    onChange={(e) => handleTextChange(e.target.value)}
+                    className="w-full text-gray-900 leading-relaxed bg-transparent border-none resize-none focus:outline-none pr-20 min-h-[60px]"
+                    placeholder="원문을 입력하세요..."
+                    style={{ fontFamily: "inherit" }}
+                  />
+                  {hasTextChanged && (
+                    <div className="text-xs text-orange-600 mt-1">
+                      텍스트가 변경되었습니다. 재생 버튼을 누르면 재번역됩니다.
+                    </div>
+                  )}
 
                   {/* 우측 상단 버튼들 */}
                   <div
@@ -347,17 +373,13 @@ Please respond in this exact JSON format:
                             // 오디오 권한 먼저 확인
                             const hasPermission = await checkAudioPermission();
                             if (!hasPermission) {
-                              // alert(
-                              //   "오디오 재생 권한이 필요합니다. 브라우저 설정에서 오디오를 허용해주세요.",
-                              // );
                               return;
                             }
 
-                            await playText(translation.original, true);
+                            await playTextAndRetranslate(editableText, true);
                           }
                         } catch (error) {
                           console.error("재생 중 에러:", error);
-                          // alert("재생 에러: " + error);
                         }
                       }}
                       onTouchStart={() => {}} // 터치 이벤트 활성화
@@ -387,7 +409,7 @@ Please respond in this exact JSON format:
                 </div>
 
                 {/* 번역 */}
-                <div className="bg-blue-50 rounded-lg p-4 relative overflow-hidden">
+                <div className="bg-blue-50 rounded-lg p-3 relative overflow-hidden">
                   <h3 className="text-sm font-medium text-blue-700 mb-2">
                     번역
                   </h3>
@@ -466,15 +488,7 @@ Please respond in this exact JSON format:
             )}
           </div>
 
-          {/* 푸터 */}
-          <div className="flex justify-end p-4 border-t border-gray-200">
-            <button
-              onClick={onClose}
-              className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
-            >
-              닫기
-            </button>
-          </div>
+          {/* 푸터 제거 */}
         </Dialog.Panel>
       </div>
     </Dialog>
