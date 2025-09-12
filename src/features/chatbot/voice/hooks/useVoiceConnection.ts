@@ -152,6 +152,14 @@ export const useVoiceConnection = (
           }
         },
         onUserTranscript: (text, isFinal) => {
+          // 🚫 일시정지 상태에서는 사용자 음성 처리 완전 차단
+          if (isPaused) {
+            console.log(
+              "🔇 [BLOCKED] 일시정지 상태로 인해 사용자 음성 무시:",
+              text,
+            );
+            return;
+          }
           if (isRespondingRef.current) return; // 어시스턴트 발화 중 전사 무시
           if (isFinal) {
             const finalText = normalizeText(text.trim());
@@ -170,6 +178,14 @@ export const useVoiceConnection = (
           }
         },
         onAssistantText: (text, isFinal) => {
+          // 🚫 일시정지 상태에서는 어시스턴트 음성 처리도 완전 차단
+          if (isPaused) {
+            console.log(
+              "🔇 [BLOCKED] 일시정지 상태로 인해 어시스턴트 음성 무시:",
+              text,
+            );
+            return;
+          }
           if (isFinal) {
             const finalText = normalizeText(
               assistantPartialRef.current || text,
