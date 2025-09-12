@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuthStore } from "../features/auth";
 import { Button } from "../components/ui";
-import { chatApi } from "../features/chatbot/messaging/api/chat";
+
 import {
   PaperAirplaneIcon,
   TrashIcon,
@@ -22,11 +22,13 @@ import {
   useCharacterStore,
   CHARACTER_PRESETS,
   VOICE_OPTIONS,
+  useCharacterSelection,
 } from "../features/chatbot/character";
 import MobileTranslationDialog from "../components/MobileTranslationDialog";
 import CardForChattingMessageWithTranslation from "../components/CardForChattingMessageWithTranslation";
 import { useExamMode } from "../features/chatbot/exam";
 import { useAudioSettings } from "../features/chatbot/settings";
+import { useConnectionState } from "../features/chatbot/connection";
 
 export default function MobileChat() {
   const { logout, getUser } = useAuthStore();
@@ -51,16 +53,18 @@ export default function MobileChat() {
   };
 
   // zustand store에서 캐릭터 상태 가져오기
-  const {
-    personaCharacter,
-    personaScenario,
-    personaGender,
-    setCharacterSettings,
-  } = useCharacterStore();
+  const { personaCharacter, personaGender } = useCharacterStore();
 
-  // 연결 상태
-  const [isConnected, setIsConnected] = useState(false);
-  const [isConnecting, setIsConnecting] = useState(false);
+  // 채팅방 연결 상태 훅
+  const {
+    isConnected,
+    isConnecting,
+    connectToChatRoom,
+    disconnect,
+    ensureChatRoomConnected,
+  } = useConnectionState({
+    chatbotConfig: defaultChatbot,
+  });
 
   // 오디오 설정 훅 (responseDelayMs: 2초로 설정하여 사용자 메시지 등록 후 적절한 대기시간 제공)
   const {
@@ -87,13 +91,18 @@ export default function MobileChat() {
   const [translationOpen, setTranslationOpen] = useState(false);
   const [translationText, setTranslationText] = useState<string>("");
 
-  // 캐릭터/음성 선택 상태
-  const [selectedCharacterId, setSelectedCharacterId] = useState<
-    (typeof CHARACTER_PRESETS)[number]["id"]
-  >(CHARACTER_PRESETS[0].id);
-  const [selectedVoice, setSelectedVoice] = useState<string>(
-    CHARACTER_PRESETS[0].defaultVoice,
-  );
+  // 캐릭터 선택 훅
+  const {
+    selectedCharacterId,
+    selectedVoice,
+    characterDialogOpen,
+    setSelectedCharacterId,
+    setSelectedVoice,
+    openCharacterDialog,
+    closeCharacterDialog,
+    applyCharacterSettings,
+    getCurrentDialogValue,
+  } = useCharacterSelection();
 
   // 채팅 메시지 훅
   const {
@@ -153,38 +162,14 @@ export default function MobileChat() {
     onAssistantMessage: addAssistantMessage,
   });
 
-  // 캐릭터 변경 시 기본 음성 동기화
-  useEffect(() => {
-    const c =
-      CHARACTER_PRESETS.find((c) => c.id === selectedCharacterId) ||
-      CHARACTER_PRESETS[0];
-    setSelectedVoice(c.defaultVoice);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedCharacterId]);
-
-  const [characterDialogOpen, setCharacterDialogOpen] = useState(false);
+  // 캐릭터 변경 시 기본 음성 동기화는 useCharacterSelection 훅에서 처리
 
   // 시험 모드 훅 (ensureConnectedAndReady 함수 정의 후 초기화)
   const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
   const ensureConnectedAndReady = async () => {
-    // Ensure chat room joined
-    if (!isConnected) {
-      setIsConnecting(true);
-      try {
-        const chatRoomData = await chatApi.getOrCreateChatRoom({
-          chatbotId: defaultChatbot.id,
-          chatbotName: defaultChatbot.name,
-        });
-        await chatApi.joinChatRoom(chatRoomData.id);
-        setIsConnected(true);
-      } catch (e) {
-        console.error("방 참여 실패:", e);
-        setIsConnecting(false);
-        throw e;
-      }
-      setIsConnecting(false);
-    }
+    // Ensure chat room joined (using connection hook)
+    await ensureChatRoomConnected();
 
     // Ensure voice connection
     if (!voiceEnabled || !voiceConn) {
@@ -282,7 +267,7 @@ export default function MobileChat() {
               <>
                 {/* 캐릭터 아바타 (역할극용) */}
                 <button
-                  onClick={() => setCharacterDialogOpen(true)}
+                  onClick={openCharacterDialog}
                   className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-400 to-yellow-500 flex items-center justify-center border border-amber-300 shadow-sm"
                   title={`${personaCharacter.name} (role-play)`}
                 >
@@ -316,7 +301,7 @@ export default function MobileChat() {
                   onClick={() => {
                     stopVoice();
                     setVoiceEnabled(false);
-                    setIsConnected(false);
+                    disconnect(); // 훅을 사용한 연결 해제
                     // 연결 끊을 때 대화 내용 초기화
                     clearChat();
                   }}
@@ -350,7 +335,7 @@ export default function MobileChat() {
               <>
                 {/* 캐릭터 아바타 + Start 버튼 + 상태 점 오버레이 */}
                 <button
-                  onClick={() => setCharacterDialogOpen(true)}
+                  onClick={openCharacterDialog}
                   className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-400 to-yellow-500 flex items-center justify-center border border-amber-300 shadow-sm"
                   title={`${personaCharacter.name} (role-play)`}
                 >
@@ -359,24 +344,15 @@ export default function MobileChat() {
                 <div className="relative inline-block">
                   <Button
                     onClick={async () => {
+                      // 채팅방 연결 (훅 사용)
                       if (!isConnected) {
-                        // 먼저 연결
-                        setIsConnecting(true);
                         try {
-                          const chatRoomData =
-                            await chatApi.getOrCreateChatRoom({
-                              chatbotId: defaultChatbot.id,
-                              chatbotName: defaultChatbot.name,
-                            });
-                          await chatApi.joinChatRoom(chatRoomData.id);
-                          setIsConnected(true);
+                          await connectToChatRoom();
                         } catch (error) {
-                          console.error("방 참여 실패:", error);
-                          alert("채팅방 참여에 실패했습니다.");
-                          setIsConnecting(false);
+                          console.error("채팅방 연결 실패:", error);
+                          alert("채팅방 연결에 실패했습니다.");
                           return;
                         }
-                        setIsConnecting(false);
                       }
 
                       // 음성 시작
@@ -566,26 +542,11 @@ export default function MobileChat() {
       {/* Character/Scenario/Gender Dialog */}
       <MobileCharacterDialog
         open={characterDialogOpen}
-        onClose={() => setCharacterDialogOpen(false)}
-        value={{
-          characterId: personaCharacter.id,
-          scenarioId: personaScenario,
-          gender: personaGender,
-          voice: selectedVoice as any,
-        }}
+        onClose={closeCharacterDialog}
+        value={getCurrentDialogValue()}
         onConfirm={(v) => {
-          console.log("Setting new character via store:", v);
-
-          // zustand store를 통해 캐릭터 설정 업데이트
-          setCharacterSettings({
-            characterId: v.characterId,
-            scenarioId: v.scenarioId || "",
-            gender: v.gender,
-            voice: v.voice,
-          });
-
-          // 기존 selectedVoice 상태도 업데이트
-          setSelectedVoice(v.voice);
+          // 캐릭터 설정 적용 (훅에서 처리)
+          applyCharacterSettings(v);
 
           // 세션에 즉시 반영 - 더 확실하게 하기 위해 연결 재시작
           if (voiceConn && isRecording) {
