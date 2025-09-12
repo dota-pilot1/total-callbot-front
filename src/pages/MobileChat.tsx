@@ -412,7 +412,10 @@ export default function MobileChat() {
       </div>
 
       {/* 채팅 영역 */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+      <div
+        className="h-[calc(100vh-200px)] overflow-y-scroll overscroll-contain p-4 space-y-3"
+        style={{ WebkitOverflowScrolling: "touch" }}
+      >
         {messages.length === 0 ? (
           <div className="text-center text-gray-400 mt-8">
             <p className="mb-2">대화를 시작해 보세요!</p>

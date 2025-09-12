@@ -179,11 +179,9 @@ Please suggest an appropriate question or response that:
     }
   };
 
-  // 자동 스크롤 효과
+  // 자동 스크롤 효과 (메시지 추가 시) - CSS 기반으로 단순화
   useEffect(() => {
-    try {
-      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    } catch {}
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
   return {
