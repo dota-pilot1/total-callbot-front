@@ -180,6 +180,10 @@ export default function MobileChat() {
       if (!isFinal && text.trim()) {
         console.log("🎤 실시간 업데이트:", text);
         setTempVoiceMessage(text);
+      } else if (isFinal) {
+        // 음성 인식 완료 시 임시 메시지 제거
+        console.log("🎤 음성 인식 완료 - 임시 메시지 제거");
+        setTempVoiceMessage(null);
       }
     },
   });

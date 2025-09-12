@@ -9,16 +9,13 @@ import {
   PlayIcon,
 } from "@heroicons/react/24/outline";
 import { examApi } from "../features/chatbot/exam/api/exam";
+// TODO: GPT Realtime API 통합 예정
+// import { voiceApi } from "../features/chatbot/voice/api/voice";
+// import { connectRealtimeVoice, type VoiceConnection } from "../features/chatbot/voice/lib/realtime";
 
 // GPT 기반 연습장: Web Speech API (실시간 음성인식) + OpenAI TTS (음성합성)
 
-// TypeScript declarations for Web Speech API
-declare global {
-  interface Window {
-    SpeechRecognition?: any;
-    webkitSpeechRecognition?: any;
-  }
-}
+// GPT Realtime API를 사용하므로 Web Speech API 선언 제거
 
 interface InputAssistDialogForChattingProps {
   onInsertKorean?: (text: string) => void;
@@ -45,26 +42,19 @@ export default function InputAssistDialogForChatting({
   const [englishText, setEnglishText] = useState("");
   const [isListening, setIsListening] = useState(false);
   const [isTranslating, setIsTranslating] = useState(false);
-  const [isSupported, setIsSupported] = useState(false);
 
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [speakingText, setSpeakingText] = useState("");
-  const recognitionRef = useRef<any>(null);
+  const voiceConnRef = useRef<any>(null); // TODO: VoiceConnection 타입 추후 적용
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  useEffect(() => {
-    const SpeechRecognition =
-      window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (SpeechRecognition) {
-      setIsSupported(true);
-    }
-  }, []);
+  // GPT Realtime API 사용으로 변경
 
   const startListening = async () => {
-    console.log("🎤 연습장 마이크 버튼 클릭됨");
-    if (!isSupported) {
-      console.log("❌ 연습장 - 음성 인식 지원되지 않음");
-      alert("이 브라우저에서는 음성 인식이 지원되지 않습니다.");
+    console.log("🎤 연습장 GPT Realtime 마이크 시작");
+
+    if (voiceConnRef.current) {
+      console.log("이미 음성인식이 활성화되어 있습니다.");
       return;
     }
 
@@ -217,7 +207,7 @@ export default function InputAssistDialogForChatting({
         console.log("🎤 연습장 음성인식 종료");
       };
 
-      recognitionRef.current = recognition;
+      // recognitionRef.current = recognition; // TODO: GPT Realtime으로 교체 예정
       recognition.start();
     } catch (error) {
       console.error("음성인식 초기화 오류:", error);
@@ -226,8 +216,9 @@ export default function InputAssistDialogForChatting({
   };
 
   const stopListening = () => {
-    if (recognitionRef.current) {
-      recognitionRef.current.stop();
+    if (voiceConnRef.current) {
+      voiceConnRef.current.stop();
+      voiceConnRef.current = null;
     }
     setIsListening(false);
   };
@@ -456,22 +447,21 @@ Korean: "${koreanText}"`;
                 <div className="flex flex-col items-center space-y-2">
                   <button
                     onClick={isListening ? stopListening : startListening}
-                    disabled={!isSupported}
                     className={`w-16 h-16 rounded-full flex items-center justify-center transition-all duration-200 ${
                       isListening
                         ? "bg-red-500 hover:bg-red-600 text-white animate-pulse"
                         : "bg-blue-500 hover:bg-blue-600 text-white"
-                    } ${!isSupported ? "opacity-50 cursor-not-allowed" : ""}`}
-                    title={isListening ? "음성인식 중지" : "음성인식 시작"}
+                    }`}
+                    title={
+                      isListening ? "GPT 음성인식 중지" : "GPT 음성인식 시작"
+                    }
                   >
                     <MicrophoneIcon className="h-8 w-8" />
                   </button>
                   <p className="text-sm text-gray-600 text-center">
-                    {!isSupported
-                      ? "음성인식을 지원하지 않는 브라우저입니다"
-                      : isListening
-                        ? "듣고 있어요... (10초 후 자동 종료)"
-                        : "마이크를 눌러 음성을 입력하세요"}
+                    {isListening
+                      ? "GPT가 듣고 있어요..."
+                      : "GPT Realtime 마이크로 음성을 입력하세요"}
                   </p>
                 </div>
 

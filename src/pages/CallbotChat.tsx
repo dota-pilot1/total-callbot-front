@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useLocation, useParams, useNavigate } from "react-router-dom";
 import { useAuthStore } from "../features/auth";
+import { v4 as uuidv4 } from "uuid";
 import { Button } from "../components/ui";
 import Sidebar from "../components/Sidebar";
 import ChatSettingsPanel from "../components/ChatSettingsPanel";
@@ -19,6 +20,7 @@ import {
   ShoppingBagIcon,
   TableCellsIcon,
   BriefcaseIcon,
+  SparklesIcon,
   UserGroupIcon,
   ComputerDesktopIcon,
   DocumentTextIcon,
@@ -31,9 +33,7 @@ import {
   DevicePhoneMobileIcon,
   SwatchIcon,
 } from "@heroicons/react/24/outline";
-import {
-  MicrophoneIcon as MicrophoneIconSolid,
-} from "@heroicons/react/24/solid";
+import { MicrophoneIcon as MicrophoneIconSolid } from "@heroicons/react/24/solid";
 import { voiceApi } from "../features/chatbot/voice/api/voice";
 import {
   connectRealtimeVoice,
@@ -42,7 +42,7 @@ import {
 import VoicePulse from "../components/VoicePulse";
 
 // 통일된 음성 보이스 (3종 중 기본값)
-const DEFAULT_REALTIME_VOICE: 'verse' | 'alloy' | 'sage' = 'verse';
+const DEFAULT_REALTIME_VOICE: "verse" | "alloy" | "sage" = "verse";
 
 // 아이콘 매핑 함수
 const getIconComponent = (chatbotId: string) => {
@@ -78,21 +78,21 @@ const getIconComponent = (chatbotId: string) => {
 // 임시 채팅 메시지 데이터
 const mockMessages = [
   {
-    id: 1,
+    id: "1",
     sender: "callbot",
     message: "안녕하세요! 콜봇입니다. 무엇을 도와드릴까요?",
     timestamp: "오후 2:30",
     type: "text",
   },
   {
-    id: 2,
+    id: "2",
     sender: "user",
     message: "안녕하세요. 오늘 날씨가 어떤가요?",
     timestamp: "오후 2:31",
     type: "text",
   },
   {
-    id: 3,
+    id: "3",
     sender: "callbot",
     message:
       "오늘은 맑은 날씨입니다. 기온은 22도로 따뜻하네요. 외출하기 좋은 날씨입니다!",
@@ -159,6 +159,7 @@ export default function CallbotChat() {
   const [voiceConn, setVoiceConn] = useState<VoiceConnection | null>(null);
   const [isListening, setIsListening] = useState(false);
   const [isResponding, setIsResponding] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const [speechLang, setSpeechLang] = useState<"auto" | "ko" | "en">("auto");
   const [echoCancellation, setEchoCancellation] = useState(true);
   const [noiseSuppression, setNoiseSuppression] = useState(true);
@@ -169,8 +170,8 @@ export default function CallbotChat() {
   // 한글 조합/스트리밍 파편으로 인한 깨짐 완화용 정규화 (개선된 버전)
   const normalizeText = (s: string) => {
     try {
-      if (!s || typeof s !== 'string') return '';
-      
+      if (!s || typeof s !== "string") return "";
+
       // NFC 정규화 (한글 조합 문자 정규화)
       let normalized = s.normalize("NFC");
 
@@ -184,7 +185,7 @@ export default function CallbotChat() {
 
       return normalized;
     } catch (error) {
-      console.warn('텍스트 정규화 실패:', error);
+      console.warn("텍스트 정규화 실패:", error);
       return (s || "").trim();
     }
   };
@@ -241,6 +242,58 @@ export default function CallbotChat() {
     }
   };
 
+  // 자연스러운 응답 제안 생성
+  const getNaturalSuggestions = () => {
+    const lastBotMessage = messages
+      .slice()
+      .reverse()
+      .find((msg) => msg.sender === "callbot");
+
+    if (!lastBotMessage) {
+      return [
+        "안녕하세요! 궁금한 것이 있어요",
+        "도움을 요청하고 싶습니다",
+        "잘 부탁드립니다",
+      ];
+    }
+
+    const suggestions = [];
+    const botText = lastBotMessage.message.toLowerCase();
+
+    // 동의 관련 응답
+    suggestions.push(
+      "맞아요, 저도 그렇게 생각해요",
+      "정말 좋은 의견이네요",
+      "동감합니다",
+    );
+
+    // 반론/다른 의견
+    suggestions.push(
+      "하지만 다른 관점에서 보면...",
+      "조금 다른 생각을 가지고 있어요",
+      "그런데 이런 경우는 어떨까요?",
+    );
+
+    // 추가 질문
+    if (botText.includes("방법") || botText.includes("어떻게")) {
+      suggestions.push("더 자세히 설명해 주실 수 있나요?");
+    } else if (botText.includes("추천") || botText.includes("제안")) {
+      suggestions.push("다른 옵션도 있을까요?");
+    } else {
+      suggestions.push("좀 더 구체적으로 알고 싶어요");
+    }
+
+    // 감사 표현
+    suggestions.push("고마워요, 도움이 되었어요", "좋은 정보 감사합니다");
+
+    return suggestions.slice(0, 6); // 최대 6개
+  };
+
+  const applySuggestion = (suggestion: string) => {
+    setNewMessage(suggestion);
+    setShowSuggestions(false);
+  };
+
   const handleSendMessage = async () => {
     if (!newMessage.trim()) return;
 
@@ -249,7 +302,7 @@ export default function CallbotChat() {
 
     // 로컬 시뮬레이션 (채팅방이 없는 경우)
     const userMessage = {
-      id: messages.length + 1,
+      id: uuidv4(),
       sender: "user" as const,
       message: normalizeText(messageContent),
       timestamp: new Date().toLocaleTimeString("ko-KR", {
@@ -271,9 +324,7 @@ export default function CallbotChat() {
             item: {
               type: "message",
               role: "user",
-              content: [
-                { type: "input_text", text: userMessage.message },
-              ],
+              content: [{ type: "input_text", text: userMessage.message }],
             },
           }),
         );
@@ -281,7 +332,11 @@ export default function CallbotChat() {
         voiceConn.dc.send(
           JSON.stringify({
             type: "response.create",
-            response: { modalities: ["audio", "text"], conversation: "auto", voice: DEFAULT_REALTIME_VOICE },
+            response: {
+              modalities: ["audio", "text"],
+              conversation: "auto",
+              voice: DEFAULT_REALTIME_VOICE,
+            },
           }),
         );
         return; // 로컬 목업 응답 생략
@@ -326,7 +381,7 @@ export default function CallbotChat() {
       };
 
       const botResponse = {
-        id: messages.length + 2,
+        id: uuidv4(),
         sender: "callbot" as const,
         message: getBotResponse(messageContent, chatbot?.id || "default"),
         timestamp: new Date().toLocaleTimeString("ko-KR", {
@@ -425,19 +480,28 @@ export default function CallbotChat() {
                     const key = String(e.item_id);
                     const entry = userItemsRef.current.get(key);
                     if (!entry) return;
-                    if (entry.completed) { userItemsRef.current.delete(key); return; }
+                    if (entry.completed) {
+                      userItemsRef.current.delete(key);
+                      return;
+                    }
                     if (entry.timer) clearTimeout(entry.timer);
                     entry.timer = setTimeout(() => {
-                      const merged = normalizeText((entry.buffer || '').trim());
-                      if (merged && merged !== normalizeText(lastUserFinalRef.current)) {
+                      const merged = normalizeText((entry.buffer || "").trim());
+                      if (
+                        merged &&
+                        merged !== normalizeText(lastUserFinalRef.current)
+                      ) {
                         setMessages((prev) => [
                           ...prev,
                           {
-                            id: prev.length + 1,
-                            sender: 'user' as const,
+                            id: uuidv4(),
+                            sender: "user" as const,
                             message: merged,
-                            timestamp: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }),
-                            type: 'text' as const,
+                            timestamp: new Date().toLocaleTimeString("ko-KR", {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            }),
+                            type: "text" as const,
                           },
                         ]);
                         lastUserFinalRef.current = merged;
@@ -449,29 +513,55 @@ export default function CallbotChat() {
                 } catch {}
               },
               onUserTranscript: (text, isFinal, meta) => {
-                const key = String(meta?.itemId || 'default');
-                const entry = userItemsRef.current.get(key) || { buffer: '', completed: false, timer: null };
+                const key = String(meta?.itemId || "default");
+                const entry = userItemsRef.current.get(key) || {
+                  buffer: "",
+                  completed: false,
+                  timer: null,
+                };
                 if (!isFinal) {
                   entry.buffer += text;
                   userItemsRef.current.set(key, entry);
                 } else {
                   entry.buffer = entry.buffer || text;
                   entry.completed = true;
-                  if (entry.timer) { clearTimeout(entry.timer); entry.timer = null; }
-                  const finalText = normalizeText((entry.buffer || '').trim());
-                  if (debugEvents && finalText) console.debug('[voice:user:final]', finalText);
-                  if (finalText && finalText !== normalizeText(lastUserFinalRef.current)) {
+                  if (entry.timer) {
+                    clearTimeout(entry.timer);
+                    entry.timer = null;
+                  }
+                  const finalText = normalizeText((entry.buffer || "").trim());
+                  console.log(
+                    "🎤 [voice:user:final]",
+                    finalText,
+                    "last:",
+                    lastUserFinalRef.current,
+                  );
+
+                  // 무조건 메시지 등록 (필터링 거의 없음)
+                  if (finalText && finalText.trim()) {
+                    const messageId = uuidv4(); // 고유 ID 생성
+                    console.log("✅ 사용자 메시지 강제 등록:", finalText);
                     setMessages((prev) => [
                       ...prev,
                       {
-                        id: prev.length + 1,
-                        sender: 'user' as const,
+                        id: messageId,
+                        sender: "user" as const,
                         message: finalText,
-                        timestamp: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }),
-                        type: 'text' as const,
+                        timestamp: new Date().toLocaleTimeString("ko-KR", {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        }),
+                        type: "text" as const,
                       },
                     ]);
                     lastUserFinalRef.current = finalText;
+                  } else {
+                    console.log(
+                      "❌ 메시지 등록 실패:",
+                      finalText,
+                      "길이:",
+                      finalText?.length,
+                    );
                   }
                   userItemsRef.current.delete(key);
                 }
@@ -500,19 +590,22 @@ export default function CallbotChat() {
                     return;
                   }
                   if (normalizedFinal) {
-                    setMessages((prev) => [
-                      ...prev,
-                      {
-                        id: prev.length + 1,
-                        sender: "callbot" as const,
-                        message: finalText,
-                        timestamp: new Date().toLocaleTimeString("ko-KR", {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        }),
-                        type: "text" as const,
-                      },
-                    ]);
+                    // 사용자 메시지 등록 시간을 주기 위해 1초 지연
+                    setTimeout(() => {
+                      setMessages((prev) => [
+                        ...prev,
+                        {
+                          id: uuidv4(),
+                          sender: "callbot" as const,
+                          message: finalText,
+                          timestamp: new Date().toLocaleTimeString("ko-KR", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          }),
+                          type: "text" as const,
+                        },
+                      ]);
+                    }, 2000);
                     lastAssistantFinalRef.current = finalText.trim();
                     if (meta?.responseId)
                       processedAssistantKeysRef.current.add(key);
@@ -539,7 +632,10 @@ export default function CallbotChat() {
   const startVoice = async () => {
     if (voiceConn) return;
     try {
-      const session = await voiceApi.createSession({ lang: speechLang, voice: DEFAULT_REALTIME_VOICE });
+      const session = await voiceApi.createSession({
+        lang: speechLang,
+        voice: DEFAULT_REALTIME_VOICE,
+      });
       const conn = await connectRealtimeVoice({
         token: session.token,
         model: session.model,
@@ -576,19 +672,28 @@ export default function CallbotChat() {
               const key = String(e.item_id);
               const entry = userItemsRef.current.get(key);
               if (!entry) return;
-              if (entry.completed) { userItemsRef.current.delete(key); return; }
+              if (entry.completed) {
+                userItemsRef.current.delete(key);
+                return;
+              }
               if (entry.timer) clearTimeout(entry.timer);
               entry.timer = setTimeout(() => {
-                const merged = normalizeText((entry.buffer || '').trim());
-                if (merged && merged !== normalizeText(lastUserFinalRef.current)) {
+                const merged = normalizeText((entry.buffer || "").trim());
+                if (
+                  merged &&
+                  merged !== normalizeText(lastUserFinalRef.current)
+                ) {
                   setMessages((prev) => [
                     ...prev,
                     {
-                      id: prev.length + 1,
-                      sender: 'user' as const,
+                      id: uuidv4(),
+                      sender: "user" as const,
                       message: merged,
-                      timestamp: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }),
-                      type: 'text' as const,
+                      timestamp: new Date().toLocaleTimeString("ko-KR", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      }),
+                      type: "text" as const,
                     },
                   ]);
                   lastUserFinalRef.current = merged;
@@ -600,29 +705,55 @@ export default function CallbotChat() {
           } catch {}
         },
         onUserTranscript: (text, isFinal, meta) => {
-          const key = String(meta?.itemId || 'default');
-          const entry = userItemsRef.current.get(key) || { buffer: '', completed: false, timer: null };
+          const key = String(meta?.itemId || "default");
+          const entry = userItemsRef.current.get(key) || {
+            buffer: "",
+            completed: false,
+            timer: null,
+          };
           if (!isFinal) {
             entry.buffer += text;
             userItemsRef.current.set(key, entry);
           } else {
             entry.buffer = entry.buffer || text;
             entry.completed = true;
-            if (entry.timer) { clearTimeout(entry.timer); entry.timer = null; }
-            const finalText = normalizeText((entry.buffer || '').trim());
-            if (debugEvents && finalText) console.debug('[voice:user:final]', finalText);
-            if (finalText && finalText !== normalizeText(lastUserFinalRef.current)) {
+            if (entry.timer) {
+              clearTimeout(entry.timer);
+              entry.timer = null;
+            }
+            const finalText = normalizeText((entry.buffer || "").trim());
+            console.log(
+              "🎤 [voice:user:final]",
+              finalText,
+              "last:",
+              lastUserFinalRef.current,
+            );
+
+            // 무조건 메시지 등록 (필터링 거의 없음)
+            if (finalText && finalText.trim()) {
+              const messageId = uuidv4(); // 고유 ID 생성
+              console.log("✅ 사용자 메시지 강제 등록:", finalText);
               setMessages((prev) => [
                 ...prev,
                 {
-                  id: prev.length + 1,
-                  sender: 'user' as const,
+                  id: messageId,
+                  sender: "user" as const,
                   message: finalText,
-                  timestamp: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }),
-                  type: 'text' as const,
+                  timestamp: new Date().toLocaleTimeString("ko-KR", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  }),
+                  type: "text" as const,
                 },
               ]);
               lastUserFinalRef.current = finalText;
+            } else {
+              console.log(
+                "❌ 메시지 등록 실패:",
+                finalText,
+                "길이:",
+                finalText?.length,
+              );
             }
             userItemsRef.current.delete(key);
           }
@@ -649,19 +780,22 @@ export default function CallbotChat() {
               return;
             }
             if (normalizedFinal) {
-              setMessages((prev) => [
-                ...prev,
-                {
-                  id: prev.length + 1,
-                  sender: "callbot" as const,
-                  message: finalText,
-                  timestamp: new Date().toLocaleTimeString("ko-KR", {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  }),
-                  type: "text" as const,
-                },
-              ]);
+              // 사용자 메시지 등록 시간을 주기 위해 1초 지연
+              setTimeout(() => {
+                setMessages((prev) => [
+                  ...prev,
+                  {
+                    id: uuidv4(),
+                    sender: "callbot" as const,
+                    message: finalText,
+                    timestamp: new Date().toLocaleTimeString("ko-KR", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    }),
+                    type: "text" as const,
+                  },
+                ]);
+              }, 2000);
               lastAssistantFinalRef.current = finalText.trim();
               if (meta?.responseId) processedAssistantKeysRef.current.add(key);
             }
@@ -775,19 +909,31 @@ export default function CallbotChat() {
                     {chatbot.description}
                   </p>
                 )}
-                
+
                 {/* 연결 상태 배지 */}
-                <div className={`inline-flex items-center px-3 py-2 rounded-full text-sm font-medium ${
-                  isConnected 
-                    ? "bg-green-100 text-green-800 border border-green-200" 
-                    : isConnecting 
-                      ? "bg-yellow-100 text-yellow-800 border border-yellow-200 animate-pulse" 
-                      : "bg-gray-100 text-gray-600 border border-gray-200"
-                }`}>
-                  <div className={`w-2 h-2 rounded-full mr-2 ${
-                    isConnected ? "bg-green-500" : isConnecting ? "bg-yellow-500" : "bg-gray-400"
-                  }`}></div>
-                  {isConnecting ? "연결중..." : isConnected ? "연결됨" : "연결 대기중"}
+                <div
+                  className={`inline-flex items-center px-3 py-2 rounded-full text-sm font-medium ${
+                    isConnected
+                      ? "bg-green-100 text-green-800 border border-green-200"
+                      : isConnecting
+                        ? "bg-yellow-100 text-yellow-800 border border-yellow-200 animate-pulse"
+                        : "bg-gray-100 text-gray-600 border border-gray-200"
+                  }`}
+                >
+                  <div
+                    className={`w-2 h-2 rounded-full mr-2 ${
+                      isConnected
+                        ? "bg-green-500"
+                        : isConnecting
+                          ? "bg-yellow-500"
+                          : "bg-gray-400"
+                    }`}
+                  ></div>
+                  {isConnecting
+                    ? "연결중..."
+                    : isConnected
+                      ? "연결됨"
+                      : "연결 대기중"}
                 </div>
 
                 {/* 방 정보 표시 */}
@@ -835,8 +981,12 @@ export default function CallbotChat() {
                   <div className="bg-gray-50 rounded-lg p-4 space-y-3">
                     <div className="flex items-center justify-between">
                       <div>
-                        <h4 className="text-sm font-semibold text-gray-900">음성 인식</h4>
-                        <p className="text-xs text-gray-600">실시간 음성 대화</p>
+                        <h4 className="text-sm font-semibold text-gray-900">
+                          음성 인식
+                        </h4>
+                        <p className="text-xs text-gray-600">
+                          실시간 음성 대화
+                        </p>
                       </div>
                       <button
                         onClick={() => {
@@ -857,25 +1007,33 @@ export default function CallbotChat() {
                         />
                       </button>
                     </div>
-                    
+
                     {/* 음성 상태 표시 */}
                     {voiceEnabled && isRecording && (
-                      <div className={`flex items-center space-x-2 text-xs ${
-                        isListening 
-                          ? "text-red-600" 
-                          : isResponding 
-                            ? "text-blue-600" 
-                            : "text-gray-500"
-                      }`}>
-                        <div className={`w-2 h-2 rounded-full ${
-                          isListening 
-                            ? "bg-red-500 animate-pulse" 
-                            : isResponding 
-                              ? "bg-blue-500 animate-pulse" 
-                              : "bg-gray-400"
-                        }`}></div>
+                      <div
+                        className={`flex items-center space-x-2 text-xs ${
+                          isListening
+                            ? "text-red-600"
+                            : isResponding
+                              ? "text-blue-600"
+                              : "text-gray-500"
+                        }`}
+                      >
+                        <div
+                          className={`w-2 h-2 rounded-full ${
+                            isListening
+                              ? "bg-red-500 animate-pulse"
+                              : isResponding
+                                ? "bg-blue-500 animate-pulse"
+                                : "bg-gray-400"
+                          }`}
+                        ></div>
                         <span>
-                          {isListening ? "듣는 중..." : isResponding ? "응답 중..." : "대기 중"}
+                          {isListening
+                            ? "듣는 중..."
+                            : isResponding
+                              ? "응답 중..."
+                              : "대기 중"}
                         </span>
                       </div>
                     )}
@@ -886,17 +1044,17 @@ export default function CallbotChat() {
               {/* 추가 설정 및 기능 - 연결 후에만 표시 */}
               {isConnected && (
                 <div className="mt-auto pt-6 border-t border-gray-200 space-y-3">
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     className="w-full"
                     onClick={() => setSettingsPanelOpen(!settingsPanelOpen)}
                   >
                     <CogIcon className="h-4 w-4 mr-2" />
                     고급 설정
                   </Button>
-                  
-                  <Button 
-                    variant="ghost" 
+
+                  <Button
+                    variant="ghost"
                     className="w-full text-sm"
                     onClick={handleClearChat}
                   >
@@ -922,32 +1080,33 @@ export default function CallbotChat() {
                     )}
                     {messages.length === 0 ? (
                       <div className="text-center text-gray-400 mt-8">
-                        대화를 시작해 보세요. 음성 인식 모드를 켜거나, 아래 입력창에 메시지를 입력하세요.
+                        대화를 시작해 보세요. 음성 인식 모드를 켜거나, 아래
+                        입력창에 메시지를 입력하세요.
                       </div>
                     ) : (
                       messages.map((message) => (
-                      <div
-                        key={message.id}
-                        className={`flex ${message.sender === "user" ? "justify-end" : "justify-start"}`}
-                      >
                         <div
-                          className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                            message.sender === "user"
-                              ? "bg-indigo-500 text-white"
-                              : "bg-white border border-gray-200 text-gray-900"
-                          }`}
+                          key={message.id}
+                          className={`flex ${message.sender === "user" ? "justify-end" : "justify-start"}`}
                         >
-                          <p className="text-sm">{message.message}</p>
-                          <p
-                            className={`text-xs mt-1 ${
+                          <div
+                            className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
                               message.sender === "user"
-                                ? "text-indigo-100"
-                                : "text-gray-500"
+                                ? "bg-indigo-500 text-white"
+                                : "bg-white border border-gray-200 text-gray-900"
                             }`}
                           >
-                            {message.timestamp}
-                          </p>
-                        </div>
+                            <p className="text-sm">{message.message}</p>
+                            <p
+                              className={`text-xs mt-1 ${
+                                message.sender === "user"
+                                  ? "text-indigo-100"
+                                  : "text-gray-500"
+                              }`}
+                            >
+                              {message.timestamp}
+                            </p>
+                          </div>
                         </div>
                       ))
                     )}
@@ -973,7 +1132,15 @@ export default function CallbotChat() {
                         )}
                       </button>
 
-                      <div className="flex-1 flex items-center space-x-2">
+                      {/* 자동 완성 제안 버튼 */}
+                      <button
+                        onClick={() => setShowSuggestions(!showSuggestions)}
+                        className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 transition-colors"
+                        title="자동 완성 제안"
+                      >
+                        <SparklesIcon className="h-4 w-4" />
+                      </button>
+                      <div className="flex-1 flex items-center space-x-2 relative">
                         <input
                           type="text"
                           value={newMessage}
@@ -982,8 +1149,15 @@ export default function CallbotChat() {
                           onCompositionEnd={() => setIsIMEComposing(false)}
                           onKeyDown={(e) => {
                             const anyEvt = e.nativeEvent as any;
-                            const composing = isIMEComposing || anyEvt?.isComposing || anyEvt?.keyCode === 229;
-                            if (e.key === "Enter" && !e.shiftKey && !composing) {
+                            const composing =
+                              isIMEComposing ||
+                              anyEvt?.isComposing ||
+                              anyEvt?.keyCode === 229;
+                            if (
+                              e.key === "Enter" &&
+                              !e.shiftKey &&
+                              !composing
+                            ) {
                               handleSendMessage();
                             }
                           }}
@@ -998,9 +1172,32 @@ export default function CallbotChat() {
                         >
                           <PaperAirplaneIcon className="h-4 w-4" />
                         </Button>
-
                       </div>
                     </div>
+
+                    {/* 자동 완성 제안 팝업 */}
+                    {showSuggestions && (
+                      <div className="absolute bottom-full left-0 right-0 mb-2 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-64 overflow-y-auto">
+                        <div className="p-3">
+                          <h4 className="text-sm font-medium text-gray-700 mb-2">
+                            💭 자연스러운 응답 제안
+                          </h4>
+                          <div className="grid grid-cols-1 gap-1">
+                            {getNaturalSuggestions().map(
+                              (suggestion, index) => (
+                                <button
+                                  key={index}
+                                  onClick={() => applySuggestion(suggestion)}
+                                  className="text-left p-2 rounded-md hover:bg-gray-50 text-sm text-gray-700 transition-colors"
+                                >
+                                  {suggestion}
+                                </button>
+                              ),
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </>
               ) : (
@@ -1010,44 +1207,63 @@ export default function CallbotChat() {
                   <div className="max-w-2xl mx-auto space-y-6">
                     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                       <div className="text-center mb-6">
-                        <div className={`w-20 h-20 mx-auto mb-4 bg-gradient-to-br ${chatbot?.color || "from-indigo-500 to-purple-600"} rounded-full flex items-center justify-center shadow-lg`}>
+                        <div
+                          className={`w-20 h-20 mx-auto mb-4 bg-gradient-to-br ${chatbot?.color || "from-indigo-500 to-purple-600"} rounded-full flex items-center justify-center shadow-lg`}
+                        >
                           {chatbot?.id ? (
                             (() => {
-                              const IconComponent = getIconComponent(chatbot.id);
-                              return <IconComponent className="h-10 w-10 text-white" />;
+                              const IconComponent = getIconComponent(
+                                chatbot.id,
+                              );
+                              return (
+                                <IconComponent className="h-10 w-10 text-white" />
+                              );
                             })()
                           ) : (
-                            <span className="text-white text-xl font-bold">콜봇</span>
+                            <span className="text-white text-xl font-bold">
+                              콜봇
+                            </span>
                           )}
                         </div>
                         <h2 className="text-2xl font-bold text-gray-900 mb-2">
                           {chatbot?.name || "AI 콜봇"}과의 대화
                         </h2>
                         <p className="text-gray-600 leading-relaxed">
-                          {chatbot?.description || "전문 AI 어시스턴트"}와 대화해보세요.
+                          {chatbot?.description || "전문 AI 어시스턴트"}와
+                          대화해보세요.
                           <br />
                           실시간 음성 대화와 텍스트 채팅을 지원합니다.
                         </p>
                       </div>
-                      
+
                       <div className="bg-gray-50 rounded-lg p-4">
-                        <h3 className="font-semibold text-gray-900 mb-3">주요 기능</h3>
+                        <h3 className="font-semibold text-gray-900 mb-3">
+                          주요 기능
+                        </h3>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                           <div className="flex items-center space-x-2">
                             <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                            <span className="text-sm text-gray-700">실시간 음성 대화</span>
+                            <span className="text-sm text-gray-700">
+                              실시간 음성 대화
+                            </span>
                           </div>
                           <div className="flex items-center space-x-2">
                             <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                            <span className="text-sm text-gray-700">텍스트 채팅</span>
+                            <span className="text-sm text-gray-700">
+                              텍스트 채팅
+                            </span>
                           </div>
                           <div className="flex items-center space-x-2">
                             <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                            <span className="text-sm text-gray-700">전문 영역 상담</span>
+                            <span className="text-sm text-gray-700">
+                              전문 영역 상담
+                            </span>
                           </div>
                           <div className="flex items-center space-x-2">
                             <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                            <span className="text-sm text-gray-700">대화 내역 저장</span>
+                            <span className="text-sm text-gray-700">
+                              대화 내역 저장
+                            </span>
                           </div>
                         </div>
                       </div>
@@ -1058,17 +1274,29 @@ export default function CallbotChat() {
                       <div className="bg-white rounded-xl shadow-sm border border-gray-200">
                         <div className="border-b border-gray-200 p-4">
                           <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-                            <svg className="w-5 h-5 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                            <svg
+                              className="w-5 h-5 mr-2 text-gray-500"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                              />
                             </svg>
                             이전 대화
                           </h3>
                         </div>
-                        
+
                         {loadingRooms ? (
                           <div className="p-8 text-center">
                             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500 mx-auto mb-4"></div>
-                            <p className="text-gray-600">대화 목록을 불러오는 중...</p>
+                            <p className="text-gray-600">
+                              대화 목록을 불러오는 중...
+                            </p>
                           </div>
                         ) : (
                           <div className="divide-y divide-gray-200">
@@ -1081,14 +1309,26 @@ export default function CallbotChat() {
                                 <div className="flex items-center justify-between">
                                   <div className="flex-1">
                                     <h4 className="font-medium text-gray-900">
-                                      {(room as any).name || `${chatbot?.name}와의 대화`}
+                                      {(room as any).name ||
+                                        `${chatbot?.name}와의 대화`}
                                     </h4>
                                     <p className="text-sm text-gray-500 mt-1">
-                                      {(room as any).lastMessageAt && `마지막 활동: ${new Date((room as any).lastMessageAt).toLocaleDateString()}`}
+                                      {(room as any).lastMessageAt &&
+                                        `마지막 활동: ${new Date((room as any).lastMessageAt).toLocaleDateString()}`}
                                     </p>
                                   </div>
-                                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                  <svg
+                                    className="w-5 h-5 text-gray-400"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M9 5l7 7-7 7"
+                                    />
                                   </svg>
                                 </div>
                               </div>
