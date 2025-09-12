@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../features/auth";
 import { Button } from "../components/ui";
 
@@ -9,6 +10,7 @@ import {
   SparklesIcon,
   Cog6ToothIcon,
   LanguageIcon,
+  BookOpenIcon,
 } from "@heroicons/react/24/outline";
 // no solid icons needed currently
 import { useVoiceConnection } from "../features/chatbot/voice";
@@ -26,13 +28,13 @@ import {
 } from "../features/chatbot/character";
 import MobileTranslationDialog from "../components/MobileTranslationDialog";
 import CardForChattingMessageWithTranslation from "../components/CardForChattingMessageWithTranslation";
-import InputAssistDialogForChatting from "../components/InputAssistDialogForChatting";
 import { useExamMode } from "../features/chatbot/exam";
 import { useAudioSettings } from "../features/chatbot/settings";
 import { useConnectionState } from "../features/chatbot/connection";
 
 export default function MobileChat() {
   const { logout, getUser } = useAuthStore();
+  const navigate = useNavigate();
 
   // 사용자 정보 상태
   const [user, setUser] = useState(getUser());
@@ -149,8 +151,6 @@ export default function MobileChat() {
     audioRef,
     startVoice,
     stopVoice,
-    pauseVoiceInput,
-    resumeVoiceInput,
     setVoiceEnabled,
     sendVoiceMessage,
   } = useVoiceConnection({
@@ -199,8 +199,6 @@ export default function MobileChat() {
     ensureConnectedAndReady,
   });
 
-  // toggleConnection 함수 제거됨 - 더 이상 사용하지 않음
-
   const openTranslation = (text: string) => {
     setTranslationText(text);
     setTranslationOpen(true);
@@ -230,6 +228,17 @@ export default function MobileChat() {
               </div>
             </div>
             <div className="flex items-center space-x-2">
+              {/* 연습장 버튼 */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate("/practice")}
+                title="연습장"
+                className="w-9 px-0"
+              >
+                <BookOpenIcon className="h-4 w-4" />
+              </Button>
+
               {/* 설정 버튼 */}
               <Button
                 variant="outline"
@@ -453,13 +462,6 @@ export default function MobileChat() {
               >
                 <SparklesIcon className="h-5 w-5" />
               </button>
-              {/* 입력 도우미 버튼 */}
-              <InputAssistDialogForChatting
-                onInsertKorean={(text) => setNewMessage(newMessage + text)}
-                onInsertEnglish={(text) => setNewMessage(newMessage + text)}
-                onPauseVoice={pauseVoiceInput}
-                onResumeVoice={resumeVoiceInput}
-              />
             </div>
 
             {/* 텍스트 입력 */}

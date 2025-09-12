@@ -1,12 +1,16 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  ChatBubbleLeftRightIcon,
+  BookOpenIcon,
   MicrophoneIcon,
   XMarkIcon,
   LanguageIcon,
   PaperAirplaneIcon,
+  PlayIcon,
 } from "@heroicons/react/24/outline";
+import { examApi } from "../features/chatbot/exam/api/exam";
+
+// GPT 기반 연습장: Web Speech API (실시간 음성인식) + OpenAI TTS (음성합성)
 
 // TypeScript declarations for Web Speech API
 declare global {
@@ -16,37 +20,37 @@ declare global {
   }
 }
 
-interface SpeechRecognition extends EventTarget {
-  continuous: boolean;
-  interimResults: boolean;
-  lang: string;
-  start(): void;
-  stop(): void;
-  onresult: ((this: SpeechRecognition, ev: any) => any) | null;
-  onerror: ((this: SpeechRecognition, ev: any) => any) | null;
-}
-
 interface InputAssistDialogForChattingProps {
   onInsertKorean?: (text: string) => void;
   onInsertEnglish?: (text: string) => void;
-  onPauseVoice?: () => void;
-  onResumeVoice?: () => void;
+  onOpenChange?: (isOpen: boolean) => void;
 }
 
 export default function InputAssistDialogForChatting({
   onInsertKorean,
   onInsertEnglish,
-  onPauseVoice,
-  onResumeVoice,
+  onOpenChange,
 }: InputAssistDialogForChattingProps) {
   const [isOpen, setIsOpen] = useState(false);
+
+  // Helper function to update dialog state and optionally notify parent
+  const updateIsOpen = (newState: boolean, notifyParent = true) => {
+    setIsOpen(newState);
+    if (notifyParent) {
+      onOpenChange?.(newState);
+    }
+  };
+
   const [koreanText, setKoreanText] = useState("");
   const [englishText, setEnglishText] = useState("");
   const [isListening, setIsListening] = useState(false);
   const [isTranslating, setIsTranslating] = useState(false);
   const [isSupported, setIsSupported] = useState(false);
 
-  const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [speakingText, setSpeakingText] = useState("");
+  const recognitionRef = useRef<any>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     const SpeechRecognition =
@@ -56,10 +60,61 @@ export default function InputAssistDialogForChatting({
     }
   }, []);
 
-  const startListening = () => {
-    if (!isSupported) return;
+  const startListening = async () => {
+    console.log("🎤 연습장 마이크 버튼 클릭됨");
+    if (!isSupported) {
+      console.log("❌ 연습장 - 음성 인식 지원되지 않음");
+      alert("이 브라우저에서는 음성 인식이 지원되지 않습니다.");
+      return;
+    }
+
+    // 추가 안전 대기 시간 (메인 마이크 완전 종료 보장)
+    console.log("⏳ 연습장 마이크 시작 전 추가 대기 (500ms)...");
+    await new Promise((resolve) => setTimeout(resolve, 500));
 
     try {
+      // 마이크 권한 상태 확인
+      const permissionStatus = await navigator.permissions.query({
+        name: "microphone" as PermissionName,
+      });
+      console.log("🎤 마이크 권한 상태:", permissionStatus.state);
+
+      if (permissionStatus.state === "denied") {
+        alert(
+          "마이크 권한이 거부되었습니다. 브라우저 설정에서 마이크 권한을 허용해주세요.",
+        );
+        return;
+      }
+
+      // 마이크 실제 접근 테스트
+      console.log("🎤 마이크 실제 접근 가능성 테스트...");
+      let testStream;
+      try {
+        testStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        console.log(
+          "✅ 마이크 접근 테스트 성공:",
+          testStream.getAudioTracks().length,
+          "개 트랙",
+        );
+
+        // 테스트 스트림 즉시 정리
+        testStream.getTracks().forEach((track) => {
+          console.log("🧹 테스트 트랙 정리:", track.label);
+          track.stop();
+        });
+
+        // 스트림 정리 후 추가 대기
+        console.log("⏳ 테스트 스트림 정리 후 대기 (300ms)...");
+        await new Promise((resolve) => setTimeout(resolve, 300));
+      } catch (micError) {
+        console.error("❌ 마이크 접근 테스트 실패:", micError);
+        const errorMessage =
+          micError instanceof Error ? micError.message : String(micError);
+        alert(`마이크에 접근할 수 없습니다: ${errorMessage}`);
+        return;
+      }
+
+      console.log("🎤 Web Speech API 초기화 시작...");
       const SpeechRecognition =
         window.SpeechRecognition || window.webkitSpeechRecognition;
       const recognition = new SpeechRecognition();
@@ -70,21 +125,35 @@ export default function InputAssistDialogForChatting({
 
       recognition.onstart = () => {
         setIsListening(true);
+        console.log("🎤 연습장 음성인식 시작");
       };
 
       recognition.onresult = (event: any) => {
         const transcript = event.results[0][0].transcript;
+        console.log("🎤 연습장 음성인식 결과:", transcript);
         setKoreanText((prev) => prev + (prev ? " " : "") + transcript);
         setIsListening(false);
       };
 
       recognition.onerror = (event: any) => {
-        console.error("음성인식 오류:", event.error);
+        console.error("연습장 음성인식 오류:", event.error);
+        if (event.error === "no-speech") {
+          console.log(
+            "음성이 감지되지 않았습니다. 마이크에 더 가까이 대고 다시 시도해주세요.",
+          );
+        } else if (event.error === "not-allowed") {
+          alert(
+            "마이크 권한이 필요합니다. 브라우저에서 마이크 접근을 허용해주세요.",
+          );
+        } else if (event.error === "aborted") {
+          console.log("음성 인식이 중단되었습니다.");
+        }
         setIsListening(false);
       };
 
       recognition.onend = () => {
         setIsListening(false);
+        console.log("🎤 연습장 음성인식 종료");
       };
 
       recognitionRef.current = recognition;
@@ -104,86 +173,189 @@ export default function InputAssistDialogForChatting({
 
   const translateToEnglish = async () => {
     if (!koreanText.trim()) return;
-
     setIsTranslating(true);
     try {
-      // OpenAI API를 통한 번역 (실제 구현 시 API 키와 엔드포인트 필요)
-      const response = await fetch("/api/translate", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          text: koreanText,
-          from: "ko",
-          to: "en",
-        }),
+      const prompt = `Please translate the following Korean text to English. Only provide the English translation, no additional text:
+
+Korean: "${koreanText}"`;
+
+      const response = await examApi.getSampleAnswers({
+        question: prompt,
+        topic: "translation",
+        level: "intermediate",
+        count: 1,
+        englishOnly: true,
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        setEnglishText(data.translatedText);
+      const translation = response.samples?.[0]?.text?.trim() || "";
+      if (translation) {
+        setEnglishText(translation);
       } else {
-        // 임시 fallback - 실제로는 번역 API 사용
-        setEnglishText(`[번역 필요] ${koreanText}`);
+        setEnglishText(`[Translation failed] ${koreanText}`);
       }
     } catch (error) {
       console.error("번역 오류:", error);
-      // 임시 fallback
-      setEnglishText(`[번역 필요] ${koreanText}`);
+      setEnglishText(`[Translation error] ${koreanText}`);
     } finally {
       setIsTranslating(false);
     }
   };
 
-  const insertKorean = () => {
+  // 한글 입력이 변경될 때마다 자동으로 영어 번역 (1초 디바운스)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (koreanText.trim() && koreanText.length > 2) {
+        translateToEnglish();
+      }
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [koreanText]);
+
+  // 언어 감지 함수
+  const detectLanguage = (text: string): "ko" | "en" => {
+    const koreanRegex = /[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/;
+    return koreanRegex.test(text) ? "ko" : "en";
+  };
+
+  // TTS 기능
+  const playText = async (text: string) => {
+    if (!text.trim()) return;
+
+    try {
+      // 이전 오디오 중지
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+      }
+
+      setIsSpeaking(true);
+      setSpeakingText(text);
+
+      // 백엔드에서 OpenAI API 키 받기
+      const token = localStorage.getItem("accessToken");
+      const apiUrl =
+        window.location.hostname === "localhost"
+          ? "/api/config/openai-key"
+          : "https://api.total-callbot.cloud/api/config/openai-key";
+
+      const keyResponse = await fetch(apiUrl, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!keyResponse.ok) {
+        throw new Error(`API 요청 실패: ${keyResponse.status}`);
+      }
+
+      const { key } = await keyResponse.json();
+
+      // 언어 감지
+      const isKorean = detectLanguage(text) === "ko";
+
+      // OpenAI TTS API 직접 호출
+      const ttsResponse = await fetch(
+        "https://api.openai.com/v1/audio/speech",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${key}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "tts-1",
+            input: text,
+            voice: isKorean ? "nova" : "alloy",
+            speed: 1.0,
+          }),
+        },
+      );
+
+      if (ttsResponse.ok) {
+        const audioBlob = await ttsResponse.blob();
+
+        // Data URL 방식으로 변환 (모바일 호환성)
+        const reader = new FileReader();
+        reader.onload = async () => {
+          audioRef.current = new Audio(reader.result as string);
+          audioRef.current.onended = () => {
+            setIsSpeaking(false);
+            setSpeakingText("");
+          };
+          audioRef.current.onerror = () => {
+            setIsSpeaking(false);
+            setSpeakingText("");
+            console.error("Audio playback failed");
+          };
+          await audioRef.current.play();
+        };
+        reader.onerror = () => {
+          console.error("FileReader error");
+          setIsSpeaking(false);
+          setSpeakingText("");
+        };
+        reader.readAsDataURL(audioBlob);
+      } else {
+        throw new Error("TTS API 요청 실패");
+      }
+    } catch (error) {
+      console.error("TTS 오류:", error);
+      setIsSpeaking(false);
+      setSpeakingText("");
+      alert("음성 재생에 실패했습니다.");
+    }
+  };
+
+  const applyKorean = () => {
     if (koreanText.trim() && onInsertKorean) {
       onInsertKorean(koreanText);
-      setIsOpen(false);
+      updateIsOpen(false);
       setKoreanText("");
       setEnglishText("");
     }
   };
 
-  const insertEnglish = () => {
+  const applyEnglish = () => {
     if (englishText.trim() && onInsertEnglish) {
       onInsertEnglish(englishText);
-      setIsOpen(false);
+      updateIsOpen(false);
       setKoreanText("");
       setEnglishText("");
     }
   };
 
-  const openDialog = () => {
-    setIsOpen(true);
-    if (onPauseVoice) {
-      onPauseVoice();
-      console.log("📢 챗봇 음성 입력이 일시정지되었습니다");
+  const openDialog = async () => {
+    // 1단계: 부모 컴포넌트에 메인 마이크 종료 요청
+    console.log("🎯 연습장 열기 요청 - 메인 마이크 종료 시작");
+    if (onOpenChange) {
+      await onOpenChange(true); // 메인 마이크 종료 대기
     }
+
+    // 2단계: 메인 마이크 완전 종료 후 연습장 열기 (부모 알림 중복 방지)
+    console.log("📖 메인 마이크 종료 완료 - 연습장 열기");
+    updateIsOpen(true, false);
   };
 
   const closeDialog = () => {
-    setIsOpen(false);
+    updateIsOpen(false);
     setKoreanText("");
     setEnglishText("");
     if (isListening) {
       stopListening();
     }
-    if (onResumeVoice) {
-      onResumeVoice();
-      console.log("📢 챗봇 음성 입력이 재개되었습니다");
-    }
   };
 
   return (
     <>
-      {/* 💬 버튼 */}
+      {/* 📖 버튼 */}
       <button
         onClick={openDialog}
         className="w-10 h-10 rounded-full transition-colors flex items-center justify-center bg-gray-100 hover:bg-gray-200 text-gray-600"
-        title="입력 도우미"
+        title="연습장"
       >
-        <ChatBubbleLeftRightIcon className="h-5 w-5" />
+        <BookOpenIcon className="h-5 w-5" />
       </button>
 
       {/* 전체 화면 다이얼로그 */}
@@ -207,7 +379,7 @@ export default function InputAssistDialogForChatting({
               {/* 헤더 */}
               <div className="flex items-center justify-between p-4 border-b border-gray-200 flex-shrink-0">
                 <h3 className="text-lg font-semibold text-gray-900">
-                  음성 입력 도구
+                  음성 입력 연습장
                 </h3>
                 <button
                   onClick={closeDialog}
@@ -248,14 +420,27 @@ export default function InputAssistDialogForChatting({
                     <label className="block text-sm font-medium text-gray-700">
                       한국어 입력
                     </label>
-                    <button
-                      onClick={insertKorean}
-                      disabled={!koreanText.trim()}
-                      className="px-3 py-1 bg-blue-500 text-white rounded-md text-sm hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center space-x-1"
-                    >
-                      <PaperAirplaneIcon className="h-3 w-3" />
-                      <span>입력</span>
-                    </button>
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={() => playText(koreanText)}
+                        disabled={
+                          !koreanText.trim() ||
+                          (isSpeaking && speakingText === koreanText)
+                        }
+                        className="px-2 py-1 bg-green-500 text-white rounded-md text-sm hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center"
+                        title="한국어 음성 재생"
+                      >
+                        <PlayIcon className="h-3 w-3" />
+                      </button>
+                      <button
+                        onClick={applyKorean}
+                        disabled={!koreanText.trim()}
+                        className="px-3 py-1 bg-blue-500 text-white rounded-md text-sm hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center space-x-1"
+                      >
+                        <PaperAirplaneIcon className="h-3 w-3" />
+                        <span>적용</span>
+                      </button>
+                    </div>
                   </div>
                   <textarea
                     value={koreanText}
@@ -264,38 +449,56 @@ export default function InputAssistDialogForChatting({
                     className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
                     rows={4}
                   />
-                  <button
-                    onClick={translateToEnglish}
-                    disabled={!koreanText.trim() || isTranslating}
-                    className="w-full px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center space-x-2"
-                  >
-                    <LanguageIcon className="h-4 w-4" />
-                    <span>{isTranslating ? "번역 중..." : "영어로 번역"}</span>
-                  </button>
                 </div>
 
                 {/* 영어 입력 */}
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <label className="block text-sm font-medium text-gray-700">
-                      영어 입력
+                      영어 입력{" "}
+                      {isTranslating && (
+                        <span className="text-blue-500">(번역 중...)</span>
+                      )}
                     </label>
-                    <button
-                      onClick={insertEnglish}
-                      disabled={!englishText.trim()}
-                      className="px-3 py-1 bg-blue-500 text-white rounded-md text-sm hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center space-x-1"
-                    >
-                      <PaperAirplaneIcon className="h-3 w-3" />
-                      <span>입력</span>
-                    </button>
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={() => playText(englishText)}
+                        disabled={
+                          !englishText.trim() ||
+                          (isSpeaking && speakingText === englishText)
+                        }
+                        className="px-2 py-1 bg-green-500 text-white rounded-md text-sm hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center"
+                        title="영어 음성 재생"
+                      >
+                        <PlayIcon className="h-3 w-3" />
+                      </button>
+                      <button
+                        onClick={applyEnglish}
+                        disabled={!englishText.trim() || isTranslating}
+                        className="px-3 py-1 bg-blue-500 text-white rounded-md text-sm hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center space-x-1"
+                      >
+                        <PaperAirplaneIcon className="h-3 w-3" />
+                        <span>적용</span>
+                      </button>
+                    </div>
                   </div>
                   <textarea
                     value={englishText}
                     onChange={(e) => setEnglishText(e.target.value)}
-                    placeholder="번역된 영어 텍스트가 여기에 표시됩니다"
+                    placeholder="한글 입력 시 자동으로 영어 번역이 표시됩니다"
                     className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
                     rows={4}
                   />
+                  {koreanText.trim() && (
+                    <button
+                      onClick={translateToEnglish}
+                      disabled={isTranslating}
+                      className="w-full px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center space-x-2"
+                    >
+                      <LanguageIcon className="h-4 w-4" />
+                      <span>{isTranslating ? "번역 중..." : "다시 번역"}</span>
+                    </button>
+                  )}
                 </div>
               </div>
             </motion.div>
