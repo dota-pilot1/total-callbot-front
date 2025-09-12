@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useAuthStore } from "../features/auth";
 import { Button } from "../components/ui";
 import { chatApi } from "../features/chatbot/messaging/api/chat";
@@ -11,14 +11,10 @@ import {
   LanguageIcon,
 } from "@heroicons/react/24/outline";
 // no solid icons needed currently
-import { voiceApi } from "../features/chatbot/voice/api/voice";
-import {
-  connectRealtimeVoice,
-  type VoiceConnection,
-} from "../features/chatbot/voice/lib/realtime";
+import { useVoiceConnection } from "../features/chatbot/voice";
+import { useChatMessages } from "../features/chatbot/messaging";
 import VoicePulse from "../components/VoicePulse";
 import MobileSettingsDropdown from "../components/MobileSettingsDropdown";
-import { examApi } from "../features/chatbot/exam/api/exam";
 
 import MobileCharacterDialog from "../components/MobileCharacterDialog";
 import { CHARACTER_LIST } from "../features/chatbot/character/characters";
@@ -29,7 +25,7 @@ import {
 } from "../features/chatbot/character";
 import MobileTranslationDialog from "../components/MobileTranslationDialog";
 import CardForChattingMessageWithTranslation from "../components/CardForChattingMessageWithTranslation";
-import { getRandomExamTopic, buildExamPrompt } from "../features/chatbot/exam";
+import { useExamMode } from "../features/chatbot/exam";
 
 export default function MobileChat() {
   const { logout, getUser } = useAuthStore();
@@ -61,20 +57,9 @@ export default function MobileChat() {
     setCharacterSettings,
   } = useCharacterStore();
 
-  // 채팅 관련 상태
-  const [messages, setMessages] = useState<any[]>([]);
-  const [newMessage, setNewMessage] = useState("");
-  const [isIMEComposing, setIsIMEComposing] = useState(false);
+  // 연결 상태
   const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
-
-  // 음성 관련 상태
-  const [voiceEnabled, setVoiceEnabled] = useState(false);
-  const [isRecording, setIsRecording] = useState(false);
-  const [voiceConn, setVoiceConn] = useState<VoiceConnection | null>(null);
-  const [isListening, setIsListening] = useState(false);
-  const [isResponding, setIsResponding] = useState(false);
-  const isRespondingRef = useRef(false);
 
   // 설정 관련 상태
   const [speechLang, setSpeechLang] = useState<"ko" | "en">("en");
@@ -85,8 +70,6 @@ export default function MobileChat() {
   const [responseDelayMs, setResponseDelayMs] = useState(3000); // 기본값 3초
   const [debugEvents, setDebugEvents] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [examSending, setExamSending] = useState(false);
-  const [suggestLoading, setSuggestLoading] = useState(false);
 
   // Translation dialog state (mobile)
   const [translationOpen, setTranslationOpen] = useState(false);
@@ -100,6 +83,64 @@ export default function MobileChat() {
     CHARACTER_PRESETS[0].defaultVoice,
   );
 
+  // 채팅 메시지 훅
+  const {
+    messages,
+    newMessage,
+    isIMEComposing,
+    suggestLoading,
+    messagesEndRef,
+    setNewMessage,
+    setIsIMEComposing,
+    addUserMessage,
+    addAssistantMessage,
+    sendMessage,
+    clearChat,
+    suggestReply,
+  } = useChatMessages({
+    responseDelayMs,
+    selectedCharacterId,
+    onSendMessage: (text: string) => {
+      // 음성 연결이 있으면 음성으로 전송
+      try {
+        if (voiceConn?.dc && voiceConn.dc.readyState === "open") {
+          sendVoiceMessage(text);
+        }
+      } catch (e) {
+        console.error("Realtime 텍스트 전송 실패:", e);
+      }
+    },
+  });
+
+  // CHARACTER_LIST에서 실제 캐릭터 찾기
+  const actualPersonaCharacter =
+    CHARACTER_LIST.find((c) => c.id === personaCharacter.id) ||
+    CHARACTER_LIST[0];
+
+  // 음성 연결 훅
+  const {
+    voiceEnabled,
+    isRecording,
+    isListening,
+    isResponding,
+    voiceConn,
+    audioRef,
+    startVoice,
+    stopVoice,
+    setVoiceEnabled,
+    sendVoiceMessage,
+  } = useVoiceConnection({
+    speechLang,
+    echoCancellation,
+    noiseSuppression,
+    autoGainControl,
+    selectedVoice,
+    personaCharacter: actualPersonaCharacter,
+    personaGender,
+    onUserMessage: addUserMessage,
+    onAssistantMessage: addAssistantMessage,
+  });
+
   // 캐릭터 변경 시 기본 음성 동기화
   useEffect(() => {
     const c =
@@ -111,269 +152,7 @@ export default function MobileChat() {
 
   const [characterDialogOpen, setCharacterDialogOpen] = useState(false);
 
-  const buildPersonaInstructions = () => {
-    // 캐릭터에 따른 대표 상황(설명)
-    const meta = CHARACTER_LIST.find((c) => c.id === personaCharacter.id);
-    const genderNote =
-      personaGender === "male"
-        ? "Use a subtly masculine persona. "
-        : "Use a subtly feminine persona. ";
-    const voiceNote = selectedVoice ? `Voice: ${selectedVoice}. ` : "";
-    const persona = meta ? `${meta.personality}\n${meta.background}` : "";
-
-    // 기본적으로 영어로 답변, 한국어 요청 시에만 한국어 사용
-    const languageNote =
-      "Be direct and straightforward. Keep replies to 1-2 sentences maximum. No unnecessary explanations or elaboration. Start with a brief self-introduction when first greeting. Respond primarily in English. If the user specifically requests Korean (한국어로 답변해줘, 한글로 말해줘, etc.), then respond in Korean using formal, respectful language. ";
-
-    return (
-      `I am ${personaCharacter.name} (${personaCharacter.emoji}). ${genderNote}${voiceNote}` +
-      languageNote +
-      `I stay in character at all times. I avoid meta talk.\n\nMy persona notes:\n${persona}`
-    );
-  };
-
-  // Refs
-  const audioRef = useRef<HTMLAudioElement>(null);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const userPartialRef = useRef<string>("");
-  const assistantPartialRef = useRef<string>("");
-  const lastUserFinalRef = useRef<string>("");
-  const lastAssistantFinalRef = useRef<string>("");
-
-  // 텍스트 정규화 함수
-  const normalizeText = (s: string) => {
-    try {
-      if (!s || typeof s !== "string") return "";
-      let normalized = s.normalize("NFC");
-      normalized = normalized.replace(/[\uFFFD\u0000-\u001F]/g, "");
-      normalized = normalized.replace(/\s+/g, " ").trim();
-      return normalized;
-    } catch (error) {
-      console.warn("텍스트 정규화 실패:", error);
-      return (s || "").trim();
-    }
-  };
-
-  // 자동 스크롤
-  useEffect(() => {
-    try {
-      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    } catch {}
-  }, [messages]);
-
-  // 메시지 전송
-  const handleSendMessage = async () => {
-    if (!newMessage.trim()) return;
-
-    const messageContent = newMessage.trim();
-    setNewMessage("");
-
-    const userMessage = {
-      id: crypto.randomUUID(), // 완전 고유한 ID 사용
-      sender: "user" as const,
-      message: normalizeText(messageContent),
-      timestamp: new Date().toLocaleTimeString("ko-KR", {
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
-      type: "text" as const,
-    };
-
-    // 사용자 메시지를 먼저 추가
-    setMessages((prev) => [...prev, userMessage]);
-
-    // 실시간 음성 연결이 있으면 전송
-    try {
-      if (voiceConn?.dc && voiceConn.dc.readyState === "open") {
-        voiceConn.dc.send(
-          JSON.stringify({
-            type: "conversation.item.create",
-            item: {
-              type: "message",
-              role: "user",
-              content: [{ type: "input_text", text: userMessage.message }],
-            },
-          }),
-        );
-        voiceConn.dc.send(
-          JSON.stringify({
-            type: "response.create",
-            response: {
-              modalities: ["audio", "text"],
-              conversation: "auto",
-              voice: selectedVoice,
-            },
-          }),
-        );
-        return;
-      }
-    } catch (e) {
-      console.error("Realtime 텍스트 전송 실패:", e);
-    }
-
-    // 시뮬레이션 응답 - 간단한 setTimeout으로 처리
-    setTimeout(() => {
-      const botResponse = {
-        id: crypto.randomUUID(),
-        sender: "callbot" as const,
-        message: `"${messageContent}"에 대해 답변드리겠습니다.`,
-        timestamp: new Date().toLocaleTimeString("ko-KR", {
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
-        type: "text" as const,
-      };
-      setMessages((prev) => [...prev, botResponse]);
-    }, responseDelayMs);
-  };
-
-  // toggleConnection 함수 제거됨 - 더 이상 사용하지 않음
-
-  // 음성 시작
-  const startVoice = async () => {
-    if (voiceConn) return;
-    try {
-      const session = await voiceApi.createSession({
-        lang: speechLang,
-        voice: selectedVoice,
-      });
-      let micStream: MediaStream | null = null;
-      const conn = await connectRealtimeVoice({
-        token: session.token,
-        model: session.model,
-        audioElement: audioRef.current,
-        voice: selectedVoice,
-        audioConstraints: {
-          echoCancellation,
-          noiseSuppression,
-          autoGainControl,
-          channelCount: 1,
-        },
-        onEvent: (evt) => {
-          const e: any = evt as any;
-          const t = e?.type as string | undefined;
-          if (t === "input_audio_buffer.speech_started") setIsListening(true);
-          if (t === "input_audio_buffer.speech_stopped") setIsListening(false);
-          if (t === "output_audio_buffer.started") {
-            setIsResponding(true);
-            isRespondingRef.current = true;
-            try {
-              micStream
-                ?.getAudioTracks()
-                ?.forEach((tr) => (tr.enabled = false));
-            } catch {}
-          }
-          if (t === "response.done" || t === "output_audio_buffer.stopped") {
-            setIsResponding(false);
-            isRespondingRef.current = false;
-            try {
-              micStream?.getAudioTracks()?.forEach((tr) => (tr.enabled = true));
-            } catch {}
-          }
-        },
-        onUserTranscript: (text, isFinal) => {
-          if (isRespondingRef.current) return; // 어시스턴트 발화 중 전사 무시
-          if (isFinal) {
-            const finalText = normalizeText(text.trim());
-            console.log("[음성 디버그] 최종 텍스트:", finalText);
-            console.log("[음성 디버그] 이전 텍스트:", lastUserFinalRef.current);
-
-            // 텍스트가 있으면 무조건 추가 (중복 체크 완화)
-            if (finalText && finalText.length > 0) {
-              console.log("[음성 디버그] 사용자 메시지 추가 중:", finalText);
-              // 사용자 메시지를 즉시 추가
-              setMessages((prev) => [
-                ...prev,
-                {
-                  id: Date.now(),
-                  sender: "user" as const,
-                  message: finalText,
-                  timestamp: new Date().toLocaleTimeString("ko-KR", {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  }),
-                  type: "text" as const,
-                },
-              ]);
-              console.log("[음성 디버그] 메시지 배열에 추가 완료");
-              lastUserFinalRef.current = finalText;
-            } else {
-              console.log("[음성 디버그] 텍스트가 비어있어서 스킵");
-            }
-          }
-        },
-        onAssistantText: (text, isFinal) => {
-          if (isFinal) {
-            const finalText = normalizeText(
-              assistantPartialRef.current || text,
-            );
-            const normalizedFinal = normalizeText(finalText);
-            const normalizedLast = normalizeText(lastAssistantFinalRef.current);
-            if (normalizedFinal && normalizedFinal !== normalizedLast) {
-              setMessages((prev) => [
-                ...prev,
-                {
-                  id: prev.length + 1,
-                  sender: "callbot" as const,
-                  message: finalText,
-                  timestamp: new Date().toLocaleTimeString("ko-KR", {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  }),
-                  type: "text" as const,
-                },
-              ]);
-              lastAssistantFinalRef.current = finalText.trim();
-            }
-            assistantPartialRef.current = "";
-          } else {
-            assistantPartialRef.current += text;
-          }
-        },
-      });
-      setVoiceConn(conn);
-      try {
-        micStream = conn.localStream;
-      } catch {}
-      setIsRecording(true);
-      // 세션 기본 퍼소나 업데이트
-      try {
-        if (conn.dc && conn.dc.readyState === "open") {
-          conn.dc.send(
-            JSON.stringify({
-              type: "session.update",
-              session: {
-                instructions: buildPersonaInstructions(),
-              },
-            }),
-          );
-        } else {
-          conn.dc?.addEventListener("open", () => {
-            try {
-              conn.dc?.send(
-                JSON.stringify({
-                  type: "session.update",
-                  session: { instructions: buildPersonaInstructions() },
-                }),
-              );
-            } catch {}
-          });
-        }
-      } catch {}
-    } catch (e) {
-      console.error("음성 연결 실패:", e);
-    }
-  };
-
-  // 음성 정지
-  const stopVoice = () => {
-    try {
-      voiceConn?.stop();
-    } catch {}
-    setVoiceConn(null);
-    setIsRecording(false);
-  };
-
+  // 시험 모드 훅 (ensureConnectedAndReady 함수 정의 후 초기화)
   const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
   const ensureConnectedAndReady = async () => {
@@ -412,130 +191,15 @@ export default function MobileChat() {
     }
   };
 
-  const triggerExam = async () => {
-    try {
-      if (examSending) return;
-      setExamSending(true);
-      await ensureConnectedAndReady();
-    } catch (e) {
-      alert(
-        "연결에 실패했습니다. 마이크 권한 또는 네트워크 상태를 확인해주세요.",
-      );
-      return;
-    }
+  // 시험 모드 훅
+  const { examSending, triggerExam } = useExamMode({
+    voiceConnection: voiceConn,
+    selectedVoice,
+    onAddAssistantMessage: addAssistantMessage,
+    ensureConnectedAndReady,
+  });
 
-    const topic = getRandomExamTopic();
-    const prompt = buildExamPrompt(topic);
-    try {
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: prev.length + 1,
-          sender: "callbot" as const,
-          message: `이번 시험 주제: ${topic.ko}\n총 5문항으로 진행됩니다.`,
-          timestamp: new Date().toLocaleTimeString("ko-KR", {
-            hour: "2-digit",
-            minute: "2-digit",
-          }),
-          type: "text" as const,
-        },
-      ]);
-    } catch {}
-    try {
-      // Add user instruction into the conversation for traceability
-      voiceConn!.dc.send(
-        JSON.stringify({
-          type: "conversation.item.create",
-          item: {
-            type: "message",
-            role: "user",
-            content: [{ type: "input_text", text: prompt }],
-          },
-        }),
-      );
-      // Ask assistant to respond (audio + text) using current voice
-      voiceConn!.dc.send(
-        JSON.stringify({
-          type: "response.create",
-          response: {
-            modalities: ["audio", "text"],
-            conversation: "auto",
-            voice: selectedVoice,
-          },
-        }),
-      );
-    } catch (e) {
-      console.error("Exam 트리거 실패:", e);
-      alert("Exam 지시를 전송하지 못했습니다. 다시 시도해주세요.");
-    } finally {
-      setExamSending(false);
-    }
-  };
-
-  // toggleRecording 함수 제거됨 - 더 이상 사용하지 않음
-
-  // 채팅 지우기
-  const handleClearChat = () => {
-    setMessages([]);
-    lastUserFinalRef.current = "";
-    lastAssistantFinalRef.current = "";
-    assistantPartialRef.current = "";
-    userPartialRef.current = "";
-  };
-  // AI 제안: 모범답안 엔진을 이용해 1개 제안을 받아 인풋에 채우기
-  const handleSuggestReply = async () => {
-    if (suggestLoading) return;
-    const rev = [...messages].reverse();
-    const lastBot = rev.find((m) => m.sender === "callbot")?.message || "";
-    const lastUsr = rev.find((m) => m.sender === "user")?.message || "";
-    if (!lastBot && !lastUsr) return;
-    try {
-      setSuggestLoading(true);
-      const question = (lastBot || lastUsr || "").trim();
-      const tail = messages
-        .slice(-5)
-        .map((m) => {
-          const role = m.sender === "user" ? "USER" : "ASSISTANT";
-          const text = String(m.message || "")
-            .replace(/\s+/g, " ")
-            .trim();
-          return `- ${role}: ${text}`;
-        })
-        .join("\n");
-
-      // 선택된 캐릭터 정보 추가
-      const selectedCharacter = selectedCharacterId
-        ? CHARACTER_LIST.find((c) => c.id === selectedCharacterId)
-        : null;
-      const characterInfo = selectedCharacter
-        ? `Selected Character: ${selectedCharacter.name} - ${selectedCharacter.personality || selectedCharacter.background || "A historical figure"}`
-        : "";
-
-      const enhancedContext = `${characterInfo ? characterInfo + "\n\n" : ""}Recent conversation:
-${tail}
-
-Please suggest an appropriate question or response that:
-1. Continues the conversation naturally
-2. Is relevant to the selected character (if any)
-3. Encourages meaningful dialogue
-4. Considers the character's historical background, expertise, or personality`;
-
-      const resp = await examApi.getSampleAnswers({
-        question,
-        topic: "conversation",
-        level: "intermediate",
-        count: 1,
-        englishOnly: true,
-        context: enhancedContext,
-      });
-      const text = (resp.samples?.[0]?.text || "").trim();
-      if (text) setNewMessage(text);
-    } catch (e) {
-      console.error("Suggest reply failed (sample-answers):", e);
-    } finally {
-      setSuggestLoading(false);
-    }
-  };
+  // toggleConnection 함수 제거됨 - 더 이상 사용하지 않음
 
   const openTranslation = (text: string) => {
     setTranslationText(text);
@@ -642,7 +306,7 @@ Please suggest an appropriate question or response that:
                     setVoiceEnabled(false);
                     setIsConnected(false);
                     // 연결 끊을 때 대화 내용 초기화
-                    handleClearChat();
+                    clearChat();
                   }}
                   className="w-10 h-10 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center shadow-lg transition-colors"
                   title="음성 연결 중단"
@@ -653,7 +317,7 @@ Please suggest an appropriate question or response that:
                 {/* 대화 내용 클리어 버튼 (연결된 상태에서만) */}
                 {isConnected && (
                   <button
-                    onClick={handleClearChat}
+                    onClick={clearChat}
                     className="w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 transition-colors flex items-center justify-center"
                     title="대화 내용 지우기"
                   >
@@ -786,7 +450,7 @@ Please suggest an appropriate question or response that:
           <div className="flex items-center space-x-3">
             {/* 챗봇 제안 버튼 (마이크 대신) */}
             <button
-              onClick={handleSuggestReply}
+              onClick={suggestReply}
               className={`w-10 h-10 rounded-full transition-colors flex items-center justify-center ${suggestLoading ? "bg-indigo-500 text-white animate-pulse" : "bg-gray-100 hover:bg-gray-200 text-gray-600"}`}
               title="AI가 다음 답변을 제안합니다"
               disabled={suggestLoading}
@@ -816,7 +480,7 @@ Please suggest an appropriate question or response that:
                     !suggestLoading
                   ) {
                     e.preventDefault();
-                    handleSendMessage();
+                    sendMessage();
                   }
                 }}
                 placeholder={
@@ -837,7 +501,7 @@ Please suggest an appropriate question or response that:
 
               {/* 전송 버튼 */}
               <Button
-                onClick={handleSendMessage}
+                onClick={sendMessage}
                 disabled={!newMessage.trim() || examSending || suggestLoading}
                 size="sm"
                 className="px-3"
@@ -882,7 +546,7 @@ Please suggest an appropriate question or response that:
         onResponseDelayChange={setResponseDelayMs}
         debugEvents={debugEvents}
         onDebugEventsChange={setDebugEvents}
-        onClearChat={handleClearChat}
+        onClearChat={clearChat}
       />
 
       {/* Model Answers Dialog (mobile) */}
