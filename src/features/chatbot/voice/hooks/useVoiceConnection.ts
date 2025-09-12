@@ -21,12 +21,15 @@ export interface UseVoiceConnectionReturn {
   isRecording: boolean;
   isListening: boolean;
   isResponding: boolean;
+  isPaused: boolean;
   voiceConn: VoiceConnection | null;
   audioRef: React.RefObject<HTMLAudioElement | null>;
 
   // 액션들
   startVoice: () => Promise<void>;
   stopVoice: () => void;
+  pauseVoiceInput: () => void;
+  resumeVoiceInput: () => void;
   setVoiceEnabled: (enabled: boolean) => void;
   sendVoiceMessage: (message: string) => void;
 }
@@ -58,6 +61,7 @@ export const useVoiceConnection = (
   const [voiceConn, setVoiceConn] = useState<VoiceConnection | null>(null);
   const [isListening, setIsListening] = useState(false);
   const [isResponding, setIsResponding] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
 
   // Refs
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -228,6 +232,54 @@ export const useVoiceConnection = (
     setIsRecording(false);
     setIsListening(false);
     setIsResponding(false);
+    setIsPaused(false);
+  };
+
+  // 음성 입력 일시정지 (OpenAI Realtime API 공식 이벤트 사용)
+  const pauseVoiceInput = () => {
+    try {
+      if (voiceConn?.dc && voiceConn.dc.readyState === "open" && !isPaused) {
+        // 진행 중인 응답 취소
+        voiceConn.dc.send(
+          JSON.stringify({
+            type: "response.cancel",
+          }),
+        );
+
+        // 입력 오디오 버퍼 클리어
+        voiceConn.dc.send(
+          JSON.stringify({
+            type: "input_audio_buffer.clear",
+          }),
+        );
+
+        // 출력 오디오 버퍼 클리어
+        voiceConn.dc.send(
+          JSON.stringify({
+            type: "output_audio_buffer.clear",
+          }),
+        );
+
+        setIsPaused(true);
+        setIsListening(false);
+        setIsResponding(false);
+        console.log("음성 입력이 일시정지되었습니다");
+      }
+    } catch (error) {
+      console.error("음성 입력 일시정지 실패:", error);
+    }
+  };
+
+  // 음성 입력 재개
+  const resumeVoiceInput = () => {
+    try {
+      if (voiceConn?.dc && voiceConn.dc.readyState === "open" && isPaused) {
+        setIsPaused(false);
+        console.log("음성 입력이 재개되었습니다");
+      }
+    } catch (error) {
+      console.error("음성 입력 재개 실패:", error);
+    }
   };
 
   // 텍스트 메시지를 음성 연결로 전송
@@ -273,12 +325,15 @@ export const useVoiceConnection = (
     isRecording,
     isListening,
     isResponding,
+    isPaused,
     voiceConn,
     audioRef,
 
     // 액션들
     startVoice,
     stopVoice,
+    pauseVoiceInput,
+    resumeVoiceInput,
     setVoiceEnabled,
     sendVoiceMessage,
   };

@@ -26,6 +26,7 @@ import {
 } from "../features/chatbot/character";
 import MobileTranslationDialog from "../components/MobileTranslationDialog";
 import CardForChattingMessageWithTranslation from "../components/CardForChattingMessageWithTranslation";
+import InputAssistDialogForChatting from "../components/InputAssistDialogForChatting";
 import { useExamMode } from "../features/chatbot/exam";
 import { useAudioSettings } from "../features/chatbot/settings";
 import { useConnectionState } from "../features/chatbot/connection";
@@ -148,6 +149,8 @@ export default function MobileChat() {
     audioRef,
     startVoice,
     stopVoice,
+    pauseVoiceInput,
+    resumeVoiceInput,
     setVoiceEnabled,
     sendVoiceMessage,
   } = useVoiceConnection({
@@ -439,15 +442,25 @@ export default function MobileChat() {
       {isConnected && (
         <div className="bg-white border-t border-gray-200 p-4 flex-shrink-0">
           <div className="flex items-center space-x-3">
-            {/* 챗봇 제안 버튼 (마이크 대신) */}
-            <button
-              onClick={suggestReply}
-              className={`w-10 h-10 rounded-full transition-colors flex items-center justify-center ${suggestLoading ? "bg-indigo-500 text-white animate-pulse" : "bg-gray-100 hover:bg-gray-200 text-gray-600"}`}
-              title="AI가 다음 답변을 제안합니다"
-              disabled={suggestLoading}
-            >
-              <SparklesIcon className="h-5 w-5" />
-            </button>
+            {/* 버튼 세로 배치 컨테이너 */}
+            <div className="flex flex-col space-y-2">
+              {/* 챗봇 제안 버튼 (마이크 대신) */}
+              <button
+                onClick={suggestReply}
+                className={`w-10 h-10 rounded-full transition-colors flex items-center justify-center ${suggestLoading ? "bg-indigo-500 text-white animate-pulse" : "bg-gray-100 hover:bg-gray-200 text-gray-600"}`}
+                title="AI가 다음 답변을 제안합니다"
+                disabled={suggestLoading}
+              >
+                <SparklesIcon className="h-5 w-5" />
+              </button>
+              {/* 입력 도우미 버튼 */}
+              <InputAssistDialogForChatting
+                onInsertKorean={(text) => setNewMessage(newMessage + text)}
+                onInsertEnglish={(text) => setNewMessage(newMessage + text)}
+                onPauseVoice={pauseVoiceInput}
+                onResumeVoice={resumeVoiceInput}
+              />
+            </div>
 
             {/* 텍스트 입력 */}
             <div className="flex-1 flex items-center space-x-2">
