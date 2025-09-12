@@ -141,6 +141,9 @@ export default function MobileChat() {
     CHARACTER_LIST.find((c) => c.id === personaCharacter.id) ||
     CHARACTER_LIST[0];
 
+  // 임시 음성 메시지 상태 (optimistic UI용)
+  const [tempVoiceMessage, setTempVoiceMessage] = useState<string | null>(null);
+
   // 음성 연결 훅
   const {
     voiceEnabled,
@@ -161,8 +164,24 @@ export default function MobileChat() {
     selectedVoice,
     personaCharacter: actualPersonaCharacter,
     personaGender,
-    onUserMessage: addUserMessage,
+    onUserMessage: (text: string) => {
+      // 최종 메시지가 오면 임시 메시지 제거하고 정식 메시지 추가
+      setTempVoiceMessage(null);
+      addUserMessage(text);
+    },
     onAssistantMessage: addAssistantMessage,
+    onUserSpeechStart: () => {
+      // 음성 시작 시 임시 메시지 표시
+      console.log("🎤 음성 시작 - 임시 메시지 표시");
+      setTempVoiceMessage("🎤 말하는 중...");
+    },
+    onUserTranscriptUpdate: (text: string, isFinal: boolean) => {
+      // 실시간 텍스트 업데이트
+      if (!isFinal && text.trim()) {
+        console.log("🎤 실시간 업데이트:", text);
+        setTempVoiceMessage(text);
+      }
+    },
   });
 
   // 캐릭터 변경 시 기본 음성 동기화는 useCharacterSelection 훅에서 처리
@@ -436,13 +455,45 @@ export default function MobileChat() {
             </p>
           </div>
         ) : (
-          messages.map((message) => (
-            <CardForChattingMessageWithTranslation
-              key={message.id}
-              message={message}
-              isUser={message.sender === "user"}
-            />
-          ))
+          <>
+            {messages.map((message) => (
+              <CardForChattingMessageWithTranslation
+                key={message.id}
+                message={message}
+                isUser={message.sender === "user"}
+              />
+            ))}
+
+            {/* 임시 음성 메시지 표시 (optimistic UI) */}
+            {tempVoiceMessage && (
+              <div className="mb-4 flex justify-end">
+                <div className="max-w-[85%] bg-blue-500 text-white px-4 py-2 rounded-2xl rounded-br-md">
+                  <div className="flex items-center space-x-2">
+                    <span
+                      className={
+                        tempVoiceMessage.startsWith("🎤") ? "animate-pulse" : ""
+                      }
+                    >
+                      {tempVoiceMessage}
+                    </span>
+                    {tempVoiceMessage.startsWith("🎤") && (
+                      <div className="flex space-x-1">
+                        <div className="w-1 h-1 bg-white rounded-full animate-bounce"></div>
+                        <div
+                          className="w-1 h-1 bg-white rounded-full animate-bounce"
+                          style={{ animationDelay: "0.1s" }}
+                        ></div>
+                        <div
+                          className="w-1 h-1 bg-white rounded-full animate-bounce"
+                          style={{ animationDelay: "0.2s" }}
+                        ></div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+          </>
         )}
         <div ref={messagesEndRef} />
       </div>

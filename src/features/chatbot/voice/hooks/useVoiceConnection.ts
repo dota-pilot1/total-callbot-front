@@ -13,6 +13,8 @@ export interface UseVoiceConnectionOptions {
   personaGender: "male" | "female";
   onUserMessage?: (text: string) => void;
   onAssistantMessage?: (text: string) => void;
+  onUserSpeechStart?: () => void;
+  onUserTranscriptUpdate?: (text: string, isFinal: boolean) => void;
 }
 
 export interface UseVoiceConnectionReturn {
@@ -52,6 +54,8 @@ export const useVoiceConnection = (
     personaGender,
     onUserMessage,
     onAssistantMessage,
+    onUserSpeechStart,
+    onUserTranscriptUpdate,
   } = options;
 
   // 음성 연결 상태들
@@ -130,7 +134,10 @@ export const useVoiceConnection = (
         onEvent: (evt) => {
           const e: any = evt as any;
           const t = e?.type as string | undefined;
-          if (t === "input_audio_buffer.speech_started") setIsListening(true);
+          if (t === "input_audio_buffer.speech_started") {
+            setIsListening(true);
+            onUserSpeechStart?.(); // 음성 시작 알림
+          }
           if (t === "input_audio_buffer.speech_stopped") setIsListening(false);
           if (t === "output_audio_buffer.started") {
             setIsResponding(true);
@@ -151,6 +158,10 @@ export const useVoiceConnection = (
         },
         onUserTranscript: (text, isFinal) => {
           if (isRespondingRef.current) return; // 어시스턴트 발화 중 전사 무시
+
+          // 실시간 텍스트 업데이트 (final이 아니어도 호출)
+          onUserTranscriptUpdate?.(text, isFinal);
+
           if (isFinal) {
             const finalText = normalizeText(text.trim());
             console.log("[음성 디버그] 최종 텍스트:", finalText);
