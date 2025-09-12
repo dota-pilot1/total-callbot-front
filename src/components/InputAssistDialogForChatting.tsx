@@ -121,7 +121,16 @@ export default function InputAssistDialogForChatting({
 
       recognition.lang = "ko-KR";
       recognition.continuous = false;
-      recognition.interimResults = false;
+      recognition.interimResults = true; // 중간 결과 표시로 사용자 피드백 개선
+      recognition.maxAlternatives = 3; // 대안 결과 제공
+
+      // 타임아웃 설정 (10초)
+      const recognitionTimeout = setTimeout(() => {
+        if (recognition && isListening) {
+          recognition.stop();
+          console.log("🕐 음성인식 타임아웃으로 종료");
+        }
+      }, 10000);
 
       recognition.onstart = () => {
         setIsListening(true);
@@ -129,29 +138,81 @@ export default function InputAssistDialogForChatting({
       };
 
       recognition.onresult = (event: any) => {
-        const transcript = event.results[0][0].transcript;
-        console.log("🎤 연습장 음성인식 결과:", transcript);
-        setKoreanText((prev) => prev + (prev ? " " : "") + transcript);
-        setIsListening(false);
+        clearTimeout(recognitionTimeout);
+
+        let finalTranscript = "";
+        let interimTranscript = "";
+
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const result = event.results[i];
+          if (result.isFinal) {
+            finalTranscript += result[0].transcript;
+
+            // 대안 결과들도 로깅 (디버깅용)
+            console.log(
+              "🎤 최종 결과:",
+              result[0].transcript,
+              "신뢰도:",
+              result[0].confidence,
+            );
+            for (let j = 1; j < Math.min(result.length, 3); j++) {
+              console.log(
+                `🎤 대안 ${j}:`,
+                result[j].transcript,
+                "신뢰도:",
+                result[j].confidence,
+              );
+            }
+          } else {
+            interimTranscript += result[0].transcript;
+            console.log("🎤 중간 결과:", interimTranscript);
+          }
+        }
+
+        if (finalTranscript) {
+          console.log("🎤 연습장 음성인식 최종 결과:", finalTranscript);
+          setKoreanText((prev) => prev + (prev ? " " : "") + finalTranscript);
+          setIsListening(false);
+        }
       };
 
       recognition.onerror = (event: any) => {
-        console.error("연습장 음성인식 오류:", event.error);
-        if (event.error === "no-speech") {
-          console.log(
-            "음성이 감지되지 않았습니다. 마이크에 더 가까이 대고 다시 시도해주세요.",
-          );
-        } else if (event.error === "not-allowed") {
-          alert(
-            "마이크 권한이 필요합니다. 브라우저에서 마이크 접근을 허용해주세요.",
-          );
-        } else if (event.error === "aborted") {
-          console.log("음성 인식이 중단되었습니다.");
+        clearTimeout(recognitionTimeout);
+        console.error("연습장 음성인식 오류:", event.error, "상세:", event);
+
+        let userMessage = "";
+        switch (event.error) {
+          case "no-speech":
+            userMessage = "음성이 감지되지 않았습니다. 다시 시도해주세요.";
+            break;
+          case "not-allowed":
+            userMessage =
+              "마이크 권한이 필요합니다. 브라우저 설정을 확인해주세요.";
+            break;
+          case "aborted":
+            userMessage = "음성 인식이 중단되었습니다.";
+            break;
+          case "network":
+            userMessage = "네트워크 오류입니다. 인터넷 연결을 확인해주세요.";
+            break;
+          case "service-not-allowed":
+            userMessage = "음성인식 서비스를 사용할 수 없습니다.";
+            break;
+          default:
+            userMessage = `음성인식 오류가 발생했습니다: ${event.error}`;
         }
+
+        console.log("사용자 메시지:", userMessage);
+        // alert 대신 더 부드러운 처리 (나중에 toast 등으로 대체 가능)
+        if (event.error !== "aborted") {
+          setTimeout(() => alert(userMessage), 100);
+        }
+
         setIsListening(false);
       };
 
       recognition.onend = () => {
+        clearTimeout(recognitionTimeout);
         setIsListening(false);
         console.log("🎤 연습장 음성인식 종료");
       };
@@ -409,7 +470,7 @@ Korean: "${koreanText}"`;
                     {!isSupported
                       ? "음성인식을 지원하지 않는 브라우저입니다"
                       : isListening
-                        ? "말씀해 주세요..."
+                        ? "듣고 있어요... (10초 후 자동 종료)"
                         : "마이크를 눌러 음성을 입력하세요"}
                   </p>
                 </div>
