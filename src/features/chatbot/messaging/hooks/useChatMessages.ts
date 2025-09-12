@@ -99,19 +99,20 @@ export const useChatMessages = (
     // 사용자 메시지를 먼저 추가
     addUserMessage(messageContent);
 
-    // 외부 콜백으로 전송 처리 (음성 연결 등)
-    if (onSendMessage) {
-      try {
-        onSendMessage(messageContent);
-        return;
-      } catch (e) {
-        console.error("메시지 전송 실패:", e);
-      }
-    }
-
-    // 콜백이 없으면 시뮬레이션 응답
+    // 지연 시간 후 실제 전송 처리 (음성 연결이든 시뮬레이션이든)
     setTimeout(() => {
-      addAssistantMessage(`"${messageContent}"에 대해 답변드리겠습니다.`);
+      if (onSendMessage) {
+        try {
+          onSendMessage(messageContent);
+        } catch (e) {
+          console.error("메시지 전송 실패:", e);
+          // 실패 시 시뮬레이션 응답
+          addAssistantMessage("죄송합니다. 메시지 전송에 실패했습니다.");
+        }
+      } else {
+        // 콜백이 없으면 시뮬레이션 응답
+        addAssistantMessage(`"${messageContent}"에 대해 답변드리겠습니다.`);
+      }
     }, responseDelayMs);
   };
 

@@ -26,6 +26,7 @@ import {
 import MobileTranslationDialog from "../components/MobileTranslationDialog";
 import CardForChattingMessageWithTranslation from "../components/CardForChattingMessageWithTranslation";
 import { useExamMode } from "../features/chatbot/exam";
+import { useAudioSettings } from "../features/chatbot/settings";
 
 export default function MobileChat() {
   const { logout, getUser } = useAuthStore();
@@ -61,14 +62,25 @@ export default function MobileChat() {
   const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
 
-  // 설정 관련 상태
-  const [speechLang, setSpeechLang] = useState<"ko" | "en">("en");
-  const [echoCancellation, setEchoCancellation] = useState(true);
-  const [noiseSuppression, setNoiseSuppression] = useState(true);
-  const [autoGainControl, setAutoGainControl] = useState(false);
-  const [coalesceDelayMs, setCoalesceDelayMs] = useState(800);
-  const [responseDelayMs, setResponseDelayMs] = useState(3000); // 기본값 3초
-  const [debugEvents, setDebugEvents] = useState(false);
+  // 오디오 설정 훅 (responseDelayMs: 2초로 설정하여 사용자 메시지 등록 후 적절한 대기시간 제공)
+  const {
+    settings: {
+      speechLang,
+      echoCancellation,
+      noiseSuppression,
+      autoGainControl,
+      coalesceDelayMs,
+      responseDelayMs,
+      debugEvents,
+    },
+    setSpeechLang,
+    setEchoCancellation,
+    setNoiseSuppression,
+    setAutoGainControl,
+    setCoalesceDelayMs,
+    setResponseDelayMs,
+    setDebugEvents,
+  } = useAudioSettings();
   const [settingsOpen, setSettingsOpen] = useState(false);
 
   // Translation dialog state (mobile)
