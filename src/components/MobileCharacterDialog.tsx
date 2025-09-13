@@ -83,10 +83,10 @@ export default function MobileCharacterDialog({
         >
           <div className="absolute inset-0 bg-black/40" onClick={onClose} />
           <motion.div
-            className="absolute inset-0 bg-white md:rounded-t-xl md:top-auto md:bottom-0 md:h-[80vh] shadow-xl"
-            initial={{ y: "100%" }}
+            className="absolute inset-0 bg-white md:rounded-t-xl md:top-auto md:bottom-0 md:h-[90vh] shadow-xl"
+            initial={{ y: "-100%" }}
             animate={{ y: 0 }}
-            exit={{ y: "100%" }}
+            exit={{ y: "-100%" }}
             transition={{ type: "spring", stiffness: 220, damping: 28 }}
           >
             <div className="flex items-center justify-between px-4 py-3 border-b">

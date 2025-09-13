@@ -113,7 +113,7 @@ export default function MobileSettingsDropdown({
               stiffness: 200,
               duration: 0.3,
             }}
-            className="fixed top-0 left-0 right-0 bg-white shadow-lg z-50 max-h-[80vh] overflow-y-auto"
+            className="fixed top-0 left-0 right-0 bg-white shadow-lg z-50 h-screen overflow-y-auto"
           >
             {/* 헤더 */}
             <div className="sticky top-0 bg-white border-b border-gray-200 px-4 py-3 flex justify-between items-center">
