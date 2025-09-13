@@ -255,15 +255,15 @@ export default function SentenceSplitterDialogButtonWithTranslate({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-start"
+            className="fixed inset-0 bg-black bg-opacity-50 z-[9999] flex items-start"
             onClick={handleClose}
           >
             <motion.div
-              initial={{ y: "-100%" }}
+              initial={{ y: "100%" }}
               animate={{ y: 0 }}
-              exit={{ y: "-100%" }}
+              exit={{ y: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 500 }}
-              className="w-full bg-white rounded-b-2xl h-[100vh] flex flex-col"
+              className="w-full bg-white rounded-t-2xl h-screen flex flex-col"
               onClick={(e) => e.stopPropagation()}
             >
               {/* 헤더 */}
