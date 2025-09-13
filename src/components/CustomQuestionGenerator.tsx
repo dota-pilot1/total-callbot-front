@@ -7,6 +7,7 @@ import { CHARACTER_LIST } from "../features/chatbot/character/characters";
 interface CustomQuestionGeneratorProps {
   open: boolean;
   onClose: () => void;
+  onInputText?: (text: string) => void;
 }
 
 interface GeneratedQuestion {
@@ -18,11 +19,16 @@ interface GeneratedQuestion {
 export default function CustomQuestionGenerator({
   open,
   onClose,
+  onInputText,
 }: CustomQuestionGeneratorProps) {
   const [speaker, setSpeaker] = useState("");
   const [listener, setListener] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [questions, setQuestions] = useState<GeneratedQuestion[]>([]);
+  const [questionCount, setQuestionCount] = useState<5 | 10>(5);
+  const [questionStyle, setQuestionStyle] = useState<
+    "일상" | "비즈니스" | "학술"
+  >("일상");
 
   // 번역 상태 관리
   const [translatedTexts, setTranslatedTexts] = useState<{
@@ -39,7 +45,7 @@ export default function CustomQuestionGenerator({
     (c) => c.id === personaCharacter.id,
   );
 
-  const generateCharacterQuestions = async (questionCount: 5 | 10) => {
+  const generateCharacterQuestions = async () => {
     if (!currentCharacter) {
       alert("캐릭터가 선택되지 않았습니다.");
       return;
@@ -73,7 +79,21 @@ export default function CustomQuestionGenerator({
 
       const { key } = await keyResponse.json();
 
-      // 3. OpenAI API 직접 호출
+      // 3. 스타일에 따른 프롬프트 설정
+      const getStylePrompt = () => {
+        switch (questionStyle) {
+          case "일상":
+            return "일상적이고 친근한 대화에서 나올 수 있는";
+          case "비즈니스":
+            return "비즈니스나 업무 상황에서 유용한 전문적이고 정중한";
+          case "학술":
+            return "학술적이고 교육적인 내용을 다루는 깊이 있는";
+          default:
+            return "자연스러운";
+        }
+      };
+
+      // 4. OpenAI API 직접 호출
       const response = await fetch(
         "https://api.openai.com/v1/chat/completions",
         {
@@ -92,7 +112,7 @@ export default function CustomQuestionGenerator({
 성격: ${currentCharacter.personality}
 배경: ${currentCharacter.background}
 
-사용자가 ${currentCharacter.name}에게 물어볼 수 있는 자연스러운 질문 ${questionCount}개를 생성하고, 각 질문에 대한 ${currentCharacter.name}의 특성을 반영한 적절한 답변 2개를 만들어주세요.
+사용자가 ${currentCharacter.name}에게 물어볼 수 있는 ${getStylePrompt()} 질문 ${questionCount}개를 생성하고, 각 질문에 대한 ${currentCharacter.name}의 특성을 반영한 적절한 답변 2개를 만들어주세요.
 
 출력 형식:
 Q1: [질문]
@@ -162,7 +182,21 @@ A2-2: [${currentCharacter.name}의 답변2]
 
       const { key } = await keyResponse.json();
 
-      // 3. OpenAI API 직접 호출
+      // 3. 스타일에 따른 프롬프트 설정
+      const getStylePrompt = () => {
+        switch (questionStyle) {
+          case "일상":
+            return "일상적이고 친근한 대화에서 나올 수 있는";
+          case "비즈니스":
+            return "비즈니스나 업무 상황에서 유용한 전문적이고 정중한";
+          case "학술":
+            return "학술적이고 교육적인 내용을 다루는 깊이 있는";
+          default:
+            return "자연스러운";
+        }
+      };
+
+      // 4. OpenAI API 직접 호출
       const response = await fetch(
         "https://api.openai.com/v1/chat/completions",
         {
@@ -176,7 +210,7 @@ A2-2: [${currentCharacter.name}의 답변2]
             messages: [
               {
                 role: "system",
-                content: `당신은 대화 질문 생성기입니다. ${speaker}(화자)가 ${listener}(청자)에게 물어볼 수 있는 자연스러운 대화 질문 5개를 생성하고, 각 질문에 대한 적절한 답변 2개를 만들어주세요.
+                content: `당신은 대화 질문 생성기입니다. ${speaker}(화자)가 ${listener}(청자)에게 물어볼 수 있는 ${getStylePrompt()} 대화 질문 ${questionCount}개를 생성하고, 각 질문에 대한 적절한 답변 2개를 만들어주세요.
 
 출력 형식:
 Q1: [질문]
@@ -187,10 +221,10 @@ Q2: [질문]
 A2-1: [답변1]
 A2-2: [답변2]
 
-...이런 식으로 Q5까지 생성해주세요.`,
+...이런 식으로 Q${questionCount}까지 생성해주세요.`,
               },
             ],
-            max_tokens: 2000,
+            max_tokens: questionCount === 10 ? 3000 : 1500,
             temperature: 0.7,
           }),
         },
@@ -202,7 +236,7 @@ A2-2: [답변2]
 
       const data = await response.json();
       const content = data.choices[0].message.content;
-      const parsedQuestions = parseGPTResponse(content, 5);
+      const parsedQuestions = parseGPTResponse(content, questionCount);
       setQuestions(parsedQuestions);
     } catch (error) {
       console.error("질문 생성 실패:", error);
@@ -517,34 +551,72 @@ A2-2: [답변2]
             </div>
 
             <div className="p-4 space-y-6 overflow-y-auto h-[calc(100%-7rem)]">
-              {/* 질문 개수 선택 - 최상단 */}
+              {/* 질문 개수와 스타일 선택 */}
               <div className="flex items-center justify-between">
-                <h3 className="text-sm font-medium text-slate-600">
-                  질문 개수 선택
-                </h3>
-                <div className="flex space-x-2">
-                  <button
-                    onClick={() => generateCharacterQuestions(5)}
-                    disabled={isGenerating}
-                    className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                      isGenerating
-                        ? "bg-slate-200 text-slate-400 cursor-not-allowed"
-                        : "bg-slate-700 hover:bg-slate-800 text-white"
-                    }`}
-                  >
-                    5개
-                  </button>
-                  <button
-                    onClick={() => generateCharacterQuestions(10)}
-                    disabled={isGenerating}
-                    className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                      isGenerating
-                        ? "bg-slate-200 text-slate-400 cursor-not-allowed"
-                        : "bg-slate-600 hover:bg-slate-700 text-white"
-                    }`}
-                  >
-                    10개
-                  </button>
+                <div className="flex items-center space-x-4">
+                  {/* 개수 선택 */}
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm text-slate-600">개수:</span>
+                    <div className="flex space-x-1">
+                      <button
+                        onClick={() => setQuestionCount(5)}
+                        className={`px-2 py-1 text-xs border rounded transition-colors ${
+                          questionCount === 5
+                            ? "border-slate-700 bg-slate-700 text-white"
+                            : "border-slate-300 text-slate-600 hover:border-slate-400"
+                        }`}
+                      >
+                        5
+                      </button>
+                      <button
+                        onClick={() => setQuestionCount(10)}
+                        className={`px-2 py-1 text-xs border rounded transition-colors ${
+                          questionCount === 10
+                            ? "border-slate-700 bg-slate-700 text-white"
+                            : "border-slate-300 text-slate-600 hover:border-slate-400"
+                        }`}
+                      >
+                        10
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* 스타일 선택 */}
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm text-slate-600">스타일:</span>
+                    <div className="flex space-x-1">
+                      <button
+                        onClick={() => setQuestionStyle("일상")}
+                        className={`px-2 py-1 text-xs border rounded transition-colors ${
+                          questionStyle === "일상"
+                            ? "border-slate-700 bg-slate-700 text-white"
+                            : "border-slate-300 text-slate-600 hover:border-slate-400"
+                        }`}
+                      >
+                        일상
+                      </button>
+                      <button
+                        onClick={() => setQuestionStyle("비즈니스")}
+                        className={`px-2 py-1 text-xs border rounded transition-colors ${
+                          questionStyle === "비즈니스"
+                            ? "border-slate-700 bg-slate-700 text-white"
+                            : "border-slate-300 text-slate-600 hover:border-slate-400"
+                        }`}
+                      >
+                        비즈니스
+                      </button>
+                      <button
+                        onClick={() => setQuestionStyle("학술")}
+                        className={`px-2 py-1 text-xs border rounded transition-colors ${
+                          questionStyle === "학술"
+                            ? "border-slate-700 bg-slate-700 text-white"
+                            : "border-slate-300 text-slate-600 hover:border-slate-400"
+                        }`}
+                      >
+                        학술
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -563,7 +635,7 @@ A2-2: [답변2]
                     </div>
                   </div>
                   <button
-                    onClick={() => generateCharacterQuestions(5)}
+                    onClick={() => generateCharacterQuestions()}
                     disabled={isGenerating}
                     className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                       isGenerating
@@ -718,7 +790,7 @@ A2-2: [답변2]
                               })()}
                             </div>
                           </div>
-                          <div className="flex space-x-1 ml-2">
+                          <div className="grid grid-cols-2 gap-1 ml-2">
                             <button
                               onClick={() => handlePlayQuestion(q.id)}
                               className="p-1 text-blue-600 hover:bg-blue-100 rounded"
@@ -739,6 +811,26 @@ A2-2: [답변2]
                               title="저장"
                             >
                               💾
+                            </button>
+                            <button
+                              onClick={() => {
+                                const question = questions.find(
+                                  (qu) => qu.id === q.id,
+                                );
+                                if (question && onInputText) {
+                                  const translationState =
+                                    translatedTexts[`question-${q.id}`];
+                                  const textToInput =
+                                    translationState?.isTranslated
+                                      ? translationState.translated
+                                      : question.question;
+                                  onInputText(textToInput);
+                                }
+                              }}
+                              className="p-1 text-blue-600 hover:bg-blue-100 rounded text-sm"
+                              title="입력"
+                            >
+                              📝
                             </button>
                           </div>
                         </div>
@@ -783,7 +875,7 @@ A2-2: [답변2]
                                   })()}
                                 </div>
                               </div>
-                              <div className="flex space-x-1 ml-2">
+                              <div className="grid grid-cols-2 gap-1 ml-2">
                                 <button
                                   onClick={() =>
                                     handlePlayAnswer(q.id, answerIndex)
@@ -810,6 +902,32 @@ A2-2: [답변2]
                                   title="저장"
                                 >
                                   💾
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    const question = questions.find(
+                                      (qu) => qu.id === q.id,
+                                    );
+                                    if (
+                                      question &&
+                                      question.answers[answerIndex] &&
+                                      onInputText
+                                    ) {
+                                      const translationState =
+                                        translatedTexts[
+                                          `answer-${q.id}-${answerIndex}`
+                                        ];
+                                      const textToInput =
+                                        translationState?.isTranslated
+                                          ? translationState.translated
+                                          : question.answers[answerIndex];
+                                      onInputText(textToInput);
+                                    }
+                                  }}
+                                  className="p-1 text-green-600 hover:bg-green-100 rounded text-sm"
+                                  title="입력"
+                                >
+                                  📝
                                 </button>
                               </div>
                             </div>

@@ -661,6 +661,7 @@ export default function MobileChat() {
       <CustomQuestionGenerator
         open={customQuestionDialogOpen}
         onClose={() => setCustomQuestionDialogOpen(false)}
+        onInputText={(text: string) => setNewMessage(text)}
       />
     </div>
   );
