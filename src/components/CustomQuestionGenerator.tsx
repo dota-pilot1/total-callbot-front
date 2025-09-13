@@ -25,10 +25,10 @@ export default function CustomQuestionGenerator({
   const [listener, setListener] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [questions, setQuestions] = useState<GeneratedQuestion[]>([]);
-  const [questionCount, setQuestionCount] = useState<5 | 10>(5);
+  const [questionCount, setQuestionCount] = useState<1 | 2 | 3 | 4 | 5>(3);
   const [questionStyle, setQuestionStyle] = useState<
-    "일상" | "비즈니스" | "학술"
-  >("일상");
+    "일상" | "비즈니스" | "학술" | "역할"
+  >("역할");
 
   // 번역 상태 관리
   const [translatedTexts, setTranslatedTexts] = useState<{
@@ -88,6 +88,8 @@ export default function CustomQuestionGenerator({
             return "비즈니스나 업무 상황에서 유용한 전문적이고 정중한";
           case "학술":
             return "학술적이고 교육적인 내용을 다루는 깊이 있는";
+          case "역할":
+            return `${currentCharacter.name}의 역할과 캐릭터 설정에 맞는 상황에서 나올 수 있는 적절하고 전문적인`;
           default:
             return "자연스러운";
         }
@@ -114,6 +116,16 @@ export default function CustomQuestionGenerator({
 
 사용자가 ${currentCharacter.name}에게 물어볼 수 있는 ${getStylePrompt()} 질문 ${questionCount}개를 생성하고, 각 질문에 대한 ${currentCharacter.name}의 특성을 반영한 적절한 답변 2개를 만들어주세요.
 
+${
+  questionStyle === "역할"
+    ? `[중요] 역할 기반 질문 생성 시 주의사항:
+- ${currentCharacter.name}의 직업이나 역할과 관련된 전문적인 질문을 생성하세요
+- 개인적이고 사적인 질문(주말계획, 취미, 개인사 등)은 피하세요
+- 업무나 서비스와 관련된 적절한 질문을 만드세요
+- 고객-서비스 제공자 관계에 맞는 질문을 우선하세요`
+    : ""
+}
+
 출력 형식:
 Q1: [질문]
 A1-1: [${currentCharacter.name}의 답변1]
@@ -126,7 +138,7 @@ A2-2: [${currentCharacter.name}의 답변2]
 ...이런 식으로 Q${questionCount}까지 생성해주세요.`,
               },
             ],
-            max_tokens: questionCount === 10 ? 3000 : 1500,
+            max_tokens: questionCount * 400,
             temperature: 0.7,
           }),
         },
@@ -191,6 +203,8 @@ A2-2: [${currentCharacter.name}의 답변2]
             return "비즈니스나 업무 상황에서 유용한 전문적이고 정중한";
           case "학술":
             return "학술적이고 교육적인 내용을 다루는 깊이 있는";
+          case "역할":
+            return `${speaker}와 ${listener}의 역할에 맞는 업무적이고 상황에 적절한`;
           default:
             return "자연스러운";
         }
@@ -212,6 +226,17 @@ A2-2: [${currentCharacter.name}의 답변2]
                 role: "system",
                 content: `당신은 대화 질문 생성기입니다. ${speaker}(화자)가 ${listener}(청자)에게 물어볼 수 있는 ${getStylePrompt()} 대화 질문 ${questionCount}개를 생성하고, 각 질문에 대한 적절한 답변 2개를 만들어주세요.
 
+${
+  questionStyle === "역할"
+    ? `[중요] 역할 기반 질문 생성 시 주의사항:
+- ${speaker}와 ${listener}의 역할과 직업에 맞는 전문적인 질문을 생성하세요
+- 개인적이고 사적인 질문(주말계획, 취미, 개인사, 연애, 가족 등)은 피하세요
+- 업무, 서비스, 거래와 관련된 적절한 질문을 만드세요
+- 고객-직원, 손님-점원 등의 관계에 맞는 예의바른 질문을 우선하세요
+- 해당 업종에서 실제로 나올 수 있는 현실적인 질문을 만드세요`
+    : ""
+}
+
 출력 형식:
 Q1: [질문]
 A1-1: [답변1]
@@ -224,7 +249,7 @@ A2-2: [답변2]
 ...이런 식으로 Q${questionCount}까지 생성해주세요.`,
               },
             ],
-            max_tokens: questionCount === 10 ? 3000 : 1500,
+            max_tokens: questionCount * 400,
             temperature: 0.7,
           }),
         },
@@ -511,6 +536,42 @@ A2-2: [답변2]
     console.log("Save answer:", questionId, answerIndex);
   };
 
+  const handleInputText = async (text: string, key: string) => {
+    if (!onInputText) return;
+
+    try {
+      // 현재 번역 상태 확인
+      const translationState = translatedTexts[key];
+      let englishText = "";
+
+      // 이미 번역된 상태이고 원본이 한국어라면 번역된 텍스트 사용
+      if (
+        translationState?.isTranslated &&
+        /[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/.test(translationState.original)
+      ) {
+        englishText = translationState.translated;
+      }
+      // 원본이 이미 영어라면 그대로 사용
+      else if (!/[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/.test(text)) {
+        englishText = text;
+      }
+      // 한국어라면 영어로 번역
+      else {
+        const translated = await translateText(text);
+        englishText = translated || text;
+      }
+
+      // 영어 텍스트를 입력창에 입력하고 창 닫기
+      onInputText(englishText);
+      handleClose();
+    } catch (error) {
+      console.error("텍스트 입력 실패:", error);
+      // 실패해도 원본 텍스트는 입력
+      onInputText(text);
+      handleClose();
+    }
+  };
+
   const resetForm = () => {
     setSpeaker("");
     setListener("");
@@ -558,26 +619,21 @@ A2-2: [답변2]
                   <div className="flex items-center space-x-2">
                     <span className="text-sm text-slate-600">개수:</span>
                     <div className="flex space-x-1">
-                      <button
-                        onClick={() => setQuestionCount(5)}
-                        className={`px-2 py-1 text-xs border rounded transition-colors ${
-                          questionCount === 5
-                            ? "border-slate-700 bg-slate-700 text-white"
-                            : "border-slate-300 text-slate-600 hover:border-slate-400"
-                        }`}
-                      >
-                        5
-                      </button>
-                      <button
-                        onClick={() => setQuestionCount(10)}
-                        className={`px-2 py-1 text-xs border rounded transition-colors ${
-                          questionCount === 10
-                            ? "border-slate-700 bg-slate-700 text-white"
-                            : "border-slate-300 text-slate-600 hover:border-slate-400"
-                        }`}
-                      >
-                        10
-                      </button>
+                      {[1, 2, 3, 4, 5].map((count) => (
+                        <button
+                          key={count}
+                          onClick={() =>
+                            setQuestionCount(count as 1 | 2 | 3 | 4 | 5)
+                          }
+                          className={`px-2 py-1 text-xs border rounded transition-colors ${
+                            questionCount === count
+                              ? "border-slate-700 bg-slate-700 text-white"
+                              : "border-slate-300 text-slate-600 hover:border-slate-400"
+                          }`}
+                        >
+                          {count}
+                        </button>
+                      ))}
                     </div>
                   </div>
 
@@ -585,6 +641,16 @@ A2-2: [답변2]
                   <div className="flex items-center space-x-2">
                     <span className="text-sm text-slate-600">스타일:</span>
                     <div className="flex space-x-1">
+                      <button
+                        onClick={() => setQuestionStyle("역할")}
+                        className={`px-2 py-1 text-xs border rounded transition-colors ${
+                          questionStyle === "역할"
+                            ? "border-slate-700 bg-slate-700 text-white"
+                            : "border-slate-300 text-slate-600 hover:border-slate-400"
+                        }`}
+                      >
+                        역할
+                      </button>
                       <button
                         onClick={() => setQuestionStyle("일상")}
                         className={`px-2 py-1 text-xs border rounded transition-colors ${
@@ -817,18 +883,15 @@ A2-2: [답변2]
                                 const question = questions.find(
                                   (qu) => qu.id === q.id,
                                 );
-                                if (question && onInputText) {
-                                  const translationState =
-                                    translatedTexts[`question-${q.id}`];
-                                  const textToInput =
-                                    translationState?.isTranslated
-                                      ? translationState.translated
-                                      : question.question;
-                                  onInputText(textToInput);
+                                if (question) {
+                                  handleInputText(
+                                    question.question,
+                                    `question-${q.id}`,
+                                  );
                                 }
                               }}
                               className="p-1 text-blue-600 hover:bg-blue-100 rounded text-sm"
-                              title="입력"
+                              title="영어로 입력"
                             >
                               📝
                             </button>
@@ -910,22 +973,16 @@ A2-2: [답변2]
                                     );
                                     if (
                                       question &&
-                                      question.answers[answerIndex] &&
-                                      onInputText
+                                      question.answers[answerIndex]
                                     ) {
-                                      const translationState =
-                                        translatedTexts[
-                                          `answer-${q.id}-${answerIndex}`
-                                        ];
-                                      const textToInput =
-                                        translationState?.isTranslated
-                                          ? translationState.translated
-                                          : question.answers[answerIndex];
-                                      onInputText(textToInput);
+                                      handleInputText(
+                                        question.answers[answerIndex],
+                                        `answer-${q.id}-${answerIndex}`,
+                                      );
                                     }
                                   }}
                                   className="p-1 text-green-600 hover:bg-green-100 rounded text-sm"
-                                  title="입력"
+                                  title="영어로 입력"
                                 >
                                   📝
                                 </button>
