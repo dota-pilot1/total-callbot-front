@@ -4,7 +4,7 @@ import {
   LanguageIcon,
   PlayIcon,
   PauseIcon,
-  ArrowDownTrayIcon,
+  BookmarkIcon,
 } from "@heroicons/react/24/outline";
 import SentenceSplitterDialogButtonWithTranslate from "./SentenceSplitterDialogButtonWithTranslate";
 
@@ -276,7 +276,7 @@ export default function CardForChattingMessageWithTranslation({
                   }`}
                   title="저장"
                 >
-                  💾
+                  <BookmarkIcon className="h-4 w-4" />
                 </button>
               </div>
             </div>
@@ -348,7 +348,7 @@ export default function CardForChattingMessageWithTranslation({
                   }`}
                   title="저장"
                 >
-                  💾
+                  <BookmarkIcon className="h-4 w-4" />
                 </button>
               </div>
             </div>
