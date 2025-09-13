@@ -1,6 +1,11 @@
 import { useState, useRef } from "react";
 import { examApi } from "../features/chatbot/exam/api/exam";
-import { LanguageIcon, PlayIcon, PauseIcon } from "@heroicons/react/24/outline";
+import {
+  LanguageIcon,
+  PlayIcon,
+  PauseIcon,
+  TrashIcon,
+} from "@heroicons/react/24/outline";
 import SentenceSplitterDialogButtonWithTranslate from "./SentenceSplitterDialogButtonWithTranslate";
 
 interface Message {
@@ -190,6 +195,12 @@ export default function CardForChattingMessageWithTranslation({
     }
   };
 
+  const handleDeleteClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    // TODO: 삭제 기능 구현 예정
+    console.log("Delete message:", message.id);
+  };
+
   return (
     <div className={`flex ${isUser ? "justify-end" : "justify-start"} mb-4`}>
       <div
@@ -203,13 +214,13 @@ export default function CardForChattingMessageWithTranslation({
           {/* 앞면 (원본 메시지) */}
           {!isFlipped && (
             <div
-              className={`px-3 py-2 rounded-lg shadow-sm relative ${
+              className={`px-3 py-2 pb-6 rounded-lg shadow-sm relative ${
                 isUser
                   ? "bg-indigo-500 text-white"
                   : "bg-white border border-gray-200 text-gray-900"
               }`}
             >
-              <p className="text-sm leading-relaxed whitespace-pre-wrap pr-20">
+              <p className="text-sm leading-relaxed whitespace-pre-wrap pr-24">
                 {message.message}
               </p>
               <div className="mt-1">
@@ -222,8 +233,8 @@ export default function CardForChattingMessageWithTranslation({
                 </p>
               </div>
 
-              {/* 버튼 영역 - 우하단 3버튼 */}
-              <div className="absolute bottom-2 right-2 flex gap-1">
+              {/* 버튼 영역 - 우측 중앙 2x2 그리드 */}
+              <div className="absolute top-1/2 right-2 -translate-y-1/2 grid grid-cols-2 gap-1">
                 <SentenceSplitterDialogButtonWithTranslate
                   message={message.message}
                   isUser={isUser}
@@ -256,6 +267,17 @@ export default function CardForChattingMessageWithTranslation({
                     <PlayIcon className="h-4 w-4" />
                   )}
                 </button>
+                <button
+                  onClick={handleDeleteClick}
+                  className={`p-1.5 rounded-full border transition-colors ${
+                    isUser
+                      ? "hover:bg-red-400 text-indigo-100 border-indigo-200"
+                      : "hover:bg-red-100 text-gray-600 border-gray-300"
+                  }`}
+                  title="삭제"
+                >
+                  <TrashIcon className="h-4 w-4" />
+                </button>
               </div>
             </div>
           )}
@@ -263,13 +285,13 @@ export default function CardForChattingMessageWithTranslation({
           {/* 뒤면 (번역된 메시지) */}
           {isFlipped && (
             <div
-              className={`px-3 py-2 rounded-lg shadow-sm relative ${
+              className={`px-3 py-2 pb-6 rounded-lg shadow-sm relative ${
                 isUser
                   ? "bg-emerald-500 text-white"
                   : "bg-emerald-50 text-gray-900 border border-emerald-200"
               }`}
             >
-              <p className="text-sm leading-relaxed whitespace-pre-wrap pr-20">
+              <p className="text-sm leading-relaxed whitespace-pre-wrap pr-24">
                 {isTranslating
                   ? "번역 중..."
                   : translation || "번역을 준비하고 있습니다..."}
@@ -284,8 +306,8 @@ export default function CardForChattingMessageWithTranslation({
                 </p>
               </div>
 
-              {/* 버튼 영역 - 우하단 3버튼 */}
-              <div className="absolute bottom-2 right-2 flex gap-1">
+              {/* 버튼 영역 - 우측 중앙 2x2 그리드 */}
+              <div className="absolute top-1/2 right-2 -translate-y-1/2 grid grid-cols-2 gap-1">
                 <SentenceSplitterDialogButtonWithTranslate
                   message={message.message}
                   isUser={isUser}
@@ -316,6 +338,17 @@ export default function CardForChattingMessageWithTranslation({
                   ) : (
                     <PlayIcon className="h-4 w-4" />
                   )}
+                </button>
+                <button
+                  onClick={handleDeleteClick}
+                  className={`p-1.5 rounded-full border transition-colors ${
+                    isUser
+                      ? "hover:bg-red-400 text-emerald-100 border-emerald-200"
+                      : "hover:bg-red-100 text-emerald-600 border-emerald-300"
+                  }`}
+                  title="삭제"
+                >
+                  <TrashIcon className="h-4 w-4" />
                 </button>
               </div>
             </div>
