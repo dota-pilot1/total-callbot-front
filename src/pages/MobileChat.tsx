@@ -27,6 +27,7 @@ import {
   useCharacterSelection,
 } from "../features/chatbot/character";
 import MobileTranslationDialog from "../components/MobileTranslationDialog";
+import CustomQuestionGenerator from "../components/CustomQuestionGenerator";
 import CardForChattingMessageWithTranslation from "../components/CardForChattingMessageWithTranslation";
 import { useExamMode } from "../features/chatbot/exam";
 import { useAudioSettings } from "../features/chatbot/settings";
@@ -93,6 +94,10 @@ export default function MobileChat() {
   // Translation dialog state (mobile)
   const [translationOpen, setTranslationOpen] = useState(false);
   const [translationText, setTranslationText] = useState<string>("");
+
+  // 커스텀 질문 생성기 다이얼로그 상태
+  const [customQuestionDialogOpen, setCustomQuestionDialogOpen] =
+    useState(false);
 
   // 캐릭터 선택 훅
   const {
@@ -517,6 +522,14 @@ export default function MobileChat() {
               >
                 <SparklesIcon className="h-5 w-5" />
               </button>
+              {/* 커스텀 질문 생성기 버튼 */}
+              <button
+                onClick={() => setCustomQuestionDialogOpen(true)}
+                className="w-10 h-10 rounded-full transition-colors flex items-center justify-center bg-gray-100 hover:bg-gray-200 text-gray-600"
+                title="커스텀 질문 생성기"
+              >
+                🎯
+              </button>
             </div>
 
             {/* 텍스트 입력 */}
@@ -550,25 +563,28 @@ export default function MobileChat() {
                 className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
                 style={{ minHeight: "4.5rem" }}
               />
-              {/* 번역 버튼 */}
-              <button
-                onClick={() => openTranslation(newMessage)}
-                disabled={!newMessage.trim()}
-                className="p-2 rounded-lg bg-green-100 hover:bg-green-200 text-green-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                title="입력 텍스트 번역하기"
-              >
-                <LanguageIcon className="h-4 w-4" />
-              </button>
+              {/* 오른쪽 버튼들 (수직 배치) */}
+              <div className="flex flex-col space-y-2">
+                {/* 번역 버튼 */}
+                <button
+                  onClick={() => openTranslation(newMessage)}
+                  disabled={!newMessage.trim()}
+                  className="p-2 rounded-lg bg-green-100 hover:bg-green-200 text-green-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  title="입력 텍스트 번역하기"
+                >
+                  <LanguageIcon className="h-4 w-4" />
+                </button>
 
-              {/* 전송 버튼 */}
-              <Button
-                onClick={sendMessage}
-                disabled={!newMessage.trim() || examSending || suggestLoading}
-                size="sm"
-                className="px-3"
-              >
-                <PaperAirplaneIcon className="h-4 w-4" />
-              </Button>
+                {/* 전송 버튼 */}
+                <Button
+                  onClick={sendMessage}
+                  disabled={!newMessage.trim() || examSending || suggestLoading}
+                  size="sm"
+                  className="px-3"
+                >
+                  <PaperAirplaneIcon className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           </div>
         </div>
@@ -639,6 +655,12 @@ export default function MobileChat() {
         onClose={() => setTranslationOpen(false)}
         text={translationText}
         onInsertText={(text: string) => setNewMessage(text)}
+      />
+
+      {/* Custom Question Generator Dialog */}
+      <CustomQuestionGenerator
+        open={customQuestionDialogOpen}
+        onClose={() => setCustomQuestionDialogOpen(false)}
       />
     </div>
   );
