@@ -276,7 +276,7 @@ export default function CardForChattingMessageWithTranslation({
                   }`}
                   title="저장"
                 >
-                  <ArrowDownTrayIcon className="h-4 w-4" />
+                  💾
                 </button>
               </div>
             </div>
@@ -348,7 +348,7 @@ export default function CardForChattingMessageWithTranslation({
                   }`}
                   title="저장"
                 >
-                  <ArrowDownTrayIcon className="h-4 w-4" />
+                  💾
                 </button>
               </div>
             </div>
