@@ -4,7 +4,7 @@ import {
   LanguageIcon,
   PlayIcon,
   PauseIcon,
-  TrashIcon,
+  ArrowDownTrayIcon,
 } from "@heroicons/react/24/outline";
 import SentenceSplitterDialogButtonWithTranslate from "./SentenceSplitterDialogButtonWithTranslate";
 
@@ -195,10 +195,10 @@ export default function CardForChattingMessageWithTranslation({
     }
   };
 
-  const handleDeleteClick = (e: React.MouseEvent) => {
+  const handleSaveClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    // TODO: 삭제 기능 구현 예정
-    console.log("Delete message:", message.id);
+    // TODO: 저장 기능 구현 예정
+    console.log("Save message:", message.id);
   };
 
   return (
@@ -268,15 +268,15 @@ export default function CardForChattingMessageWithTranslation({
                   )}
                 </button>
                 <button
-                  onClick={handleDeleteClick}
+                  onClick={handleSaveClick}
                   className={`p-1.5 rounded-full border transition-colors ${
                     isUser
-                      ? "hover:bg-red-400 text-indigo-100 border-indigo-200"
-                      : "hover:bg-red-100 text-gray-600 border-gray-300"
+                      ? "hover:bg-indigo-400 text-indigo-100 border-indigo-200"
+                      : "hover:bg-gray-100 text-gray-600 border-gray-300"
                   }`}
-                  title="삭제"
+                  title="저장"
                 >
-                  <TrashIcon className="h-4 w-4" />
+                  <ArrowDownTrayIcon className="h-4 w-4" />
                 </button>
               </div>
             </div>
@@ -340,15 +340,15 @@ export default function CardForChattingMessageWithTranslation({
                   )}
                 </button>
                 <button
-                  onClick={handleDeleteClick}
+                  onClick={handleSaveClick}
                   className={`p-1.5 rounded-full border transition-colors ${
                     isUser
-                      ? "hover:bg-red-400 text-emerald-100 border-emerald-200"
-                      : "hover:bg-red-100 text-emerald-600 border-emerald-300"
+                      ? "hover:bg-emerald-400 text-emerald-100 border-emerald-200"
+                      : "hover:bg-emerald-100 text-emerald-600 border-emerald-300"
                   }`}
-                  title="삭제"
+                  title="저장"
                 >
-                  <TrashIcon className="h-4 w-4" />
+                  <ArrowDownTrayIcon className="h-4 w-4" />
                 </button>
               </div>
             </div>
