@@ -8,7 +8,7 @@ export const chatRoomApi = {
     return response.data;
   },
 
-  // 전체 공개 채팅방 목록 조회 (임시로 사용자별 엔드포인트 사용)
+  // 채팅방 목록 조회
   async getRooms(): Promise<ChatRoom[]> {
     const response = await apiClient.get<ChatRoom[]>("/chat/rooms");
     return response.data;

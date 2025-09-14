@@ -137,7 +137,16 @@ export default function Chat() {
 
   // 메시지 전송 핸들러
   const handleSendMessage = () => {
-    if (!inputMessage.trim()) return;
+    console.log("handleSendMessage called", {
+      inputMessage,
+      connected,
+      currentUserName,
+    });
+    if (!inputMessage.trim()) {
+      console.log("Empty message, returning");
+      return;
+    }
+    console.log("Calling sendMessage...");
     sendMessage(inputMessage, currentUserName, userEmail);
     setInputMessage("");
   };

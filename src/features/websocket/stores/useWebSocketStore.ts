@@ -79,22 +79,39 @@ export const useWebSocketStore = create<WebSocketState>((set, get) => ({
 
         // 채팅방별 메시지 구독
         const messageSubscription =
-          roomId === "general" ? "/topic/public" : `/topic/chatroom/${roomId}`;
+          roomId === "general" ? "/topic/chat" : `/topic/chat/${roomId}`;
 
-        client.subscribe(messageSubscription, (message: any) => {
-          const receivedMessage = JSON.parse(message.body);
-          console.log("Received message:", receivedMessage);
+        const subscription = client.subscribe(
+          messageSubscription,
+          (message: any) => {
+            console.log("📨 Raw message received:", message);
 
-          const formattedMessage: ChatMessage = {
-            id: Date.now() + Math.random(),
-            content: receivedMessage.content,
-            sender: receivedMessage.senderName === userName ? "user" : "other",
-            timestamp: new Date().toLocaleTimeString(),
-            senderName: receivedMessage.senderName,
-          };
+            try {
+              const receivedMessage = JSON.parse(message.body);
+              console.log("📨 Parsed message:", receivedMessage);
 
-          get().addMessage(formattedMessage);
-        });
+              const formattedMessage: ChatMessage = {
+                id: Date.now() + Math.random(),
+                content: receivedMessage.content,
+                sender:
+                  receivedMessage.senderName === userName ? "user" : "other",
+                timestamp: new Date().toLocaleTimeString(),
+                senderName: receivedMessage.senderName,
+              };
+
+              console.log("📨 Adding formatted message:", formattedMessage);
+              get().addMessage(formattedMessage);
+            } catch (error) {
+              console.error(
+                "❌ Error parsing received message:",
+                error,
+                message,
+              );
+            }
+          },
+        );
+
+        console.log("📨 Subscription created:", subscription);
 
         // 입장 메시지 전송
         const joinInfo = {
@@ -147,7 +164,18 @@ export const useWebSocketStore = create<WebSocketState>((set, get) => ({
   sendMessage: (content: string, userName: string, userEmail: string) => {
     const { stompClient, connected, currentRoomId } = get();
 
-    if (!content.trim()) return;
+    console.log("🟡 sendMessage called", {
+      content,
+      userName,
+      connected,
+      currentRoomId,
+      hasStompClient: !!stompClient,
+    });
+
+    if (!content.trim()) {
+      console.log("🔴 Empty content, returning");
+      return;
+    }
 
     if (stompClient && connected) {
       const chatMessage = {
@@ -161,9 +189,22 @@ export const useWebSocketStore = create<WebSocketState>((set, get) => ({
           ? "/app/chat/message"
           : `/app/chat/${currentRoomId}/message`;
 
-      stompClient.publish({
-        destination: messageEndpoint,
-        body: JSON.stringify(chatMessage),
+      console.log("🟢 Publishing message", { messageEndpoint, chatMessage });
+
+      try {
+        stompClient.publish({
+          destination: messageEndpoint,
+          body: JSON.stringify(chatMessage),
+        });
+
+        console.log("✅ Message published successfully");
+      } catch (error) {
+        console.error("❌ Error publishing message:", error);
+      }
+    } else {
+      console.log("🔴 Cannot send message - not connected or no stomp client", {
+        connected,
+        hasStompClient: !!stompClient,
       });
     }
   },
