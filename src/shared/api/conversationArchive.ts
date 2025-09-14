@@ -1,4 +1,4 @@
-import apiClient from "./axiosConfig";
+import { apiClient } from "./client";
 
 export interface ConversationArchive {
   id: string;
