@@ -223,23 +223,6 @@ export default function Chat() {
     setMessages((prev) => [...prev, newMessage]);
   };
 
-  // 시스템 메시지 추가
-  const addSystemMessage = (content: string) => {
-    const systemMessage: ChatMessage = {
-      id: Date.now() + Math.random(),
-      content,
-      sender: "other",
-      senderName: "시스템",
-      timestamp: new Date().toLocaleTimeString("ko-KR", {
-        hour12: false,
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
-    };
-
-    setMessages((prev) => [...prev, systemMessage]);
-  };
-
   // 메시지 클리어
   const clearMessages = () => {
     setMessages([]);
