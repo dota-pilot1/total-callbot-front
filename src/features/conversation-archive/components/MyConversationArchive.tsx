@@ -286,21 +286,18 @@ export default function MyConversationArchive({
                   >
                     <div className="bg-white border border-gray-200 rounded-lg p-4 space-y-4">
                       {/* Category Selection - Top Row Small Buttons */}
-                      <div className="flex flex-wrap gap-2 mb-3">
+                      <div className="flex gap-2 mb-3">
                         {CATEGORIES.map((cat) => (
                           <button
                             key={cat}
                             onClick={() => setSelectedCategory(cat)}
-                            className={`px-2 py-1 text-xs rounded-full border transition-all flex items-center gap-1 ${
+                            className={`flex-1 px-3 py-1.5 text-xs rounded-full border transition-all text-center font-medium ${
                               selectedCategory === cat
                                 ? CATEGORY_COLORS[cat] + " ring-1 ring-current"
                                 : "bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100"
                             }`}
                           >
-                            <span className="text-xs">
-                              {CATEGORY_ICONS[cat]}
-                            </span>
-                            <span className="font-medium">{cat}</span>
+                            {cat}
                           </button>
                         ))}
                       </div>
