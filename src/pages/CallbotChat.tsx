@@ -40,6 +40,7 @@ import {
   type VoiceConnection,
 } from "../features/chatbot/voice/lib/realtime";
 import VoicePulse from "../components/VoicePulse";
+import ChatRoomDropdown from "../components/ChatRoomDropdown";
 
 // 통일된 음성 보이스 (3종 중 기본값)
 const DEFAULT_REALTIME_VOICE: "verse" | "alloy" | "sage" = "verse";
@@ -857,6 +858,7 @@ export default function CallbotChat() {
               </h1>
             </div>
             <div className="flex items-center space-x-4">
+              <ChatRoomDropdown />
               <span className="text-sm text-gray-600">
                 {user?.name || user?.email || "게스트"}님
               </span>

@@ -11,13 +11,14 @@ import {
   Cog6ToothIcon,
   LanguageIcon,
   ArchiveBoxIcon,
-  UsersIcon,
+  ArrowRightOnRectangleIcon,
 } from "@heroicons/react/24/outline";
 // no solid icons needed currently
 import { useVoiceConnection } from "../features/chatbot/voice";
 import { useChatMessages } from "../features/chatbot/messaging";
 import VoicePulse from "../components/VoicePulse";
 import MobileSettingsDropdown from "../components/MobileSettingsDropdown";
+import MobileChatDropdown from "../components/MobileChatDropdown";
 
 import MobileCharacterDialog from "../components/MobileCharacterDialog";
 import { CHARACTER_LIST } from "../features/chatbot/character/characters";
@@ -323,17 +324,17 @@ export default function MobileChat() {
       <div className="bg-white shadow-sm border-b flex-shrink-0 sticky top-0 z-40">
         <div className="p-4">
           <div className="flex justify-between items-center">
-            <div className="flex items-center">
+            <div className="flex items-center space-x-2">
+              {/* 로고 */}
+              <div className="w-8 h-8 bg-indigo-500 rounded-full flex items-center justify-center">
+                <span className="text-white font-bold text-xs">T</span>
+              </div>
               <div>
                 <h1 className="text-lg font-semibold text-gray-900">
-                  {defaultChatbot.name}
+                  Total Callbot
                 </h1>
                 <p className="text-xs text-gray-600">
-                  {user?.name
-                    ? `${user.name}님`
-                    : user?.email
-                      ? `${user.email}님`
-                      : "로그인된 사용자"}
+                  {user?.name || user?.email || "게스트"}님
                   {chatParticipantCount > 0 && (
                     <span className="ml-2 text-green-600 font-medium">
                       👥({chatParticipantCount})
@@ -343,23 +344,15 @@ export default function MobileChat() {
               </div>
             </div>
             <div className="flex items-center space-x-2">
-              {/* 사용자간 채팅 버튼 */}
-              <div className="relative">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => navigate("/chat")}
-                  title="사용자간 채팅"
-                  className="w-9 px-0"
-                >
-                  <UsersIcon className="h-4 w-4" />
-                </Button>
-                {chatParticipantCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-green-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-medium">
-                    {chatParticipantCount}
-                  </span>
-                )}
-              </div>
+              {/* 사용자간 채팅 드롭다운 버튼 */}
+              <MobileChatDropdown
+                participantCount={chatParticipantCount}
+                onChatChange={(type) => {
+                  if (type === "general") {
+                    navigate("/chat");
+                  }
+                }}
+              />
 
               {/* 연습장 버튼 */}
               <Button
@@ -401,8 +394,10 @@ export default function MobileChat() {
                   console.log("Logout button clicked in MobileChat");
                   logout();
                 }}
+                title="로그아웃"
+                className="w-9 px-0"
               >
-                로그아웃
+                <ArrowRightOnRectangleIcon className="h-4 w-4" />
               </Button>
             </div>
           </div>

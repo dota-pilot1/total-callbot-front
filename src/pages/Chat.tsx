@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useAuthStore } from "../features/auth";
 import { Button } from "../components/ui";
 import { ArrowLeftIcon, PaperAirplaneIcon } from "@heroicons/react/24/outline";
@@ -85,9 +85,13 @@ function MessageBubble({
 
 export default function Chat() {
   const navigate = useNavigate();
+  const { roomId } = useParams<{ roomId?: string }>();
   const { getUser } = useAuthStore();
   const user = getUser();
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // 현재 채팅방 ID (기본값: "general")
+  const currentRoomId = roomId || "general";
 
   // WebSocket 연결 상태
   const [connected, setConnected] = useState(false);
@@ -167,8 +171,12 @@ export default function Chat() {
         setConnecting(false);
         setStompClient(client);
 
-        // /topic/chat 구독 - 실제 채팅 메시지 수신
-        client.subscribe("/topic/chat", (message: any) => {
+        // 채팅방별 메시지 구독
+        const chatTopic =
+          currentRoomId === "general"
+            ? "/topic/chat"
+            : `/topic/chat/${currentRoomId}`;
+        client.subscribe(chatTopic, (message: any) => {
           const chatMessage = JSON.parse(message.body);
 
           // 시스템 메시지와 일반 메시지 모두 동일하게 처리
@@ -176,14 +184,22 @@ export default function Chat() {
           addMessage(chatMessage.content, chatMessage.senderName);
         });
 
-        // 참여자 수 구독 - 백엔드에서 정확한 참여자 수 수신
-        client.subscribe("/topic/participant-count", (message: any) => {
+        // 채팅방별 참여자 수 구독
+        const participantTopic =
+          currentRoomId === "general"
+            ? "/topic/participant-count"
+            : `/topic/participant-count/${currentRoomId}`;
+        client.subscribe(participantTopic, (message: any) => {
           const participantData = JSON.parse(message.body);
           setParticipants(participantData.participants || []);
         });
 
         // 현재 참여자 수 요청
-        client.send("/app/chat/participant-count", {}, {});
+        const participantEndpoint =
+          currentRoomId === "general"
+            ? "/app/chat/participant-count"
+            : `/app/chat/${currentRoomId}/participant-count`;
+        client.send(participantEndpoint, {}, {});
 
         // 구독 설정 후 참여 알림 전송 (약간의 딜레이)
         setTimeout(() => {
@@ -191,7 +207,11 @@ export default function Chat() {
             senderName: currentUserName,
             senderEmail: user?.email || "unknown@example.com",
           };
-          client.send("/app/chat/join", {}, JSON.stringify(joinInfo));
+          const joinEndpoint =
+            currentRoomId === "general"
+              ? "/app/chat/join"
+              : `/app/chat/${currentRoomId}/join`;
+          client.send(joinEndpoint, {}, JSON.stringify(joinInfo));
         }, 100);
       },
       (error: any) => {
@@ -210,7 +230,11 @@ export default function Chat() {
         senderName: currentUserName,
         senderEmail: user?.email || "unknown@example.com",
       };
-      stompClient.send("/app/chat/leave", {}, JSON.stringify(leaveInfo));
+      const leaveEndpoint =
+        currentRoomId === "general"
+          ? "/app/chat/leave"
+          : `/app/chat/${currentRoomId}/leave`;
+      stompClient.send(leaveEndpoint, {}, JSON.stringify(leaveInfo));
 
       stompClient.disconnect();
     }
@@ -230,7 +254,11 @@ export default function Chat() {
         senderEmail: user?.email || "unknown@example.com",
       };
 
-      stompClient.send("/app/chat/message", {}, JSON.stringify(chatMessage));
+      const messageEndpoint =
+        currentRoomId === "general"
+          ? "/app/chat/message"
+          : `/app/chat/${currentRoomId}/message`;
+      stompClient.send(messageEndpoint, {}, JSON.stringify(chatMessage));
       setInputMessage("");
     } else {
       alert("먼저 채팅에 연결해주세요!");
@@ -276,7 +304,9 @@ export default function Chat() {
               </Button>
               <div>
                 <h1 className="text-lg font-semibold text-gray-900">
-                  실시간 채팅
+                  {currentRoomId === "general"
+                    ? "전체 채팅"
+                    : `채팅방: ${currentRoomId}`}
                 </h1>
                 <p className="text-xs text-gray-600">{currentUserName}님</p>
               </div>
