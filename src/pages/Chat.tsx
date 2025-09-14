@@ -130,7 +130,14 @@ export default function Chat() {
     }
 
     setConnecting(true);
-    const socket = new window.SockJS("http://localhost:8080/ws-stomp");
+
+    // 환경에 따른 WebSocket URL 설정
+    const isProduction = window.location.protocol === "https:";
+    const wsUrl = isProduction
+      ? `${window.location.protocol}//${window.location.host}/ws-stomp`
+      : "http://localhost:8080/ws-stomp";
+
+    const socket = new window.SockJS(wsUrl);
     const client = window.Stomp.over(socket);
 
     client.connect(
