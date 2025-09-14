@@ -153,11 +153,10 @@ export default function Chat() {
         // 시스템 메시지 추가
         addSystemMessage(`${currentUserName}님이 채팅에 참여했습니다`);
 
-        // /topic/test 구독 - 다른 사용자들의 메시지 수신
-        client.subscribe("/topic/test", (message: any) => {
-          const content = message.body;
-          // Step 1: Echo 서버를 통한 기본 브로드캐스트 메시지 처리
-          addMessage(content, "다른 사용자");
+        // /topic/chat 구독 - 실제 채팅 메시지 수신
+        client.subscribe("/topic/chat", (message: any) => {
+          const chatMessage = JSON.parse(message.body);
+          addMessage(chatMessage.content, chatMessage.senderName);
         });
       },
       (error: any) => {
@@ -183,8 +182,14 @@ export default function Chat() {
     if (!inputMessage.trim()) return;
 
     if (stompClient && connected) {
-      // Step 1: 기본 메시지 브로드캐스트
-      stompClient.send("/app/test/echo", {}, inputMessage);
+      // Step 2: 사용자 정보가 포함된 실제 채팅 메시지
+      const chatMessage = {
+        content: inputMessage,
+        senderName: currentUserName,
+        senderEmail: user?.email || "unknown@example.com",
+      };
+
+      stompClient.send("/app/chat/message", {}, JSON.stringify(chatMessage));
       setInputMessage("");
     } else {
       alert("먼저 채팅에 연결해주세요!");
@@ -341,7 +346,7 @@ export default function Chat() {
             </div>
             <div className="flex items-center justify-between mt-2">
               <p className="text-xs text-gray-500">
-                💬 실시간 멀티유저 채팅 (Step 1 완료)
+                💬 실시간 멀티유저 채팅 (Step 2 - 사용자 구분)
               </p>
               <div className="flex space-x-2">
                 <Button
