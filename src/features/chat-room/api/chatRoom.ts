@@ -8,27 +8,28 @@ export const chatRoomApi = {
     return response.data;
   },
 
-  // 채팅방 목록 조회
+  // 전체 공개 채팅방 목록 조회 - 새로운 다중 사용자용
   async getRooms(): Promise<ChatRoom[]> {
-    const response = await apiClient.get<ChatRoom[]>("/chat/rooms");
+    const response = await apiClient.get<ChatRoom[]>(
+      "/multiuser-chat/rooms/public",
+    );
     return response.data;
   },
 
-  // 채팅방 생성 (get-or-create 엔드포인트 사용)
+  // 다중 사용자 채팅방 생성
   async createRoom(roomData: CreateChatRoomRequest): Promise<ChatRoom> {
-    const response = await apiClient.post<{ chatRoom: ChatRoom }>(
-      "/chat/rooms/get-or-create",
-      {
-        chatbotId: roomData.name, // name을 chatbotId로 사용
-        chatbotName: roomData.description || roomData.name, // description이 있으면 사용, 없으면 name 사용
-      },
-    );
-    return response.data.chatRoom;
+    const response = await apiClient.post<ChatRoom>("/multiuser-chat/rooms", {
+      name: roomData.name,
+      description: roomData.description,
+      maxParticipants: 50,
+      isPublic: true,
+    });
+    return response.data;
   },
 
-  // 채팅방 삭제
+  // 채팅방 삭제 - 새로운 다중 사용자용
   async deleteRoom(roomId: string): Promise<void> {
-    await apiClient.delete(`/chat/rooms/${roomId}`);
+    await apiClient.delete(`/multiuser-chat/rooms/${roomId}`);
   },
 
   // 채팅방 상세 조회
