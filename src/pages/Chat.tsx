@@ -150,18 +150,23 @@ export default function Chat() {
         setConnecting(false);
         setStompClient(client);
 
-        // 서버로 참여 알림 전송
-        const joinInfo = {
-          senderName: currentUserName,
-          senderEmail: user?.email || "unknown@example.com",
-        };
-        client.send("/app/chat/join", {}, JSON.stringify(joinInfo));
-
         // /topic/chat 구독 - 실제 채팅 메시지 수신
         client.subscribe("/topic/chat", (message: any) => {
           const chatMessage = JSON.parse(message.body);
+
+          // 시스템 메시지와 일반 메시지 모두 동일하게 처리
+          // 백엔드에서 이미 올바른 senderName("시스템")으로 전송됨
           addMessage(chatMessage.content, chatMessage.senderName);
         });
+
+        // 구독 설정 후 참여 알림 전송 (약간의 딜레이)
+        setTimeout(() => {
+          const joinInfo = {
+            senderName: currentUserName,
+            senderEmail: user?.email || "unknown@example.com",
+          };
+          client.send("/app/chat/join", {}, JSON.stringify(joinInfo));
+        }, 100);
       },
       (error: any) => {
         console.error("Connection error: ", error);
@@ -337,28 +342,23 @@ export default function Chat() {
                 <PaperAirplaneIcon className="h-5 w-5" />
               </Button>
             </div>
-            <div className="flex items-center justify-between mt-2">
-              <p className="text-xs text-gray-500">
-                💬 실시간 멀티유저 채팅 (Step 2 - 사용자 구분)
-              </p>
-              <div className="flex space-x-2">
-                <Button
-                  onClick={clearMessages}
-                  variant="outline"
-                  size="sm"
-                  className="px-3 text-xs"
-                >
-                  🧹 지우기
-                </Button>
-                <Button
-                  onClick={disconnect}
-                  variant="outline"
-                  size="sm"
-                  className="px-3 text-xs text-red-600 border-red-300 hover:bg-red-50"
-                >
-                  나가기
-                </Button>
-              </div>
+            <div className="flex items-center justify-end mt-2 space-x-2">
+              <Button
+                onClick={clearMessages}
+                variant="outline"
+                size="sm"
+                className="px-3 text-xs"
+              >
+                🧹
+              </Button>
+              <Button
+                onClick={disconnect}
+                variant="outline"
+                size="sm"
+                className="px-3 text-xs text-red-600 border-red-300 hover:bg-red-50"
+              >
+                🚪
+              </Button>
             </div>
           </div>
         </div>
