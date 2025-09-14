@@ -11,6 +11,7 @@ import {
   Cog6ToothIcon,
   LanguageIcon,
   BookOpenIcon,
+  ArchiveBoxIcon,
 } from "@heroicons/react/24/outline";
 // no solid icons needed currently
 import { useVoiceConnection } from "../features/chatbot/voice";
@@ -29,6 +30,7 @@ import {
 import MobileTranslationDialog from "../components/MobileTranslationDialog";
 import CustomQuestionGenerator from "../components/CustomQuestionGenerator";
 import CardForChattingMessageWithTranslation from "../components/CardForChattingMessageWithTranslation";
+import MyConversationArchive from "../components/MyConversationArchive";
 import { useExamMode } from "../features/chatbot/exam";
 import { useAudioSettings } from "../features/chatbot/settings";
 import { useConnectionState } from "../features/chatbot/connection";
@@ -97,6 +99,10 @@ export default function MobileChat() {
 
   // 커스텀 질문 생성기 다이얼로그 상태
   const [customQuestionDialogOpen, setCustomQuestionDialogOpen] =
+    useState(false);
+
+  // 나의 대화 아카이브 다이얼로그 상태
+  const [conversationArchiveDialogOpen, setConversationArchiveDialogOpen] =
     useState(false);
 
   // 캐릭터 선택 훅
@@ -265,6 +271,17 @@ export default function MobileChat() {
                 className="w-9 px-0"
               >
                 <BookOpenIcon className="h-4 w-4" />
+              </Button>
+
+              {/* 나의 대화 아카이브 버튼 */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setConversationArchiveDialogOpen(true)}
+                title="나의 대화 아카이브"
+                className="w-9 px-0"
+              >
+                <ArchiveBoxIcon className="h-4 w-4" />
               </Button>
 
               {/* 설정 버튼 */}
@@ -662,6 +679,13 @@ export default function MobileChat() {
         open={customQuestionDialogOpen}
         onClose={() => setCustomQuestionDialogOpen(false)}
         onInputText={(text: string) => setNewMessage(text)}
+      />
+
+      {/* My Conversation Archive Dialog */}
+      <MyConversationArchive
+        open={conversationArchiveDialogOpen}
+        onClose={() => setConversationArchiveDialogOpen(false)}
+        onInsertConversation={(text: string) => setNewMessage(text)}
       />
     </div>
   );
