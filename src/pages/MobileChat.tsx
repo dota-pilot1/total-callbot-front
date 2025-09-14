@@ -10,7 +10,6 @@ import {
   SparklesIcon,
   Cog6ToothIcon,
   LanguageIcon,
-  BookOpenIcon,
   ArchiveBoxIcon,
 } from "@heroicons/react/24/outline";
 // no solid icons needed currently
@@ -267,10 +266,10 @@ export default function MobileChat() {
                 variant="outline"
                 size="sm"
                 onClick={() => navigate("/practice")}
-                title="연습장"
+                title="한국어 연습"
                 className="w-9 px-0"
               >
-                <BookOpenIcon className="h-4 w-4" />
+                <span className="text-xs font-bold">KR</span>
               </Button>
 
               {/* 나의 대화 아카이브 버튼 */}
