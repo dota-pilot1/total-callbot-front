@@ -2,7 +2,6 @@ import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   XMarkIcon,
-  PlusIcon,
   TrashIcon,
   ArchiveBoxIcon,
   PencilIcon,
@@ -11,13 +10,12 @@ import {
   PauseIcon,
   ArrowsRightLeftIcon,
   PaperAirplaneIcon,
-  ChevronDownIcon,
-  ChevronUpIcon,
 } from "@heroicons/react/24/outline";
 import { Button } from "../../../components/ui/Button";
 import { examApi } from "../../chatbot/exam/api/exam";
 import { useConversationArchive } from "../hooks/useConversationArchive";
 import type { ConversationArchive } from "../../../shared/api/conversationArchive";
+import ConversationInputForm from "./ConversationInputForm";
 
 interface MyConversationArchiveProps {
   open: boolean;
@@ -57,10 +55,6 @@ export default function MyConversationArchive({
   } = useConversationArchive();
 
   const [showAddForm, setShowAddForm] = useState(false);
-  const [newConversation, setNewConversation] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<
-    "역할" | "일상" | "비즈니스" | "학술"
-  >("일상");
   const [filterCategory, setFilterCategory] = useState<
     "전체" | "역할" | "일상" | "비즈니스" | "학술"
   >("전체");
@@ -89,18 +83,17 @@ export default function MyConversationArchive({
   );
 
   // 대화 추가
-  const handleAddConversation = async () => {
-    if (newConversation.trim()) {
-      const success = await addConversation({
-        conversation: newConversation.trim(),
-        conversationCategory: selectedCategory,
-      });
+  const handleAddConversation = async (
+    conversation: string,
+    category: "역할" | "일상" | "비즈니스" | "학술",
+  ) => {
+    const success = await addConversation({
+      conversation,
+      conversationCategory: category,
+    });
 
-      if (success) {
-        setNewConversation("");
-        setSelectedCategory("일상");
-        setShowAddForm(false);
-      }
+    if (success) {
+      setShowAddForm(false);
     }
   };
 
@@ -256,81 +249,13 @@ export default function MyConversationArchive({
             </div>
 
             <div className="p-4 space-y-4">
-              {/* Add New Conversation Toggle Button */}
-              <button
-                onClick={() => setShowAddForm(!showAddForm)}
-                className="w-full flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                <div className="flex items-center gap-2">
-                  <PlusIcon className="h-5 w-5 text-gray-600" />
-                  <span className="font-medium text-gray-700">
-                    새 대화 추가
-                  </span>
-                </div>
-                {showAddForm ? (
-                  <ChevronUpIcon className="h-5 w-5 text-gray-500" />
-                ) : (
-                  <ChevronDownIcon className="h-5 w-5 text-gray-500" />
-                )}
-              </button>
-
-              {/* Collapsible Add Form */}
-              <AnimatePresence>
-                {showAddForm && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: "auto", opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.2 }}
-                    className="overflow-hidden"
-                  >
-                    <div className="bg-white border border-gray-200 rounded-lg p-4 space-y-4">
-                      {/* Category Selection - Top Row Small Buttons */}
-                      <div className="flex gap-2 mb-3">
-                        {CATEGORIES.map((cat) => (
-                          <button
-                            key={cat}
-                            onClick={() => setSelectedCategory(cat)}
-                            className={`flex-1 px-3 py-1.5 text-xs rounded-full border transition-all text-center font-medium ${
-                              selectedCategory === cat
-                                ? CATEGORY_COLORS[cat] + " ring-1 ring-current"
-                                : "bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100"
-                            }`}
-                          >
-                            {cat}
-                          </button>
-                        ))}
-                      </div>
-
-                      {/* Text Input */}
-                      <textarea
-                        value={newConversation}
-                        onChange={(e) => setNewConversation(e.target.value)}
-                        placeholder="저장할 대화를 입력하세요..."
-                        className="w-full h-24 rounded-lg border border-gray-300 p-3 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 resize-none"
-                      />
-
-                      {/* Action Buttons */}
-                      <div className="flex gap-2 justify-end">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setShowAddForm(false)}
-                        >
-                          취소
-                        </Button>
-                        <Button
-                          size="sm"
-                          onClick={handleAddConversation}
-                          disabled={!newConversation.trim() || loading}
-                        >
-                          저장
-                        </Button>
-                      </div>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+              {/* Conversation Input Form */}
+              <ConversationInputForm
+                showForm={showAddForm}
+                onToggleForm={() => setShowAddForm(!showAddForm)}
+                onSubmit={handleAddConversation}
+                loading={loading}
+              />
 
               {/* Category Filter */}
               <div className="flex flex-wrap gap-2">
@@ -384,7 +309,6 @@ export default function MyConversationArchive({
                           <span
                             className={`px-3 py-1 rounded-full text-xs font-medium ${CATEGORY_COLORS[conv.conversationCategory]}`}
                           >
-                            {CATEGORY_ICONS[conv.conversationCategory]}{" "}
                             {conv.conversationCategory} #{index + 1}
                           </span>
                         </div>
@@ -407,14 +331,13 @@ export default function MyConversationArchive({
                                 <button
                                   key={cat}
                                   onClick={() => setEditingCategory(cat)}
-                                  className={`px-2 py-1 text-xs rounded-full border transition-all flex items-center gap-1 ${
+                                  className={`px-2 py-1 text-xs rounded-full border transition-all ${
                                     editingCategory === cat
                                       ? CATEGORY_COLORS[cat]
                                       : "bg-gray-50 text-gray-600 border-gray-200"
                                   }`}
                                 >
-                                  <span>{CATEGORY_ICONS[cat]}</span>
-                                  <span>{cat}</span>
+                                  {cat}
                                 </button>
                               ))}
                             </div>
