@@ -29,12 +29,9 @@ export default function ModernDropdown({
       className={clsx("relative inline-block text-left", className)}
     >
       <div>
-        <Menu.Button className="inline-flex items-center justify-center gap-x-2 px-4 py-2.5 rounded-lg bg-white text-sm font-medium text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 hover:ring-gray-400 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 min-w-[120px]">
+        <Menu.Button className="inline-flex items-center gap-x-1 px-2.5 py-1.5 rounded-md bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 border border-gray-300 focus:outline-none focus:ring-1 focus:ring-gray-400">
           {trigger}
-          <ChevronDownIcon
-            className="h-4 w-4 text-gray-500 ml-auto"
-            aria-hidden="true"
-          />
+          <ChevronDownIcon className="h-3.5 w-3.5 text-gray-400" />
         </Menu.Button>
       </div>
 
@@ -49,28 +46,22 @@ export default function ModernDropdown({
       >
         <Menu.Items
           className={clsx(
-            "absolute z-10 mt-2 w-56 origin-top-right divide-y divide-gray-100 rounded-lg bg-white shadow-lg ring-1 ring-black/5 focus:outline-none backdrop-blur-sm",
+            "absolute z-10 mt-1 w-44 rounded-md bg-white shadow-lg border border-gray-200 focus:outline-none",
             align === "right" ? "right-0" : "left-0",
           )}
         >
-          <div className="py-2">
+          <div className="py-1">
             {items.map((item) => (
               <Menu.Item key={item.id}>
                 {({ active }) => (
                   <button
                     onClick={item.onClick}
                     className={clsx(
-                      active ? "bg-gray-50 text-gray-900" : "text-gray-700",
-                      "group flex w-full items-center justify-between px-5 py-3 text-sm font-medium transition-all duration-150 hover:bg-gray-50",
+                      active ? "bg-gray-100" : "",
+                      "block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100",
                     )}
                   >
-                    <span className="flex items-center gap-3">
-                      <span className="text-base">{item.label}</span>
-                    </span>
-                    <ChevronDownIcon
-                      className="h-4 w-4 text-gray-400 rotate-[-90deg]"
-                      aria-hidden="true"
-                    />
+                    {item.label}
                   </button>
                 )}
               </Menu.Item>
