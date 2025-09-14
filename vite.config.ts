@@ -3,6 +3,9 @@ import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
   plugins: [tailwindcss()],
+  define: {
+    global: "globalThis",
+  },
   server: {
     host: "0.0.0.0", // 외부에서 접근 가능하도록
     proxy: {
