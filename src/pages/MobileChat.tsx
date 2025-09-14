@@ -101,28 +101,14 @@ export default function MobileChat() {
         () => {
           stompClient = client;
 
-          // 채팅 메시지 구독 (참여자 수 카운트용)
-          let participants = new Set<string>();
-
-          client.subscribe("/topic/chat", (message: any) => {
-            const chatMessage = JSON.parse(message.body);
-
-            if (chatMessage.senderName === "시스템") {
-              if (chatMessage.content.includes("참여했습니다")) {
-                const userName =
-                  chatMessage.content.split("님이 채팅에 참여했습니다")[0];
-                participants.add(userName);
-              } else if (chatMessage.content.includes("나갔습니다")) {
-                const userName =
-                  chatMessage.content.split("님이 채팅에서 나갔습니다")[0];
-                participants.delete(userName);
-              }
-            } else if (chatMessage.senderName !== "시스템") {
-              participants.add(chatMessage.senderName);
-            }
-
-            setChatParticipantCount(participants.size);
+          // 참여자 수 구독 - 정확한 백엔드 API 사용
+          client.subscribe("/topic/participant-count", (message: any) => {
+            const participantData = JSON.parse(message.body);
+            setChatParticipantCount(participantData.count || 0);
           });
+
+          // 현재 참여자 수 요청
+          client.send("/app/chat/participant-count", {}, {});
         },
         (error: any) => {
           console.error("Chat participant tracking connection error:", error);
@@ -348,6 +334,11 @@ export default function MobileChat() {
                     : user?.email
                       ? `${user.email}님`
                       : "로그인된 사용자"}
+                  {chatParticipantCount > 0 && (
+                    <span className="ml-2 text-green-600 font-medium">
+                      👥({chatParticipantCount})
+                    </span>
+                  )}
                 </p>
               </div>
             </div>

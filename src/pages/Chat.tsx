@@ -171,13 +171,19 @@ export default function Chat() {
         client.subscribe("/topic/chat", (message: any) => {
           const chatMessage = JSON.parse(message.body);
 
-          // 참여자 목록 실시간 업데이트
-          updateParticipantsList(chatMessage);
-
           // 시스템 메시지와 일반 메시지 모두 동일하게 처리
           // 백엔드에서 이미 올바른 senderName("시스템")으로 전송됨
           addMessage(chatMessage.content, chatMessage.senderName);
         });
+
+        // 참여자 수 구독 - 백엔드에서 정확한 참여자 수 수신
+        client.subscribe("/topic/participant-count", (message: any) => {
+          const participantData = JSON.parse(message.body);
+          setParticipants(participantData.participants || []);
+        });
+
+        // 현재 참여자 수 요청
+        client.send("/app/chat/participant-count", {}, {});
 
         // 구독 설정 후 참여 알림 전송 (약간의 딜레이)
         setTimeout(() => {
@@ -228,35 +234,6 @@ export default function Chat() {
       setInputMessage("");
     } else {
       alert("먼저 채팅에 연결해주세요!");
-    }
-  };
-
-  // 참여자 목록 업데이트 함수
-  const updateParticipantsList = (chatMessage: any) => {
-    if (chatMessage.senderName === "시스템") {
-      // 참여/나가기 메시지 파싱
-      if (chatMessage.content.includes("참여했습니다")) {
-        const userName =
-          chatMessage.content.split("님이 채팅에 참여했습니다")[0];
-        setParticipants((prev) => {
-          if (!prev.includes(userName)) {
-            return [...prev, userName];
-          }
-          return prev;
-        });
-      } else if (chatMessage.content.includes("나갔습니다")) {
-        const userName =
-          chatMessage.content.split("님이 채팅에서 나갔습니다")[0];
-        setParticipants((prev) => prev.filter((p) => p !== userName));
-      }
-    } else if (chatMessage.senderName !== "시스템") {
-      // 일반 메시지를 보낸 사용자도 참여자 목록에 추가
-      setParticipants((prev) => {
-        if (!prev.includes(chatMessage.senderName)) {
-          return [...prev, chatMessage.senderName];
-        }
-        return prev;
-      });
     }
   };
 
@@ -315,7 +292,7 @@ export default function Chat() {
                   onClick={() => setShowParticipants(!showParticipants)}
                   className="px-2 py-1 text-xs"
                 >
-                  👥 {participants.length}명
+                  👥({participants.length})
                 </Button>
               )}
 
