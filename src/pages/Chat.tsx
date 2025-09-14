@@ -32,11 +32,11 @@ function MessageBubble({
 
   return (
     <div
-      className={`flex items-end space-x-2 mb-4 ${isMyMessage ? "flex-row-reverse space-x-reverse" : ""}`}
+      className={`flex items-start space-x-2 mb-4 ${isMyMessage ? "flex-row-reverse space-x-reverse" : ""}`}
     >
       {/* 아바타 */}
       <div
-        className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+        className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium mt-1 ${
           isMyMessage ? "bg-blue-500 text-white" : "bg-green-500 text-white"
         }`}
       >
@@ -150,8 +150,12 @@ export default function Chat() {
         setConnecting(false);
         setStompClient(client);
 
-        // 시스템 메시지 추가
-        addSystemMessage(`${currentUserName}님이 채팅에 참여했습니다`);
+        // 서버로 참여 알림 전송
+        const joinInfo = {
+          senderName: currentUserName,
+          senderEmail: user?.email || "unknown@example.com",
+        };
+        client.send("/app/chat/join", {}, JSON.stringify(joinInfo));
 
         // /topic/chat 구독 - 실제 채팅 메시지 수신
         client.subscribe("/topic/chat", (message: any) => {
@@ -169,12 +173,18 @@ export default function Chat() {
 
   // WebSocket 연결 해제
   const disconnect = () => {
-    if (stompClient) {
+    if (stompClient && connected) {
+      // 서버로 나가기 알림 전송
+      const leaveInfo = {
+        senderName: currentUserName,
+        senderEmail: user?.email || "unknown@example.com",
+      };
+      stompClient.send("/app/chat/leave", {}, JSON.stringify(leaveInfo));
+
       stompClient.disconnect();
     }
     setConnected(false);
     setStompClient(null);
-    addSystemMessage("채팅에서 나갔습니다");
   };
 
   // 메시지 전송
