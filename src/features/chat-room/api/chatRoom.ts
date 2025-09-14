@@ -2,9 +2,15 @@ import { apiClient } from "../../../shared/api/client";
 import type { ChatRoom, CreateChatRoomRequest } from "../types";
 
 export const chatRoomApi = {
-  // 채팅방 목록 조회
-  async getRooms(): Promise<ChatRoom[]> {
+  // 채팅방 목록 조회 (사용자별)
+  async getUserRooms(): Promise<ChatRoom[]> {
     const response = await apiClient.get<ChatRoom[]>("/chat/rooms");
+    return response.data;
+  },
+
+  // 전체 공개 채팅방 목록 조회
+  async getRooms(): Promise<ChatRoom[]> {
+    const response = await apiClient.get<ChatRoom[]>("/chat/rooms/public");
     return response.data;
   },
 

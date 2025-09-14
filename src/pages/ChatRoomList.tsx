@@ -307,20 +307,11 @@ export default function ChatRoomList() {
           </div>
         ) : filteredRooms.length === 0 ? (
           <div className="text-center py-8">
-            <div className="text-gray-500 mb-4">
+            <div className="text-gray-500">
               {searchTerm
                 ? "검색 결과가 없습니다"
                 : "아직 생성된 채팅방이 없습니다"}
             </div>
-            {!searchTerm && (
-              <Button
-                onClick={() => setCreateModalOpen(true)}
-                className="flex items-center space-x-1"
-              >
-                <PlusIcon className="h-4 w-4" />
-                <span>첫 번째 채팅방 만들기</span>
-              </Button>
-            )}
           </div>
         ) : (
           <div className="space-y-3">

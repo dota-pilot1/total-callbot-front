@@ -1,9 +1,9 @@
-import { useNavigate } from 'react-router-dom';
-import ModernDropdown from './ui/ModernDropdown';
+import { useNavigate } from "react-router-dom";
+import ModernDropdown from "./ui/ModernDropdown";
 import {
   ChatBubbleLeftRightIcon,
-  ListBulletIcon
-} from '@heroicons/react/24/outline';
+  ListBulletIcon,
+} from "@heroicons/react/24/outline";
 
 interface ChatRoomDropdownProps {
   className?: string;
@@ -14,17 +14,17 @@ export default function ChatRoomDropdown({ className }: ChatRoomDropdownProps) {
 
   const dropdownItems = [
     {
-      id: 'all-rooms',
-      label: '전체 채팅방',
+      id: "all-rooms",
+      label: "🏠 전체 채팅방",
       icon: ChatBubbleLeftRightIcon,
-      onClick: () => navigate('/chat')
+      onClick: () => navigate("/chat"),
     },
     {
-      id: 'room-list',
-      label: '채팅방 목록',
+      id: "room-list",
+      label: "📋 채팅방 목록",
       icon: ListBulletIcon,
-      onClick: () => navigate('/chat/rooms')
-    }
+      onClick: () => navigate("/chat/rooms"),
+    },
   ];
 
   return (
