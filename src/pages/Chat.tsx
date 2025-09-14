@@ -131,11 +131,13 @@ export default function Chat() {
 
     setConnecting(true);
 
-    // 환경에 따른 WebSocket URL 설정
-    const isProduction = window.location.protocol === "https:";
-    const wsUrl = isProduction
-      ? `${window.location.protocol}//${window.location.host}/ws-stomp`
-      : "http://localhost:8080/ws-stomp";
+    // API 클라이언트와 동일한 베이스 URL 로직 사용
+    const host = window.location.hostname;
+    const isLocal = host === "localhost" || host === "127.0.0.1";
+
+    const wsUrl = isLocal
+      ? "http://localhost:8080/ws-stomp"
+      : "https://api.total-callbot.cloud/ws-stomp";
 
     const socket = new window.SockJS(wsUrl);
     const client = window.Stomp.over(socket);
