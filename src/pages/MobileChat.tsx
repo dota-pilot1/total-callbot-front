@@ -30,7 +30,7 @@ import {
 import MobileTranslationDialog from "../components/MobileTranslationDialog";
 import CustomQuestionGenerator from "../components/CustomQuestionGenerator";
 import CardForChattingMessageWithTranslation from "../components/CardForChattingMessageWithTranslation";
-import MyConversationArchive from "../components/MyConversationArchive";
+import { MyConversationArchive } from "../features/conversation-archive";
 import { useExamMode } from "../features/chatbot/exam";
 import { useAudioSettings } from "../features/chatbot/settings";
 import { useConnectionState } from "../features/chatbot/connection";
