@@ -126,8 +126,6 @@ export const useWebSocketStore = create<WebSocketState>((set, get) => ({
           destination: joinEndpoint,
           body: JSON.stringify(joinInfo),
         });
-
-        get().addSystemMessage(`${userName}님이 채팅방에 입장했습니다.`);
       },
       (error: any) => {
         console.log("Connection error: " + error);
