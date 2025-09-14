@@ -40,6 +40,7 @@ export default function ConversationInputForm({
     "역할" | "일상" | "비즈니스" | "학술"
   >("일상");
   const [speechLang, setSpeechLang] = useState<"ko" | "en">("ko");
+  const [lastTranscript, setLastTranscript] = useState("");
 
   // Voice-to-text with optional AI responses
   const { isRecording, isListening, audioRef, startVoice, stopVoice } =
@@ -60,8 +61,12 @@ export default function ConversationInputForm({
       onUserTranscriptUpdate: (text: string, isFinal: boolean) => {
         console.log("🔤 Transcript:", text, "isFinal:", isFinal);
         if (isFinal && text.trim()) {
-          // Add transcribed text to conversation input
-          setConversation((prev) => prev + (prev ? " " : "") + text.trim());
+          const cleanText = text.trim();
+          // 중복 방지: 같은 내용이면 추가하지 않음
+          if (cleanText !== lastTranscript) {
+            setConversation((prev) => prev + (prev ? " " : "") + cleanText);
+            setLastTranscript(cleanText);
+          }
         }
       },
     });
@@ -72,6 +77,7 @@ export default function ConversationInputForm({
       stopVoice();
     } else {
       console.log("🎤 Starting voice input");
+      setLastTranscript(""); // 새 음성 인식 시작 시 중복 방지 초기화
       await startVoice();
     }
   };
