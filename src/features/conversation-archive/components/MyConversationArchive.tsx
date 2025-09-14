@@ -31,13 +31,6 @@ const CATEGORY_COLORS = {
   학술: "bg-purple-100 text-purple-800 border-purple-200",
 } as const;
 
-const CATEGORY_ICONS = {
-  역할: "🎭",
-  일상: "💬",
-  비즈니스: "💼",
-  학술: "📚",
-} as const;
-
 export default function MyConversationArchive({
   open,
   onClose,
@@ -269,9 +262,7 @@ export default function MyConversationArchive({
                         : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                     }`}
                   >
-                    {category === "전체"
-                      ? "🗂️ 전체"
-                      : `${CATEGORY_ICONS[category as keyof typeof CATEGORY_ICONS]} ${category}`}
+                    {category === "전체" ? "전체" : category}
                   </button>
                 ))}
               </div>
