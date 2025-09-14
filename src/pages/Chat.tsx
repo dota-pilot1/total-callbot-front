@@ -15,51 +15,52 @@ declare global {
 interface ChatMessage {
   id: number;
   content: string;
-  sender: "user" | "server" | "system";
+  sender: "user" | "other";
   timestamp: string;
-  senderName?: string;
+  senderName: string;
 }
 
 // 메시지 컴포넌트
-function MessageBubble({ message }: { message: ChatMessage }) {
-  const isUser = message.sender === "user";
-  const isSystem = message.sender === "system";
-
-  if (isSystem) {
-    return (
-      <div className="flex justify-center my-3">
-        <div className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-sm">
-          ✅ {message.content}
-        </div>
-      </div>
-    );
-  }
+function MessageBubble({
+  message,
+  currentUserName,
+}: {
+  message: ChatMessage;
+  currentUserName: string;
+}) {
+  const isMyMessage = message.senderName === currentUserName;
 
   return (
     <div
-      className={`flex items-end space-x-2 mb-4 ${isUser ? "flex-row-reverse space-x-reverse" : ""}`}
+      className={`flex items-end space-x-2 mb-4 ${isMyMessage ? "flex-row-reverse space-x-reverse" : ""}`}
     >
       {/* 아바타 */}
       <div
         className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-          isUser ? "bg-blue-500 text-white" : "bg-green-500 text-white"
+          isMyMessage ? "bg-blue-500 text-white" : "bg-green-500 text-white"
         }`}
       >
-        {isUser ? "👤" : "🤖"}
+        {isMyMessage ? "👤" : "👥"}
       </div>
 
       {/* 메시지 버블 */}
       <div
         className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-          isUser
+          isMyMessage
             ? "bg-blue-500 text-white rounded-br-sm"
             : "bg-white border border-gray-200 text-gray-900 rounded-bl-sm"
         }`}
       >
+        {/* 보낸 사람 이름 (다른 사람 메시지일 때만) */}
+        {!isMyMessage && (
+          <div className="text-xs text-gray-500 mb-1 font-medium">
+            {message.senderName}
+          </div>
+        )}
         <div className="text-sm">{message.content}</div>
         <div
           className={`text-xs mt-1 ${
-            isUser ? "text-blue-100" : "text-gray-500"
+            isMyMessage ? "text-blue-100" : "text-gray-500"
           }`}
         >
           {message.timestamp}
@@ -139,49 +140,21 @@ export default function Chat() {
         setConnected(true);
         setConnecting(false);
         setStompClient(client);
-        addMessage("WebSocket 연결 성공!", "system");
 
-        // /topic/test 구독 - 서버에서 보내는 모든 메시지 수신
+        // 시스템 메시지 추가
+        addSystemMessage(`${currentUserName}님이 채팅에 참여했습니다`);
+
+        // /topic/test 구독 - 다른 사용자들의 메시지 수신
         client.subscribe("/topic/test", (message: any) => {
-          // 서버 응답을 받아서 적절한 sender 타입으로 표시
           const content = message.body;
-
-          // 서버 응답 형태에 따라 메시지 타입 결정
-          if (
-            content.includes("안녕하세요") &&
-            content.includes("WebSocket 연결이 정상적으로 작동합니다")
-          ) {
-            // Hello 응답
-            addMessage(content, "server", "서버");
-          } else if (content.startsWith("Echo: ")) {
-            // Echo 응답 - 원본 메시지와 Echo 응답을 분리해서 표시
-            const originalMessage = content
-              .replace("Echo: ", "")
-              .split(" (서버 시간:")[0];
-            const serverTime = content.match(/\(서버 시간: (.+?)\)/)?.[1];
-
-            // 먼저 사용자 메시지 표시
-            addMessage(originalMessage, "user", currentUserName);
-
-            // 잠시 후 서버 Echo 응답 표시
-            setTimeout(() => {
-              addMessage(
-                `Echo: ${originalMessage} (서버 시간: ${serverTime})`,
-                "server",
-                "서버",
-              );
-            }, 100);
-          } else {
-            // 기타 서버 메시지
-            addMessage(content, "server", "서버");
-          }
+          // Step 1: Echo 서버를 통한 기본 브로드캐스트 메시지 처리
+          addMessage(content, "다른 사용자");
         });
       },
       (error: any) => {
         console.error("Connection error: ", error);
         setConnected(false);
         setConnecting(false);
-        addMessage("연결 실패: " + error, "system");
       },
     );
   };
@@ -193,42 +166,28 @@ export default function Chat() {
     }
     setConnected(false);
     setStompClient(null);
-    addMessage("연결이 해제되었습니다", "system");
+    addSystemMessage("채팅에서 나갔습니다");
   };
 
-  // Hello 메시지 전송
-  const sendHello = () => {
-    if (stompClient && connected) {
-      stompClient.send("/app/test/hello", {}, currentUserName);
-      // 서버 응답을 기다림 (즉시 표시하지 않음)
-    } else {
-      alert("먼저 WebSocket에 연결해주세요!");
-    }
-  };
-
-  // Echo 메시지 전송
-  const sendEcho = () => {
+  // 메시지 전송
+  const sendMessage = () => {
     if (!inputMessage.trim()) return;
 
     if (stompClient && connected) {
+      // Step 1: 기본 메시지 브로드캐스트
       stompClient.send("/app/test/echo", {}, inputMessage);
-      // 서버 응답을 기다림 (즉시 표시하지 않음)
       setInputMessage("");
     } else {
-      alert("먼저 WebSocket에 연결해주세요!");
+      alert("먼저 채팅에 연결해주세요!");
     }
   };
 
-  // 메시지 추가 (실제 채팅 스타일)
-  const addMessage = (
-    content: string,
-    sender: "user" | "server" | "system",
-    senderName?: string,
-  ) => {
+  // 일반 메시지 추가
+  const addMessage = (content: string, senderName: string) => {
     const newMessage: ChatMessage = {
       id: Date.now() + Math.random(),
       content,
-      sender,
+      sender: senderName === currentUserName ? "user" : "other",
       senderName,
       timestamp: new Date().toLocaleTimeString("ko-KR", {
         hour12: false,
@@ -238,6 +197,23 @@ export default function Chat() {
     };
 
     setMessages((prev) => [...prev, newMessage]);
+  };
+
+  // 시스템 메시지 추가
+  const addSystemMessage = (content: string) => {
+    const systemMessage: ChatMessage = {
+      id: Date.now() + Math.random(),
+      content,
+      sender: "other",
+      senderName: "시스템",
+      timestamp: new Date().toLocaleTimeString("ko-KR", {
+        hour12: false,
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+    };
+
+    setMessages((prev) => [...prev, systemMessage]);
   };
 
   // 메시지 클리어
@@ -262,7 +238,7 @@ export default function Chat() {
               </Button>
               <div>
                 <h1 className="text-lg font-semibold text-gray-900">
-                  WebSocket 채팅 테스트
+                  실시간 채팅
                 </h1>
                 <p className="text-xs text-gray-600">{currentUserName}님</p>
               </div>
@@ -279,7 +255,7 @@ export default function Chat() {
                 }`}
               ></div>
               <span className="text-xs text-gray-600">
-                {connecting ? "연결중" : connected ? "연결됨" : "연결 안됨"}
+                {connecting ? "연결중" : connected ? "온라인" : "오프라인"}
               </span>
             </div>
           </div>
@@ -287,36 +263,15 @@ export default function Chat() {
       </div>
 
       {/* 연결 컨트롤 */}
-      <div className="bg-white border-b border-gray-200 p-4 flex-shrink-0">
-        <div className="flex items-center justify-center space-x-3">
-          {!connected ? (
+      {!connected && (
+        <div className="bg-white border-b border-gray-200 p-4 flex-shrink-0">
+          <div className="flex items-center justify-center space-x-3">
             <Button onClick={connect} disabled={connecting} className="px-6">
-              {connecting ? "연결 중..." : "WebSocket 연결"}
+              {connecting ? "연결 중..." : "채팅 시작"}
             </Button>
-          ) : (
-            <>
-              <Button onClick={sendHello} variant="outline" className="px-4">
-                👋 Hello 전송
-              </Button>
-              <Button
-                onClick={disconnect}
-                variant="outline"
-                className="px-4 text-red-600 border-red-300 hover:bg-red-50"
-              >
-                연결 해제
-              </Button>
-            </>
-          )}
-          <Button
-            onClick={clearMessages}
-            variant="outline"
-            size="sm"
-            className="px-3"
-          >
-            🧹 클리어
-          </Button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* 채팅 메시지 영역 */}
       <div className="flex-1 overflow-y-auto p-4">
@@ -324,18 +279,24 @@ export default function Chat() {
           {messages.length === 0 ? (
             <div className="text-center text-gray-500 mt-12">
               <div className="text-4xl mb-4">💬</div>
-              <p className="text-lg font-medium mb-2">WebSocket 채팅 테스트</p>
+              <p className="text-lg font-medium mb-2">실시간 멀티유저 채팅</p>
               <p className="text-sm">
-                WebSocket에 연결하고 실시간 메시지를 주고받아보세요!
+                다른 사용자들과 실시간으로 대화해보세요!
               </p>
-              <p className="text-xs text-gray-400 mt-2">
-                🔥 서버 응답만 표시 (중복 제거)
-              </p>
+              {!connected && (
+                <p className="text-xs text-gray-400 mt-2">
+                  채팅을 시작하려면 연결 버튼을 클릭하세요
+                </p>
+              )}
             </div>
           ) : (
             <>
               {messages.map((message) => (
-                <MessageBubble key={message.id} message={message} />
+                <MessageBubble
+                  key={message.id}
+                  message={message}
+                  currentUserName={currentUserName}
+                />
               ))}
               <div ref={messagesEndRef} />
             </>
@@ -355,23 +316,43 @@ export default function Chat() {
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !e.shiftKey) {
                     e.preventDefault();
-                    sendEcho();
+                    sendMessage();
                   }
                 }}
                 placeholder="메시지를 입력하세요..."
                 className="flex-1 px-4 py-3 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
               <Button
-                onClick={sendEcho}
+                onClick={sendMessage}
                 disabled={!inputMessage.trim()}
                 className="w-12 h-12 p-0 rounded-full"
               >
                 <PaperAirplaneIcon className="h-5 w-5" />
               </Button>
             </div>
-            <p className="text-xs text-gray-500 mt-2 text-center">
-              💡 Step 1: 서버 응답 기반 실시간 채팅 (중복 방지)
-            </p>
+            <div className="flex items-center justify-between mt-2">
+              <p className="text-xs text-gray-500">
+                💬 실시간 멀티유저 채팅 (Step 1 완료)
+              </p>
+              <div className="flex space-x-2">
+                <Button
+                  onClick={clearMessages}
+                  variant="outline"
+                  size="sm"
+                  className="px-3 text-xs"
+                >
+                  🧹 지우기
+                </Button>
+                <Button
+                  onClick={disconnect}
+                  variant="outline"
+                  size="sm"
+                  className="px-3 text-xs text-red-600 border-red-300 hover:bg-red-50"
+                >
+                  나가기
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
       )}
