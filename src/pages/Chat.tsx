@@ -3,14 +3,8 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useAuthStore } from "../features/auth";
 import { Button } from "../components/ui";
 import { ArrowLeftIcon, PaperAirplaneIcon } from "@heroicons/react/24/outline";
-
-// STOMP와 SockJS 라이브러리 임포트
-declare global {
-  interface Window {
-    SockJS: any;
-    Stomp: any;
-  }
-}
+import SockJS from "sockjs-client";
+import { Client } from "@stomp/stompjs";
 
 interface ChatMessage {
   id: number;
@@ -96,7 +90,7 @@ export default function Chat() {
   // WebSocket 연결 상태
   const [connected, setConnected] = useState(false);
   const [connecting, setConnecting] = useState(false);
-  const [stompClient, setStompClient] = useState<any>(null);
+  const [stompClient, setStompClient] = useState<Client | null>(null);
 
   // 메시지 관련 상태
   const [messages, setMessages] = useState<ChatMessage[]>([]);
