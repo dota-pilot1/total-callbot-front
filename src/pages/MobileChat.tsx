@@ -11,6 +11,7 @@ import {
   Cog6ToothIcon,
   LanguageIcon,
   ArchiveBoxIcon,
+  UsersIcon,
 } from "@heroicons/react/24/outline";
 // no solid icons needed currently
 import { useVoiceConnection } from "../features/chatbot/voice";
@@ -261,6 +262,17 @@ export default function MobileChat() {
               </div>
             </div>
             <div className="flex items-center space-x-2">
+              {/* 사용자간 채팅 버튼 */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate("/chat")}
+                title="사용자간 채팅"
+                className="w-9 px-0"
+              >
+                <UsersIcon className="h-4 w-4" />
+              </Button>
+
               {/* 연습장 버튼 */}
               <Button
                 variant="outline"
