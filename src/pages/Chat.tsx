@@ -86,7 +86,6 @@ export default function Chat() {
     disconnect,
     sendMessage,
     setCurrentRoom,
-    clearMessages,
   } = useWebSocketStore();
 
   // 입력 상태

@@ -1,6 +1,6 @@
-import { create } from 'zustand';
-import SockJS from 'sockjs-client';
-import { Stomp } from '@stomp/stompjs';
+import { create } from "zustand";
+import SockJS from "sockjs-client";
+import { Stomp } from "@stomp/stompjs";
 
 export interface ChatMessage {
   id: number;
@@ -38,7 +38,7 @@ export const useWebSocketStore = create<WebSocketState>((set, get) => ({
   connecting: false,
   stompClient: null,
   messages: [],
-  currentRoomId: 'general',
+  currentRoomId: "general",
 
   // 현재 룸 설정
   setCurrentRoom: (roomId: string) => {
@@ -49,7 +49,7 @@ export const useWebSocketStore = create<WebSocketState>((set, get) => ({
 
   // 웹소켓 연결
   connect: (roomId: string, userName: string, userEmail: string) => {
-    const { connected, connecting, stompClient } = get();
+    const { connected, connecting } = get();
 
     // 이미 연결되어 있거나 연결 중이면 리턴
     if (connected || connecting) return;
@@ -74,13 +74,12 @@ export const useWebSocketStore = create<WebSocketState>((set, get) => ({
           connected: true,
           connecting: false,
           stompClient: client,
-          currentRoomId: roomId
+          currentRoomId: roomId,
         });
 
         // 채팅방별 메시지 구독
-        const messageSubscription = roomId === "general"
-          ? "/topic/public"
-          : `/topic/chatroom/${roomId}`;
+        const messageSubscription =
+          roomId === "general" ? "/topic/public" : `/topic/chatroom/${roomId}`;
 
         client.subscribe(messageSubscription, (message: any) => {
           const receivedMessage = JSON.parse(message.body);
@@ -103,9 +102,8 @@ export const useWebSocketStore = create<WebSocketState>((set, get) => ({
           senderEmail: userEmail,
         };
 
-        const joinEndpoint = roomId === "general"
-          ? "/app/chat/join"
-          : `/app/chat/${roomId}/join`;
+        const joinEndpoint =
+          roomId === "general" ? "/app/chat/join" : `/app/chat/${roomId}/join`;
 
         client.publish({
           destination: joinEndpoint,
@@ -126,13 +124,13 @@ export const useWebSocketStore = create<WebSocketState>((set, get) => ({
             get().connect(roomId, userName, userEmail);
           }
         }, 5000);
-      }
+      },
     );
   },
 
   // 웹소켓 연결 해제
   disconnect: () => {
-    const { stompClient, connected, currentRoomId } = get();
+    const { stompClient, connected } = get();
 
     if (stompClient && connected) {
       stompClient.disconnect();
@@ -141,7 +139,7 @@ export const useWebSocketStore = create<WebSocketState>((set, get) => ({
     set({
       connected: false,
       connecting: false,
-      stompClient: null
+      stompClient: null,
     });
   },
 
@@ -158,9 +156,10 @@ export const useWebSocketStore = create<WebSocketState>((set, get) => ({
         senderEmail: userEmail,
       };
 
-      const messageEndpoint = currentRoomId === "general"
-        ? "/app/chat/message"
-        : `/app/chat/${currentRoomId}/message`;
+      const messageEndpoint =
+        currentRoomId === "general"
+          ? "/app/chat/message"
+          : `/app/chat/${currentRoomId}/message`;
 
       stompClient.publish({
         destination: messageEndpoint,
@@ -171,8 +170,8 @@ export const useWebSocketStore = create<WebSocketState>((set, get) => ({
 
   // 메시지 추가
   addMessage: (message: ChatMessage) => {
-    set(state => ({
-      messages: [...state.messages, message]
+    set((state) => ({
+      messages: [...state.messages, message],
     }));
   },
 
