@@ -35,12 +35,23 @@ import { useExamMode } from "../features/chatbot/exam";
 import { useAudioSettings } from "../features/chatbot/settings";
 import { useConnectionState } from "../features/chatbot/connection";
 
+// STOMP와 SockJS 라이브러리 임포트
+declare global {
+  interface Window {
+    SockJS: any;
+    Stomp: any;
+  }
+}
+
 export default function MobileChat() {
   const { logout, getUser } = useAuthStore();
   const navigate = useNavigate();
 
   // 사용자 정보 상태
   const [user, setUser] = useState(getUser());
+
+  // 채팅 참여자 수 상태
+  const [chatParticipantCount, setChatParticipantCount] = useState(0);
 
   // 컴포넌트 마운트 시 사용자 정보 확인
   useEffect(() => {
@@ -49,6 +60,85 @@ export default function MobileChat() {
       setUser(currentUser);
     }
   }, [getUser]);
+
+  // 채팅 참여자 수 추적 (WebSocket)
+  useEffect(() => {
+    let stompClient: any = null;
+
+    const connectToChatRoom = async () => {
+      // CDN에서 라이브러리 로드
+      if (!window.SockJS) {
+        const sockjsScript = document.createElement("script");
+        sockjsScript.src =
+          "https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js";
+        document.head.appendChild(sockjsScript);
+        await new Promise((resolve) => {
+          sockjsScript.onload = resolve;
+        });
+      }
+      if (!window.Stomp) {
+        const stompScript = document.createElement("script");
+        stompScript.src =
+          "https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js";
+        document.head.appendChild(stompScript);
+        await new Promise((resolve) => {
+          stompScript.onload = resolve;
+        });
+      }
+
+      // WebSocket 연결 (참여자 수 추적용)
+      const host = window.location.hostname;
+      const isLocal = host === "localhost" || host === "127.0.0.1";
+      const wsUrl = isLocal
+        ? "http://localhost:8080/ws-stomp"
+        : "https://api.total-callbot.cloud/ws-stomp";
+
+      const socket = new window.SockJS(wsUrl);
+      const client = window.Stomp.over(socket);
+
+      client.connect(
+        {},
+        () => {
+          stompClient = client;
+
+          // 채팅 메시지 구독 (참여자 수 카운트용)
+          let participants = new Set<string>();
+
+          client.subscribe("/topic/chat", (message: any) => {
+            const chatMessage = JSON.parse(message.body);
+
+            if (chatMessage.senderName === "시스템") {
+              if (chatMessage.content.includes("참여했습니다")) {
+                const userName =
+                  chatMessage.content.split("님이 채팅에 참여했습니다")[0];
+                participants.add(userName);
+              } else if (chatMessage.content.includes("나갔습니다")) {
+                const userName =
+                  chatMessage.content.split("님이 채팅에서 나갔습니다")[0];
+                participants.delete(userName);
+              }
+            } else if (chatMessage.senderName !== "시스템") {
+              participants.add(chatMessage.senderName);
+            }
+
+            setChatParticipantCount(participants.size);
+          });
+        },
+        (error: any) => {
+          console.error("Chat participant tracking connection error:", error);
+        },
+      );
+    };
+
+    connectToChatRoom();
+
+    // 컴포넌트 언마운트 시 연결 해제
+    return () => {
+      if (stompClient) {
+        stompClient.disconnect();
+      }
+    };
+  }, []);
 
   // 기본 챗봇 설정 (선택 없이 바로 연결)
   const defaultChatbot = {
@@ -263,15 +353,22 @@ export default function MobileChat() {
             </div>
             <div className="flex items-center space-x-2">
               {/* 사용자간 채팅 버튼 */}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => navigate("/chat")}
-                title="사용자간 채팅"
-                className="w-9 px-0"
-              >
-                <UsersIcon className="h-4 w-4" />
-              </Button>
+              <div className="relative">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate("/chat")}
+                  title="사용자간 채팅"
+                  className="w-9 px-0"
+                >
+                  <UsersIcon className="h-4 w-4" />
+                </Button>
+                {chatParticipantCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-green-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-medium">
+                    {chatParticipantCount}
+                  </span>
+                )}
+              </div>
 
               {/* 연습장 버튼 */}
               <Button

@@ -29,7 +29,20 @@ function MessageBubble({
   currentUserName: string;
 }) {
   const isMyMessage = message.senderName === currentUserName;
+  const isSystemMessage = message.senderName === "시스템";
 
+  // 시스템 메시지는 가운데 정렬된 공지 스타일
+  if (isSystemMessage) {
+    return (
+      <div className="flex justify-center mb-4">
+        <div className="bg-gray-100 px-3 py-1 rounded-full text-xs text-gray-600 border">
+          {message.content}
+        </div>
+      </div>
+    );
+  }
+
+  // 일반 메시지
   return (
     <div
       className={`flex items-start space-x-2 mb-4 ${isMyMessage ? "flex-row-reverse space-x-reverse" : ""}`}
@@ -84,6 +97,10 @@ export default function Chat() {
   // 메시지 관련 상태
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputMessage, setInputMessage] = useState("");
+
+  // 참여자 관련 상태
+  const [participants, setParticipants] = useState<string[]>([]);
+  const [showParticipants, setShowParticipants] = useState(false);
 
   // 현재 사용자 정보
   const currentUserName = user?.name || user?.email || "익명";
@@ -154,6 +171,9 @@ export default function Chat() {
         client.subscribe("/topic/chat", (message: any) => {
           const chatMessage = JSON.parse(message.body);
 
+          // 참여자 목록 실시간 업데이트
+          updateParticipantsList(chatMessage);
+
           // 시스템 메시지와 일반 메시지 모두 동일하게 처리
           // 백엔드에서 이미 올바른 senderName("시스템")으로 전송됨
           addMessage(chatMessage.content, chatMessage.senderName);
@@ -211,6 +231,35 @@ export default function Chat() {
     }
   };
 
+  // 참여자 목록 업데이트 함수
+  const updateParticipantsList = (chatMessage: any) => {
+    if (chatMessage.senderName === "시스템") {
+      // 참여/나가기 메시지 파싱
+      if (chatMessage.content.includes("참여했습니다")) {
+        const userName =
+          chatMessage.content.split("님이 채팅에 참여했습니다")[0];
+        setParticipants((prev) => {
+          if (!prev.includes(userName)) {
+            return [...prev, userName];
+          }
+          return prev;
+        });
+      } else if (chatMessage.content.includes("나갔습니다")) {
+        const userName =
+          chatMessage.content.split("님이 채팅에서 나갔습니다")[0];
+        setParticipants((prev) => prev.filter((p) => p !== userName));
+      }
+    } else if (chatMessage.senderName !== "시스템") {
+      // 일반 메시지를 보낸 사용자도 참여자 목록에 추가
+      setParticipants((prev) => {
+        if (!prev.includes(chatMessage.senderName)) {
+          return [...prev, chatMessage.senderName];
+        }
+        return prev;
+      });
+    }
+  };
+
   // 일반 메시지 추가
   const addMessage = (content: string, senderName: string) => {
     const newMessage: ChatMessage = {
@@ -255,24 +304,79 @@ export default function Chat() {
                 <p className="text-xs text-gray-600">{currentUserName}님</p>
               </div>
             </div>
-            {/* 연결 상태 표시 */}
-            <div className="flex items-center space-x-2">
-              <div
-                className={`w-2 h-2 rounded-full ${
-                  connecting
-                    ? "bg-yellow-500 animate-pulse"
-                    : connected
-                      ? "bg-green-500"
-                      : "bg-red-500"
-                }`}
-              ></div>
-              <span className="text-xs text-gray-600">
-                {connecting ? "연결중" : connected ? "온라인" : "오프라인"}
-              </span>
+
+            {/* 참여자 정보 및 연결 상태 */}
+            <div className="flex items-center space-x-3">
+              {/* 참여자 수 및 목록 버튼 */}
+              {connected && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowParticipants(!showParticipants)}
+                  className="px-2 py-1 text-xs"
+                >
+                  👥 {participants.length}명
+                </Button>
+              )}
+
+              {/* 연결 상태 표시 */}
+              <div className="flex items-center space-x-2">
+                <div
+                  className={`w-2 h-2 rounded-full ${
+                    connecting
+                      ? "bg-yellow-500 animate-pulse"
+                      : connected
+                        ? "bg-green-500"
+                        : "bg-red-500"
+                  }`}
+                ></div>
+                <span className="text-xs text-gray-600">
+                  {connecting ? "연결중" : connected ? "온라인" : "오프라인"}
+                </span>
+              </div>
             </div>
           </div>
         </div>
       </div>
+
+      {/* 참여자 목록 슬라이드 */}
+      {showParticipants && (
+        <div className="bg-white border-b border-gray-200 shadow-sm">
+          <div className="p-4">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-medium text-gray-900">
+                참여자 목록 ({participants.length}명)
+              </h3>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowParticipants(false)}
+                className="w-6 h-6 p-0"
+              >
+                ✕
+              </Button>
+            </div>
+            <div className="space-y-2 max-h-48 overflow-y-auto">
+              {participants.map((participant, index) => (
+                <div
+                  key={index}
+                  className="flex items-center space-x-2 p-2 bg-gray-50 rounded-lg"
+                >
+                  <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-xs text-white">
+                    {participant === currentUserName ? "👤" : "👥"}
+                  </div>
+                  <span className="text-sm text-gray-700">
+                    {participant}
+                    {participant === currentUserName && (
+                      <span className="text-xs text-gray-500 ml-1">(나)</span>
+                    )}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 연결 컨트롤 */}
       {!connected && (
