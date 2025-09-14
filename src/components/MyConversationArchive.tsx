@@ -8,6 +8,8 @@ import {
   LanguageIcon,
   PlayIcon,
   PauseIcon,
+  ArrowsRightLeftIcon,
+  PaperAirplaneIcon,
 } from "@heroicons/react/24/outline";
 import { examApi } from "../features/chatbot/exam/api/exam";
 
@@ -25,6 +27,13 @@ interface MyConversationArchiveProps {
 }
 
 const CATEGORIES = ["역할", "일상", "비즈니스", "학술"] as const;
+
+const CATEGORY_COLORS = {
+  역할: "from-orange-500 to-orange-600",
+  일상: "from-green-500 to-green-600",
+  비즈니스: "from-blue-500 to-blue-600",
+  학술: "from-purple-500 to-purple-600",
+} as const;
 
 const SimpleOutlineButton = ({
   children,
@@ -96,6 +105,12 @@ export default function MyConversationArchive({
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [translatingId, setTranslatingId] = useState<string | null>(null);
   const [translations, setTranslations] = useState<Record<string, string>>({});
+  const [playingTranslationId, setPlayingTranslationId] = useState<
+    string | null
+  >(null);
+  const [selectedConversationId, setSelectedConversationId] = useState<
+    string | null
+  >(null);
 
   const filteredConversations = conversations.filter(
     (c) => c.conversationCategory === selectedCategory,
@@ -103,14 +118,12 @@ export default function MyConversationArchive({
 
   const handleAddConversation = () => {
     if (!newConversation.trim()) return;
-
     const conversation: Conversation = {
       id: Date.now().toString(),
       conversation: newConversation,
       conversationCategory: selectedCategory,
       createdAt: new Date(),
     };
-
     console.log("Adding new conversation:", conversation);
     setConversations([...conversations, conversation]);
     setNewConversation("");
@@ -163,6 +176,128 @@ export default function MyConversationArchive({
     console.log("Canceling edit");
     setEditingId(null);
     setEditingText("");
+  };
+
+  const handleExchangeWithTranslation = (conversationId: string) => {
+    console.log("Exchanging conversation with translation:", conversationId);
+    const translation = translations[conversationId];
+    if (translation) {
+      // 원문을 번역문으로 업데이트
+      setConversations(
+        conversations.map((c) =>
+          c.id === conversationId ? { ...c, conversation: translation } : c,
+        ),
+      );
+      // 번역 결과 제거
+      setTranslations((prev) => {
+        const newTranslations = { ...prev };
+        delete newTranslations[conversationId];
+        return newTranslations;
+      });
+    }
+  };
+
+  const handlePlayTranslation = async (
+    conversationId: string,
+    translationText: string,
+  ) => {
+    console.log("Playing translation:", conversationId, translationText);
+
+    if (playingTranslationId === conversationId) {
+      // 현재 재생 중인 것을 중지
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+      }
+      setPlayingTranslationId(null);
+      return;
+    }
+
+    try {
+      setPlayingTranslationId(conversationId);
+
+      // TTS API 호출
+      const token = localStorage.getItem("accessToken");
+      const apiUrl =
+        window.location.hostname === "localhost"
+          ? "/api/config/openai-key"
+          : "https://api.total-callbot.cloud/api/config/openai-key";
+
+      const keyResponse = await fetch(apiUrl, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!keyResponse.ok) {
+        throw new Error(`API 요청 실패: ${keyResponse.status}`);
+      }
+
+      const { key } = await keyResponse.json();
+
+      // OpenAI TTS API 호출
+      const ttsResponse = await fetch(
+        "https://api.openai.com/v1/audio/speech",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${key}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "tts-1",
+            input: translationText,
+            voice: "nova",
+            speed: 1.0,
+          }),
+        },
+      );
+
+      if (ttsResponse.ok) {
+        const audioBlob = await ttsResponse.blob();
+        const reader = new FileReader();
+
+        reader.onload = async () => {
+          if (audioRef.current) {
+            audioRef.current.pause();
+          }
+
+          audioRef.current = new Audio(reader.result as string);
+
+          audioRef.current.onended = () => {
+            setPlayingTranslationId(null);
+          };
+
+          audioRef.current.onerror = () => {
+            setPlayingTranslationId(null);
+            console.error("Translation audio playback failed");
+          };
+
+          try {
+            await audioRef.current.play();
+          } catch (playError) {
+            console.error("Translation audio play failed:", playError);
+            setPlayingTranslationId(null);
+          }
+        };
+
+        reader.onerror = () => {
+          console.error("Translation FileReader error");
+          setPlayingTranslationId(null);
+        };
+
+        reader.readAsDataURL(audioBlob);
+      } else {
+        throw new Error(
+          `Translation TTS API request failed: ${ttsResponse.status}`,
+        );
+      }
+    } catch (error) {
+      console.error("Translation TTS API failed:", error);
+      setPlayingTranslationId(null);
+      alert("번역문 음성 재생에 실패했습니다.");
+    }
   };
 
   const requestTranslation = async (
@@ -382,176 +517,249 @@ Please respond in this exact JSON format:
               </p>
             </div>
           ) : (
-            filteredConversations.map((conversation) => (
+            filteredConversations.map((conversation, index) => (
               <div
                 key={conversation.id}
-                className="border border-gray-200 rounded-lg p-3 hover:shadow-sm transition-shadow"
+                onClick={() => setSelectedConversationId(conversation.id)}
+                className={`border rounded-lg overflow-hidden transition-all cursor-pointer ${
+                  selectedConversationId === conversation.id
+                    ? "border-indigo-500 bg-indigo-50 shadow-md"
+                    : "border-gray-200 hover:shadow-sm"
+                }`}
               >
-                {/* 카테고리 변경 버튼들 */}
-                <div className="flex space-x-1 mb-2">
-                  {CATEGORIES.map((category) => (
+                {/* 색깔별 헤더 */}
+                <div
+                  className={`px-3 py-2 bg-gradient-to-r ${CATEGORY_COLORS[conversation.conversationCategory]} text-white text-xs font-medium flex items-center justify-between`}
+                >
+                  <span>
+                    #{index + 1} {conversation.conversationCategory}
+                  </span>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-xs opacity-75">
+                      {conversation.createdAt.toLocaleDateString()}
+                    </span>
+                    {/* 삭제 버튼 */}
                     <button
-                      key={category}
-                      onClick={() =>
-                        handleCategoryChange(conversation.id, category)
-                      }
-                      className={`px-2 py-1 text-xs border rounded transition-colors ${
-                        conversation.conversationCategory === category
-                          ? "border-indigo-500 bg-indigo-50 text-indigo-700"
-                          : "border-gray-300 text-gray-600 hover:border-gray-400 hover:bg-gray-50"
-                      }`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteConversation(conversation.id);
+                      }}
+                      className="p-1 text-white/80 hover:text-white hover:bg-white/20 rounded transition-colors"
+                      title="삭제"
                     >
-                      {category}
+                      <TrashIcon className="h-3 w-3" />
                     </button>
-                  ))}
+                  </div>
                 </div>
 
-                <div className="flex items-start justify-between">
-                  {/* 대화 내용 또는 편집 입력창 */}
-                  <div className="flex-1 mr-4">
-                    {editingId === conversation.id ? (
-                      <div className="space-y-2">
-                        <textarea
-                          value={editingText}
-                          onChange={(e) => setEditingText(e.target.value)}
-                          className="w-full p-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
-                          rows={3}
-                        />
-                        <div className="flex space-x-2">
-                          <SimpleOutlineButton
-                            size="xs"
-                            onClick={() => handleTranslate(conversation)}
-                            disabled={translatingId === conversation.id}
-                          >
-                            {translatingId === conversation.id
-                              ? "번역중..."
-                              : "번역"}
-                          </SimpleOutlineButton>
-                          <SimpleOutlineButton
-                            size="xs"
-                            onClick={() => handleEditSave(conversation.id)}
-                          >
-                            저장
-                          </SimpleOutlineButton>
-                          <SimpleOutlineButton
-                            size="xs"
-                            onClick={handleEditCancel}
-                          >
-                            취소
-                          </SimpleOutlineButton>
+                {/* 메시지 내용 */}
+                <div className="p-3">
+                  {/* 카테고리 변경 버튼들 - 수정 모드에서만 표시 */}
+                  {editingId === conversation.id && (
+                    <div className="flex space-x-1 mb-2">
+                      {CATEGORIES.map((category) => (
+                        <button
+                          key={category}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleCategoryChange(conversation.id, category);
+                          }}
+                          className={`px-2 py-1 text-xs border rounded transition-colors ${
+                            conversation.conversationCategory === category
+                              ? "border-indigo-500 bg-indigo-50 text-indigo-700"
+                              : "border-gray-300 text-gray-600 hover:border-gray-400 hover:bg-gray-50"
+                          }`}
+                        >
+                          {category}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="flex items-start justify-between">
+                    {/* 대화 내용 또는 편집 입력창 */}
+                    <div className="flex-1 mr-4">
+                      {editingId === conversation.id ? (
+                        <div className="space-y-2">
+                          <textarea
+                            value={editingText}
+                            onChange={(e) => setEditingText(e.target.value)}
+                            className="w-full p-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+                            rows={3}
+                          />
+                          <div className="flex space-x-2">
+                            <SimpleOutlineButton
+                              size="xs"
+                              onClick={() => handleTranslate(conversation)}
+                              disabled={translatingId === conversation.id}
+                            >
+                              {translatingId === conversation.id
+                                ? "번역중..."
+                                : "번역"}
+                            </SimpleOutlineButton>
+                            <SimpleOutlineButton
+                              size="xs"
+                              onClick={() => handleEditSave(conversation.id)}
+                            >
+                              저장
+                            </SimpleOutlineButton>
+                            <SimpleOutlineButton
+                              size="xs"
+                              onClick={handleEditCancel}
+                            >
+                              취소
+                            </SimpleOutlineButton>
+                          </div>
                         </div>
+                      ) : (
+                        <p className="text-sm text-gray-900 leading-relaxed">
+                          {conversation.conversation}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* 2x2 버튼 그리드 */}
+                    {editingId !== conversation.id && (
+                      <div className="grid grid-cols-2 gap-1 flex-shrink-0">
+                        {/* 첫 번째 행 */}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEditStart(conversation);
+                          }}
+                          className="p-2 text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded transition-colors"
+                          title="수정"
+                        >
+                          <PencilIcon className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handlePlay(conversation);
+                          }}
+                          className={`p-2 hover:bg-purple-50 rounded transition-colors ${
+                            playingId === conversation.id
+                              ? "text-red-500 hover:text-red-700"
+                              : "text-purple-500 hover:text-purple-700"
+                          }`}
+                          title={
+                            playingId === conversation.id ? "재생 중지" : "재생"
+                          }
+                        >
+                          {playingId === conversation.id ? (
+                            <PauseIcon className="h-4 w-4" />
+                          ) : (
+                            <PlayIcon className="h-4 w-4" />
+                          )}
+                        </button>
+
+                        {/* 두 번째 행 */}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleTranslate(conversation);
+                          }}
+                          disabled={translatingId === conversation.id}
+                          className={`p-2 rounded transition-colors ${
+                            translatingId === conversation.id
+                              ? "text-gray-400 cursor-not-allowed"
+                              : "text-green-500 hover:text-green-700 hover:bg-green-50"
+                          }`}
+                          title={
+                            translatingId === conversation.id
+                              ? "번역 중..."
+                              : "번역"
+                          }
+                        >
+                          {translatingId === conversation.id ? (
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-500"></div>
+                          ) : (
+                            <LanguageIcon className="h-4 w-4" />
+                          )}
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleUseConversation(conversation);
+                          }}
+                          className="p-2 text-indigo-500 hover:text-indigo-700 hover:bg-indigo-50 rounded transition-colors"
+                          title="사용하기"
+                        >
+                          <PaperAirplaneIcon className="h-4 w-4" />
+                        </button>
                       </div>
-                    ) : (
-                      <p className="text-sm text-gray-900 leading-relaxed">
-                        {conversation.conversation}
-                      </p>
                     )}
                   </div>
 
-                  {/* 2x2 버튼 그리드 */}
-                  {editingId !== conversation.id && (
-                    <div className="grid grid-cols-2 gap-1 flex-shrink-0">
-                      {/* 첫 번째 행 */}
-                      <button
-                        onClick={() => handleEditStart(conversation)}
-                        className="p-2 text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded transition-colors"
-                        title="수정"
-                      >
-                        <PencilIcon className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() =>
-                          handleDeleteConversation(conversation.id)
-                        }
-                        className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
-                        title="삭제"
-                      >
-                        <TrashIcon className="h-4 w-4" />
-                      </button>
-
-                      {/* 두 번째 행 */}
-                      <button
-                        onClick={() => handleTranslate(conversation)}
-                        disabled={translatingId === conversation.id}
-                        className={`p-2 rounded transition-colors ${
-                          translatingId === conversation.id
-                            ? "text-gray-400 cursor-not-allowed"
-                            : "text-green-500 hover:text-green-700 hover:bg-green-50"
-                        }`}
-                        title={
-                          translatingId === conversation.id
-                            ? "번역 중..."
-                            : "번역"
-                        }
-                      >
-                        {translatingId === conversation.id ? (
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-500"></div>
-                        ) : (
-                          <LanguageIcon className="h-4 w-4" />
-                        )}
-                      </button>
-                      <button
-                        onClick={() => handlePlay(conversation)}
-                        className={`p-2 hover:bg-purple-50 rounded transition-colors ${
-                          playingId === conversation.id
-                            ? "text-red-500 hover:text-red-700"
-                            : "text-purple-500 hover:text-purple-700"
-                        }`}
-                        title={
-                          playingId === conversation.id ? "재생 중지" : "재생"
-                        }
-                      >
-                        {playingId === conversation.id ? (
-                          <PauseIcon className="h-4 w-4" />
-                        ) : (
-                          <PlayIcon className="h-4 w-4" />
-                        )}
-                      </button>
-                    </div>
-                  )}
-                </div>
-
-                {/* 번역 결과 표시 */}
-                {editingId !== conversation.id &&
-                  translations[conversation.id] && (
-                    <div className="mt-3 p-2 bg-blue-50 rounded border-l-4 border-blue-400">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <p className="text-xs font-medium text-blue-700 mb-1">
-                            번역:
-                          </p>
-                          <p className="text-sm text-blue-900">
-                            {translations[conversation.id]}
-                          </p>
+                  {/* 번역 결과 표시 */}
+                  {editingId !== conversation.id &&
+                    translations[conversation.id] && (
+                      <div className="mt-3 p-3 bg-blue-50 rounded border border-blue-200">
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex-1">
+                            <p className="text-xs font-medium text-blue-700 mb-1">
+                              번역:
+                            </p>
+                            <p className="text-sm text-blue-900 leading-relaxed">
+                              {translations[conversation.id]}
+                            </p>
+                          </div>
+                          {/* 우측 상단 3개 버튼 */}
+                          <div className="flex space-x-1 ml-2">
+                            {/* 읽기 버튼 */}
+                            <button
+                              onClick={() =>
+                                handlePlayTranslation(
+                                  conversation.id,
+                                  translations[conversation.id],
+                                )
+                              }
+                              className={`p-1 rounded transition-colors ${
+                                playingTranslationId === conversation.id
+                                  ? "text-red-500 hover:text-red-700"
+                                  : "text-green-500 hover:text-green-700"
+                              }`}
+                              title={
+                                playingTranslationId === conversation.id
+                                  ? "재생 중지"
+                                  : "번역문 읽기"
+                              }
+                            >
+                              {playingTranslationId === conversation.id ? (
+                                <PauseIcon className="h-4 w-4" />
+                              ) : (
+                                <PlayIcon className="h-4 w-4" />
+                              )}
+                            </button>
+                            {/* 교체하기 버튼 */}
+                            <button
+                              onClick={() =>
+                                handleExchangeWithTranslation(conversation.id)
+                              }
+                              className="p-1 text-orange-500 hover:text-orange-700 transition-colors"
+                              title="번역문으로 교체"
+                            >
+                              <ArrowsRightLeftIcon className="h-4 w-4" />
+                            </button>
+                            {/* 닫기 버튼 */}
+                            <button
+                              onClick={() =>
+                                setTranslations((prev) => {
+                                  const newTranslations = { ...prev };
+                                  delete newTranslations[conversation.id];
+                                  return newTranslations;
+                                })
+                              }
+                              className="p-1 text-blue-500 hover:text-blue-700 transition-colors"
+                              title="번역 숨기기"
+                            >
+                              <XMarkIcon className="h-4 w-4" />
+                            </button>
+                          </div>
                         </div>
-                        <button
-                          onClick={() =>
-                            setTranslations((prev) => {
-                              const newTranslations = { ...prev };
-                              delete newTranslations[conversation.id];
-                              return newTranslations;
-                            })
-                          }
-                          className="ml-2 p-1 text-blue-500 hover:text-blue-700 transition-colors"
-                          title="번역 숨기기"
-                        >
-                          <XMarkIcon className="h-3 w-3" />
-                        </button>
                       </div>
-                    </div>
-                  )}
-
-                {/* 사용 버튼을 별도로 하단에 배치 */}
-                {editingId !== conversation.id && (
-                  <div className="mt-3 flex justify-end">
-                    <SimpleOutlineButton
-                      size="xs"
-                      onClick={() => handleUseConversation(conversation)}
-                    >
-                      사용하기
-                    </SimpleOutlineButton>
-                  </div>
-                )}
+                    )}
+                </div>
               </div>
             ))
           )}
