@@ -320,7 +320,7 @@ export default function MobileChat() {
           <div className="flex justify-between items-center">
             <div className="flex items-center space-x-3">
               {/* 간단한 로고 */}
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-1">
                 <div className="w-6 h-6 bg-primary rounded-md flex items-center justify-center">
                   <span className="text-primary-foreground font-bold text-xs">
                     T
@@ -334,7 +334,7 @@ export default function MobileChat() {
             <div className="flex items-center space-x-2">
               {/* 전체 채팅방 버튼 */}
               <Button
-                variant="ghost"
+                variant="outline"
                 onClick={() => navigate("/chat")}
                 className="relative h-9 w-9 p-0"
                 size="sm"
@@ -349,7 +349,7 @@ export default function MobileChat() {
 
               {/* 연습장 버튼 */}
               <Button
-                variant="ghost"
+                variant="outline"
                 size="sm"
                 onClick={() => navigate("/practice")}
                 title="한국어 연습"
@@ -360,7 +360,7 @@ export default function MobileChat() {
 
               {/* 나의 대화 아카이브 버튼 */}
               <Button
-                variant="ghost"
+                variant="outline"
                 size="sm"
                 onClick={() => setConversationArchiveDialogOpen(true)}
                 title="나의 대화 아카이브"
@@ -371,7 +371,7 @@ export default function MobileChat() {
 
               {/* 설정 버튼 */}
               <Button
-                variant="ghost"
+                variant="outline"
                 size="sm"
                 onClick={() => setSettingsOpen(true)}
                 title="설정"
@@ -381,7 +381,7 @@ export default function MobileChat() {
               </Button>
 
               <Button
-                variant="ghost"
+                variant="outline"
                 size="sm"
                 onClick={() => {
                   console.log("Logout button clicked in MobileChat");

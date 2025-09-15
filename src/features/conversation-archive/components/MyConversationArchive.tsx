@@ -25,10 +25,10 @@ interface MyConversationArchiveProps {
 
 const CATEGORIES = ["역할", "일상", "비즈니스", "학술"] as const;
 const CATEGORY_COLORS = {
-  역할: "bg-orange-100 text-orange-800 border-orange-200",
-  일상: "bg-green-100 text-green-800 border-green-200",
-  비즈니스: "bg-blue-100 text-blue-800 border-blue-200",
-  학술: "bg-purple-100 text-purple-800 border-purple-200",
+  역할: "bg-muted/20 text-foreground border-border",
+  일상: "bg-muted/20 text-foreground border-border",
+  비즈니스: "bg-muted/20 text-foreground border-border",
+  학술: "bg-muted/20 text-foreground border-border",
 } as const;
 
 export default function MyConversationArchive({
@@ -277,7 +277,7 @@ export default function MyConversationArchive({
               {/* Loading */}
               {loading && (
                 <div className="flex items-center justify-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-foreground/40"></div>
                 </div>
               )}
 
@@ -337,7 +337,7 @@ export default function MyConversationArchive({
                               onChange={(e) =>
                                 setEditingConversation(e.target.value)
                               }
-                              className="flex-1 rounded-lg border border-gray-300 p-3 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 resize-none"
+                  className="flex-1 rounded-lg border border-border p-3 text-sm focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20 resize-none"
                               rows={3}
                             />
                           </div>

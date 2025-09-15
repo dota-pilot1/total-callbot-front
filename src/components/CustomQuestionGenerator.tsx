@@ -726,7 +726,7 @@ A2-2: [답변2]
                       value={speaker}
                       onChange={(e) => setSpeaker(e.target.value)}
                       placeholder="질문하는 사람"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
                     />
                   </div>
                   <div className="flex-1">
@@ -738,7 +738,7 @@ A2-2: [답변2]
                       value={listener}
                       onChange={(e) => setListener(e.target.value)}
                       placeholder="답변하는 사람"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
                     />
                   </div>
                 </div>

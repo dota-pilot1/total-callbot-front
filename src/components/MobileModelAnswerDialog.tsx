@@ -71,20 +71,20 @@ export default function MobileModelAnswerDialog({
         >
           <div className="absolute inset-0 bg-black/40" onClick={onClose} />
           <motion.div
-            className="absolute inset-x-0 top-0 bottom-0 bg-white shadow-xl rounded-none md:rounded-t-xl md:top-auto md:bottom-0"
+            className="absolute inset-x-0 top-0 bottom-0 bg-card border-t md:border border-border shadow-xl rounded-none md:rounded-t-xl md:top-auto md:bottom-0"
             initial={{ y: "100%" }}
             animate={{ y: 0 }}
             exit={{ y: "100%" }}
             transition={{ type: "spring", stiffness: 220, damping: 28 }}
           >
             {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3 border-b">
-              <div className="font-semibold">모범 답변 예시</div>
+            <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+              <div className="font-semibold text-foreground">모범 답변 예시</div>
               <button
                 onClick={onClose}
-                className="p-2 rounded hover:bg-gray-100"
+                className="p-2 rounded hover:bg-muted/30 text-muted-foreground"
               >
-                <XMarkIcon className="w-5 h-5 text-gray-600" />
+                <XMarkIcon className="w-5 h-5" />
               </button>
             </div>
 
@@ -92,8 +92,8 @@ export default function MobileModelAnswerDialog({
             <div ref={scrollRef} className="px-4 py-3 h-[70vh] overflow-y-auto">
               {/* Question bubble */}
               <div className="mb-3 flex justify-start">
-                <div className="max-w-[85%] bg-indigo-50 text-indigo-900 border border-indigo-200 rounded-lg px-3 py-2 whitespace-pre-wrap">
-                  <div className="text-xs font-semibold text-indigo-700 mb-1">
+                <div className="max-w-[85%] bg-muted/20 text-foreground border border-border rounded-lg px-3 py-2 whitespace-pre-wrap">
+                  <div className="text-xs font-semibold text-muted-foreground mb-1">
                     질문
                   </div>
                   {question}
@@ -113,8 +113,8 @@ export default function MobileModelAnswerDialog({
               {/* Answers as chat-like bubbles */}
               {answers.map((a, idx) => (
                 <div key={idx} className="mb-3 flex justify-end">
-                  <div className="max-w-[85%] bg-white border border-gray-200 rounded-lg px-3 py-2 whitespace-pre-wrap">
-                    <div className="text-xs font-semibold text-gray-600 mb-1">
+                  <div className="max-w-[85%] bg-card border border-border rounded-lg px-3 py-2 whitespace-pre-wrap">
+                    <div className="text-xs font-semibold text-muted-foreground mb-1">
                       {a.title || `Ex${idx + 1}`}
                     </div>
                     {a.text}

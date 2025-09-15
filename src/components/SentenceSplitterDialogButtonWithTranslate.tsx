@@ -241,8 +241,8 @@ export default function SentenceSplitterDialogButtonWithTranslate({
         onClick={handleToggle}
         className={`p-1.5 rounded-full border transition-colors ${
           isUser
-            ? "hover:bg-indigo-400 text-indigo-100 border-indigo-200"
-            : "hover:bg-gray-100 text-gray-600 border-gray-300"
+            ? "hover:bg-muted/30 text-foreground border-border"
+            : "hover:bg-muted/30 text-muted-foreground border-border"
         }`}
         title="문장별 해석"
       >
