@@ -9,6 +9,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { RobotIcon } from "../components/icons/RobotIcon";
 import RippleButton from "../components/ui/RippleButton";
+import MemberStatusTable from "../components/MemberStatusTable";
 import SockJS from "sockjs-client";
 import { Stomp } from "@stomp/stompjs";
 
@@ -106,7 +107,7 @@ export default function Login() {
               </h1>
               <p className="text-sm text-muted-foreground">
                 {selectedService === "chatbot"
-                  ? "AI 챗봇과 대화하고 학습시키세요"
+                  ? "AI 챗봇과 영어 학습!"
                   : "실시간 채팅으로 소통하세요"}
               </p>
             </div>
@@ -224,6 +225,9 @@ export default function Login() {
                 terecal@daum.net / 123456
               </p>
             </div>
+
+            {/* 회원 접속 현황 테이블 */}
+            <MemberStatusTable />
           </div>
         </div>
       </div>
