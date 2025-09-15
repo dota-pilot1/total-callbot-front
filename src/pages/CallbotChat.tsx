@@ -1162,7 +1162,7 @@ export default function CallbotChat() {
                                 : "border-border bg-card text-foreground"
                             }`}
                           >
-                            <p className="text-sm">{message.message}</p>
+                            <p className="text-[13px] md:text-sm leading-relaxed">{message.message}</p>
                             <p
                               className={`text-xs mt-1 text-muted-foreground text-right`}
                             >
