@@ -184,12 +184,12 @@ const ChatbotPreview: React.FC<ChatbotPreviewProps> = ({ chatbot }) => {
               </p>
             </div>
           ) : (
-            <div className="divide-y divide-gray-200">
+            <div className="divide-y divide-border">
               {chatRooms.map((room) => (
                 <div
                   key={room.id}
                   onClick={() => handleRoomSelect(room)}
-                  className="p-6 hover:bg-gray-50 cursor-pointer transition-colors"
+                  className="p-6 hover:bg-muted/30 cursor-pointer transition-colors"
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex-1">

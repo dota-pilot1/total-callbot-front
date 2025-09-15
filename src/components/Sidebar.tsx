@@ -126,7 +126,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                       />
                       <span className="truncate flex-1">{category.name}</span>
                       <span
-                        className={`text-xs px-2 py-0.5 rounded-full ${shouldHighlight ? "text-foreground bg-muted/40" : "text-muted-foreground bg-muted/20"}`}
+                        className={`text-xs px-2 py-0.5 rounded-full ${isOpen ? "text-foreground bg-muted/50" : shouldHighlight ? "text-foreground bg-muted/40" : "text-muted-foreground bg-muted/20"}`}
                       >
                         {category.bots.length}
                       </span>
