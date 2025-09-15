@@ -216,8 +216,8 @@ export default function CardForChattingMessageWithTranslation({
             <div
               className={`px-3 py-2 pb-6 rounded-lg shadow-sm relative border ${
                 isUser
-                  ? "bg-blue-500 text-white border-blue-600 rounded-2xl"
-                  : "bg-white text-gray-900 border-gray-200"
+                  ? "bg-blue-50 text-blue-900 border-blue-200 rounded-2xl"
+                  : "bg-gray-50 text-gray-900 border-gray-200"
               }`}
             >
               <p className="text-sm leading-relaxed whitespace-pre-wrap pr-24">
@@ -226,7 +226,7 @@ export default function CardForChattingMessageWithTranslation({
               <div className="mt-1">
                 <p
                   className={`text-xs ${
-                    isUser ? "text-blue-100" : "text-gray-500"
+                    isUser ? "text-blue-600" : "text-gray-500"
                   }`}
                 >
                   {message.timestamp}
@@ -242,10 +242,10 @@ export default function CardForChattingMessageWithTranslation({
                 <button
                   onClick={handleTranslateClick}
                   disabled={isTranslating}
-                  className={`p-1.5 rounded-full border transition-colors ${
+                  className={`p-1.5 rounded border transition-colors ${
                     isUser
-                      ? "text-blue-100 hover:bg-blue-400 border-blue-400"
-                      : "text-gray-600 hover:bg-gray-100 border-gray-300"
+                      ? "text-gray-700 hover:bg-blue-200 border-gray-400 bg-white"
+                      : "text-gray-700 hover:bg-gray-200 border-gray-400 bg-white"
                   } ${isTranslating ? "opacity-50" : ""}`}
                   title="번역"
                 >
@@ -254,10 +254,10 @@ export default function CardForChattingMessageWithTranslation({
                 <button
                   onClick={handlePlayClick}
                   disabled={isPlaying}
-                  className={`p-1.5 rounded-full border transition-colors ${
+                  className={`p-1.5 rounded border transition-colors ${
                     isUser
-                      ? "text-blue-100 hover:bg-blue-400 border-blue-400"
-                      : "text-gray-600 hover:bg-gray-100 border-gray-300"
+                      ? "text-gray-700 hover:bg-blue-200 border-gray-400 bg-white"
+                      : "text-gray-700 hover:bg-gray-200 border-gray-400 bg-white"
                   }`}
                   title="음성 재생"
                 >
@@ -269,10 +269,10 @@ export default function CardForChattingMessageWithTranslation({
                 </button>
                 <button
                   onClick={handleSaveClick}
-                  className={`p-1.5 rounded-full border transition-colors ${
+                  className={`p-1.5 rounded border transition-colors ${
                     isUser
-                      ? "text-blue-100 hover:bg-blue-400 border-blue-400"
-                      : "text-gray-600 hover:bg-gray-100 border-gray-300"
+                      ? "text-gray-700 hover:bg-blue-200 border-gray-400 bg-white"
+                      : "text-gray-700 hover:bg-gray-200 border-gray-400 bg-white"
                   }`}
                   title="저장"
                 >
@@ -314,10 +314,10 @@ export default function CardForChattingMessageWithTranslation({
                 />
                 <button
                   onClick={handleTranslateClick}
-                  className={`p-1.5 rounded-full border transition-colors ${
+                  className={`p-1.5 rounded border transition-colors ${
                     isUser
-                      ? "hover:bg-emerald-400 text-emerald-100 border-emerald-200"
-                      : "hover:bg-emerald-100 text-emerald-600 border-emerald-300"
+                      ? "text-gray-700 hover:bg-emerald-200 border-gray-400 bg-white"
+                      : "text-gray-700 hover:bg-emerald-200 border-gray-400 bg-white"
                   }`}
                   title="원본"
                 >
@@ -326,10 +326,10 @@ export default function CardForChattingMessageWithTranslation({
                 <button
                   onClick={handlePlayClick}
                   disabled={isPlaying}
-                  className={`p-1.5 rounded-full border transition-colors ${
+                  className={`p-1.5 rounded border transition-colors ${
                     isUser
-                      ? "hover:bg-emerald-400 text-emerald-100 border-emerald-200"
-                      : "hover:bg-emerald-100 text-emerald-600 border-emerald-300"
+                      ? "text-gray-700 hover:bg-emerald-200 border-gray-400 bg-white"
+                      : "text-gray-700 hover:bg-emerald-200 border-gray-400 bg-white"
                   }`}
                   title="음성 재생"
                 >
@@ -341,10 +341,10 @@ export default function CardForChattingMessageWithTranslation({
                 </button>
                 <button
                   onClick={handleSaveClick}
-                  className={`p-1.5 rounded-full border transition-colors ${
+                  className={`p-1.5 rounded border transition-colors ${
                     isUser
-                      ? "hover:bg-emerald-400 text-emerald-100 border-emerald-200"
-                      : "hover:bg-emerald-100 text-emerald-600 border-emerald-300"
+                      ? "text-gray-700 hover:bg-emerald-200 border-gray-400 bg-white"
+                      : "text-gray-700 hover:bg-emerald-200 border-gray-400 bg-white"
                   }`}
                   title="저장"
                 >

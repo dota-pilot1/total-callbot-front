@@ -239,10 +239,10 @@ export default function SentenceSplitterDialogButtonWithTranslate({
       {/* 문장별 해석 버튼 */}
       <button
         onClick={handleToggle}
-        className={`p-1.5 rounded-full border transition-colors ${
+        className={`p-1.5 rounded border transition-colors ${
           isUser
-            ? "hover:bg-muted/30 text-foreground border-border"
-            : "hover:bg-muted/30 text-muted-foreground border-border"
+            ? "text-gray-700 hover:bg-blue-200 border-gray-400 bg-white"
+            : "text-gray-700 hover:bg-gray-200 border-gray-400 bg-white"
         }`}
         title="문장별 해석"
       >
