@@ -6,8 +6,10 @@ import {
   LanguageIcon,
   PaperAirplaneIcon,
   PlayIcon,
+  StopIcon,
 } from "@heroicons/react/24/outline";
 import { examApi } from "../features/chatbot/exam/api/exam";
+import { useVoiceToText } from "../features/conversation-archive/hooks/useVoiceToText";
 
 // TypeScript declarations for Web Speech API
 declare global {
@@ -22,27 +24,43 @@ export default function Practice() {
 
   const [koreanText, setKoreanText] = useState("");
   const [englishText, setEnglishText] = useState("");
-  const [isListening, setIsListening] = useState(false);
   const [isTranslating, setIsTranslating] = useState(false);
-  const [isSupported, setIsSupported] = useState(false);
+  const [useRealtimeAPI, setUseRealtimeAPI] = useState(true);
+  const [isWebSpeechListening, setIsWebSpeechListening] = useState(false);
 
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [speakingText, setSpeakingText] = useState("");
   const recognitionRef = useRef<any>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  useEffect(() => {
-    const SpeechRecognition =
-      window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (SpeechRecognition) {
-      setIsSupported(true);
-    }
-  }, []);
+  // Realtime API 음성 인식
+  const {
+    isRecording: isRealtimeRecording,
+    isListening: isRealtimeListening,
+    startRecording: startRealtimeRecording,
+    stopRecording: stopRealtimeRecording,
+  } = useVoiceToText({
+    onTranscript: (text: string, isFinal: boolean) => {
+      if (isFinal && text.trim()) {
+        setKoreanText(text.trim());
+      }
+    },
+    onError: (error: string) => {
+      console.error("Realtime API 오류:", error);
+      alert(`음성 인식 오류: ${error}`);
+    },
+  });
 
-  const startListening = () => {
-    console.log("🎤 연습장 마이크 시작");
-    if (!isSupported) {
-      alert("이 브라우저에서는 음성 인식이 지원되지 않습니다.");
+  // Web Speech API 지원 여부 확인
+  const isWebSpeechSupported = Boolean(
+    window.SpeechRecognition || window.webkitSpeechRecognition,
+  );
+
+  // Web Speech API 음성 인식 (fallback)
+  const startWebSpeechListening = () => {
+    console.log("🎤 Web Speech API 시작");
+    if (!isWebSpeechSupported) {
+      alert("이 브라우저에서는 Web Speech API가 지원되지 않습니다.");
       return;
     }
 
@@ -51,94 +69,108 @@ export default function Practice() {
         window.SpeechRecognition || window.webkitSpeechRecognition;
       const recognition = new SpeechRecognition();
 
-      // 더 견고한 설정
+      // 안정성을 위한 설정 개선
       recognition.lang = "ko-KR";
-      recognition.continuous = true; // 연속 인식 활성화
-      recognition.interimResults = true; // 중간 결과 포함
+      recognition.continuous = false; // 연속 인식 비활성화 (안정성 향상)
+      recognition.interimResults = false; // 중간 결과 비활성화 (명확한 결과만)
       recognition.maxAlternatives = 1;
 
-      // 타임아웃 설정
-      if ("webkitSpeechRecognition" in window) {
-        (recognition as any).webkitSpeechRecognition = true;
-      }
+      // 타임아웃 방지
+      let hasResult = false;
 
       recognition.onstart = () => {
-        setIsListening(true);
-        console.log("🎤 음성인식 시작");
+        setIsWebSpeechListening(true);
+        console.log("🎤 Web Speech 음성인식 시작");
+
+        // 10초 후 자동 종료 (타임아웃 방지)
+        setTimeout(() => {
+          if (!hasResult && recognitionRef.current) {
+            console.log("⏰ 타임아웃으로 인한 자동 종료");
+            recognition.stop();
+          }
+        }, 10000);
       };
 
       recognition.onresult = (event: any) => {
-        let finalTranscript = "";
-        let interimTranscript = "";
-
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-          const transcript = event.results[i][0].transcript;
-          if (event.results[i].isFinal) {
-            finalTranscript += transcript;
-          } else {
-            interimTranscript += transcript;
-          }
-        }
-
-        if (finalTranscript) {
-          console.log("🎤 최종 음성인식 결과:", finalTranscript);
-          setKoreanText(finalTranscript.trim());
-          setIsListening(false);
-          if (recognitionRef.current) {
-            recognitionRef.current.stop();
-          }
-        } else if (interimTranscript) {
-          console.log("🎤 중간 음성인식 결과:", interimTranscript);
-          // 중간 결과는 UI에 표시하지 않음 (혼란 방지)
-        }
+        hasResult = true;
+        const transcript = event.results[0][0].transcript;
+        console.log("🎤 Web Speech 최종 결과:", transcript);
+        setKoreanText((prev) =>
+          prev ? `${prev} ${transcript.trim()}` : transcript.trim(),
+        );
+        setIsWebSpeechListening(false);
       };
 
       recognition.onerror = (event: any) => {
-        console.error("음성인식 오류:", event.error);
+        console.error("Web Speech 오류:", event.error);
+        hasResult = true; // 오류도 결과로 간주하여 타임아웃 방지
 
+        let errorMessage = "음성 인식 중 오류가 발생했습니다.";
         switch (event.error) {
           case "no-speech":
-            console.log("음성이 감지되지 않았습니다. 다시 시도해주세요.");
-            // no-speech 오류 시 자동 재시작하지 않음 (무한 루프 방지)
+            errorMessage = "음성이 감지되지 않았습니다. 다시 시도해주세요.";
             break;
           case "not-allowed":
-            alert(
-              "마이크 권한이 필요합니다. 브라우저에서 마이크 접근을 허용해주세요.",
-            );
+            errorMessage =
+              "마이크 권한이 필요합니다. 브라우저에서 마이크 접근을 허용해주세요.";
             break;
           case "audio-capture":
-            alert(
-              "마이크를 찾을 수 없습니다. 마이크가 연결되어 있는지 확인해주세요.",
-            );
+            errorMessage =
+              "마이크를 찾을 수 없습니다. 마이크가 연결되어 있는지 확인해주세요.";
             break;
           case "network":
-            console.log("네트워크 오류가 발생했습니다.");
+            errorMessage =
+              "네트워크 오류가 발생했습니다. Realtime API를 사용해보세요.";
             break;
-          default:
-            console.log(`음성인식 오류: ${event.error}`);
         }
-        setIsListening(false);
+        alert(errorMessage);
+        setIsWebSpeechListening(false);
       };
 
       recognition.onend = () => {
-        setIsListening(false);
-        console.log("🎤 음성인식 종료");
+        setIsWebSpeechListening(false);
+        console.log("🎤 Web Speech 음성인식 종료");
       };
 
       recognitionRef.current = recognition;
       recognition.start();
     } catch (error) {
-      console.error("음성인식 초기화 오류:", error);
-      setIsListening(false);
+      console.error("Web Speech 초기화 오류:", error);
+      setIsWebSpeechListening(false);
+      alert("음성 인식을 시작할 수 없습니다. Realtime API를 사용해보세요.");
     }
   };
 
-  const stopListening = () => {
+  const stopWebSpeechListening = () => {
     if (recognitionRef.current) {
       recognitionRef.current.stop();
     }
-    setIsListening(false);
+    setIsWebSpeechListening(false);
   };
+
+  // 통합 음성 인식 제어
+  const handleVoiceToggle = async () => {
+    if (useRealtimeAPI) {
+      if (isRealtimeRecording) {
+        stopRealtimeRecording();
+      } else {
+        await startRealtimeRecording();
+      }
+    } else {
+      if (isWebSpeechListening) {
+        stopWebSpeechListening();
+      } else {
+        startWebSpeechListening();
+      }
+    }
+  };
+
+  const isCurrentlyListening = useRealtimeAPI
+    ? isRealtimeRecording
+    : isWebSpeechListening;
+  const isDetectingVoice = useRealtimeAPI
+    ? isRealtimeListening
+    : isWebSpeechListening;
 
   const translateToEnglish = async () => {
     if (!koreanText.trim()) return;
@@ -314,27 +346,80 @@ Korean: "${koreanText}"`;
 
       {/* 메인 컨텐츠 */}
       <div className="flex-1 max-w-4xl mx-auto w-full p-4 space-y-6">
+        {/* API 선택 */}
+        <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
+          <h3 className="text-sm font-medium text-gray-700 mb-3">
+            음성 인식 방식
+          </h3>
+          <div className="flex items-center gap-4">
+            <label className="flex items-center">
+              <input
+                type="radio"
+                checked={useRealtimeAPI}
+                onChange={() => setUseRealtimeAPI(true)}
+                className="mr-2"
+              />
+              <span className="text-sm">
+                Realtime API
+                <span className="text-gray-500">(안정적, 고품질)</span>
+              </span>
+            </label>
+            <label className="flex items-center">
+              <input
+                type="radio"
+                checked={!useRealtimeAPI}
+                onChange={() => setUseRealtimeAPI(false)}
+                disabled={!isWebSpeechSupported}
+                className="mr-2"
+              />
+              <span
+                className={`text-sm ${!isWebSpeechSupported ? "text-gray-400" : ""}`}
+              >
+                Web Speech API
+                <span className="text-gray-500">(무료, 브라우저 의존)</span>
+              </span>
+            </label>
+          </div>
+        </div>
+
         {/* 마이크 버튼 */}
         <div className="flex flex-col items-center space-y-4">
           <button
-            onClick={isListening ? stopListening : startListening}
-            disabled={!isSupported}
+            onClick={handleVoiceToggle}
+            disabled={!useRealtimeAPI && !isWebSpeechSupported}
             className={`w-20 h-20 rounded-full flex items-center justify-center transition-all duration-200 ${
-              isListening
-                ? "bg-red-500 hover:bg-red-600 text-white animate-pulse"
+              isCurrentlyListening
+                ? "bg-red-500 hover:bg-red-600 text-white"
                 : "bg-blue-500 hover:bg-blue-600 text-white"
-            } ${!isSupported ? "opacity-50 cursor-not-allowed" : ""}`}
-            title={isListening ? "음성인식 중지" : "음성인식 시작"}
+            } ${isDetectingVoice ? "animate-pulse" : ""} ${
+              !useRealtimeAPI && !isWebSpeechSupported
+                ? "opacity-50 cursor-not-allowed"
+                : ""
+            }`}
+            title={isCurrentlyListening ? "음성인식 중지" : "음성인식 시작"}
           >
-            <MicrophoneIcon className="h-10 w-10" />
+            {isCurrentlyListening ? (
+              <StopIcon className="h-10 w-10" />
+            ) : (
+              <MicrophoneIcon className="h-10 w-10" />
+            )}
           </button>
-          <p className="text-sm text-gray-600 text-center">
-            {!isSupported
-              ? "음성인식을 지원하지 않는 브라우저입니다"
-              : isListening
-                ? "말씀해 주세요..."
-                : "마이크를 눌러 음성을 입력하세요"}
-          </p>
+          <div className="text-center">
+            <p className="text-sm text-gray-600">
+              {!useRealtimeAPI && !isWebSpeechSupported
+                ? "음성인식을 지원하지 않는 브라우저입니다"
+                : isCurrentlyListening
+                  ? useRealtimeAPI
+                    ? isDetectingVoice
+                      ? "음성 감지 중... (Realtime API)"
+                      : "음성 대기 중... (Realtime API)"
+                    : "말씀해 주세요... (Web Speech)"
+                  : "마이크를 눌러 음성을 입력하세요"}
+            </p>
+            <p className="text-xs text-gray-500 mt-1">
+              현재 사용 중: {useRealtimeAPI ? "Realtime API" : "Web Speech API"}
+            </p>
+          </div>
         </div>
 
         {/* 한국어 입력 */}

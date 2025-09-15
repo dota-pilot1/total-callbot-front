@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import {
   PlusIcon,
   MicrophoneIcon,
@@ -8,16 +8,7 @@ import {
   TrashIcon,
 } from "@heroicons/react/24/outline";
 import { Button } from "../../../components/ui/Button";
-import { useVoiceConnection } from "../../chatbot/voice/hooks/useVoiceConnection";
-import { CHARACTER_LIST } from "../../chatbot/character/characters";
-
-// TypeScript declarations for Web Speech API
-declare global {
-  interface Window {
-    SpeechRecognition?: any;
-    webkitSpeechRecognition?: any;
-  }
-}
+import { useVoiceToText } from "../hooks/useVoiceToText";
 
 interface ConversationInputFormProps {
   showForm: boolean;
@@ -47,135 +38,42 @@ export default function ConversationInputForm({
   const [selectedCategory, setSelectedCategory] = useState<
     "역할" | "일상" | "비즈니스" | "학술"
   >("일상");
-  const [speechLang, setSpeechLang] = useState<"ko" | "en">("ko");
   const [lastTranscript, setLastTranscript] = useState("");
-  const [isWebSpeechRecording, setIsWebSpeechRecording] = useState(false);
 
-  // Web Speech API refs
-  const recognitionRef = useRef<any>(null);
-
-  // Voice-to-text with optional AI responses
-  const { isRecording, isListening, audioRef, startVoice, stopVoice } =
-    useVoiceConnection({
-      speechLang,
-      echoCancellation: true,
-      noiseSuppression: true,
-      autoGainControl: true,
-      selectedVoice: "alloy",
-      personaCharacter: CHARACTER_LIST[0], // Default character
-      personaGender: "female",
-      // Empty callbacks - no messages sent to chatbot, ignore AI responses
-      onUserMessage: () => {},
-      onAssistantMessage: () => {},
-      onUserSpeechStart: () => {
-        console.log("🎤 Voice input started");
-      },
-      onUserTranscriptUpdate: (text: string, isFinal: boolean) => {
-        console.log("🔤 Transcript:", text, "isFinal:", isFinal);
-        if (isFinal && text.trim()) {
-          const cleanText = text.trim();
-          // 중복 방지: 같은 내용이면 추가하지 않음
-          if (cleanText !== lastTranscript) {
-            setConversation((prev) => prev + (prev ? " " : "") + cleanText);
-            setLastTranscript(cleanText);
-          }
-        }
-      },
-    });
-
-  // Web Speech API for Korean
-  const startWebSpeechRecording = () => {
-    console.log("🎤 Starting Web Speech API (Korean)...");
-
-    if (!window.SpeechRecognition && !window.webkitSpeechRecognition) {
-      alert("이 브라우저는 음성 인식을 지원하지 않습니다.");
-      return;
-    }
-
-    try {
-      const SpeechRecognition =
-        window.SpeechRecognition || window.webkitSpeechRecognition;
-      const recognition = new SpeechRecognition();
-
-      recognition.lang = "ko-KR";
-      recognition.continuous = false;
-      recognition.interimResults = false;
-
-      recognition.onstart = () => {
-        console.log("✅ Web Speech started");
-        setIsWebSpeechRecording(true);
-      };
-
-      recognition.onresult = (event: any) => {
-        const transcript = event.results[0][0].transcript;
-        console.log("✅ Web Speech result:", transcript);
-        const cleanText = transcript.trim();
-
-        // 중복 방지
-        if (cleanText && cleanText !== lastTranscript) {
+  // Realtime API를 사용한 음성 인식 (모든 언어)
+  const {
+    isRecording,
+    isListening,
+    transcriptText,
+    startRecording,
+    stopRecording,
+  } = useVoiceToText({
+    onTranscript: (text: string, isFinal: boolean) => {
+      console.log("🔤 Transcript:", text, "isFinal:", isFinal);
+      if (isFinal && text.trim()) {
+        const cleanText = text.trim();
+        // 중복 방지: 같은 내용이면 추가하지 않음
+        if (cleanText !== lastTranscript) {
           setConversation((prev) => prev + (prev ? " " : "") + cleanText);
           setLastTranscript(cleanText);
         }
-        setIsWebSpeechRecording(false);
-      };
+      }
+    },
+    onError: (error: string) => {
+      console.error("❌ Voice recognition error:", error);
+      alert(error);
+    },
+  });
 
-      recognition.onerror = (event: any) => {
-        console.error("❌ Web Speech error:", event.error);
-        setIsWebSpeechRecording(false);
-
-        if (event.error === "not-allowed") {
-          alert(
-            "마이크 권한이 필요합니다. 브라우저에서 마이크 접근을 허용해주세요.",
-          );
-        } else {
-          alert("음성 인식 중 오류가 발생했습니다.");
-        }
-      };
-
-      recognition.onend = () => {
-        console.log("🎤 Web Speech ended");
-        setIsWebSpeechRecording(false);
-      };
-
-      recognitionRef.current = recognition;
-      recognition.start();
-    } catch (error) {
-      console.error("❌ Web Speech failed:", error);
-      setIsWebSpeechRecording(false);
-      alert("음성 인식을 시작할 수 없습니다.");
-    }
-  };
-
-  const stopWebSpeechRecording = () => {
-    if (recognitionRef.current) {
-      recognitionRef.current.stop();
-    }
-    setIsWebSpeechRecording(false);
-  };
-
-  // Hybrid voice input handler
+  // Realtime API 음성 입력 핸들러
   const handleVoiceToggle = async () => {
-    const isCurrentlyRecording =
-      speechLang === "ko" ? isWebSpeechRecording : isRecording;
-
-    if (isCurrentlyRecording) {
-      console.log("🛑 Stopping voice input");
-      if (speechLang === "ko") {
-        stopWebSpeechRecording();
-      } else {
-        stopVoice();
-      }
+    if (isRecording) {
+      console.log("🛑 Stopping voice input (Realtime API)");
+      stopRecording();
     } else {
-      console.log(
-        `🎤 Starting voice input (${speechLang === "ko" ? "Web Speech" : "Realtime API"})`,
-      );
+      console.log("🎤 Starting voice input (Realtime API)");
       setLastTranscript(""); // 새 음성 인식 시작 시 중복 방지 초기화
-
-      if (speechLang === "ko") {
-        startWebSpeechRecording();
-      } else {
-        await startVoice();
-      }
+      await startRecording();
     }
   };
 
@@ -193,9 +91,6 @@ export default function ConversationInputForm({
 
   return (
     <div className="mb-6">
-      {/* Hidden audio element for voice connection */}
-      <audio ref={audioRef} style={{ display: "none" }} />
-
       {/* Toggle Button */}
       <Button
         variant="secondary"
@@ -217,35 +112,6 @@ export default function ConversationInputForm({
           onSubmit={handleSubmit}
           className="space-y-4 bg-gray-50 p-4 rounded-lg"
         >
-          {/* Language Selection and AI Response Toggle */}
-          <div className="flex items-center gap-4 mb-3 p-2 bg-white rounded border">
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-700">언어:</span>
-              <button
-                type="button"
-                onClick={() => setSpeechLang("ko")}
-                className={`px-2 py-1 text-xs rounded ${
-                  speechLang === "ko"
-                    ? "bg-blue-500 text-white"
-                    : "bg-gray-200 text-gray-600 hover:bg-gray-300"
-                }`}
-              >
-                한국어
-              </button>
-              <button
-                type="button"
-                onClick={() => setSpeechLang("en")}
-                className={`px-2 py-1 text-xs rounded ${
-                  speechLang === "en"
-                    ? "bg-blue-500 text-white"
-                    : "bg-gray-200 text-gray-600 hover:bg-gray-300"
-                }`}
-              >
-                English
-              </button>
-            </div>
-          </div>
-
           {/* Category Selection and Voice Input */}
           <div className="flex items-center gap-2 mb-3">
             {CATEGORIES.map((category) => (
@@ -268,17 +134,17 @@ export default function ConversationInputForm({
               type="button"
               onClick={handleVoiceToggle}
               className={`ml-auto p-2 rounded-full transition-colors ${
-                (speechLang === "ko" ? isWebSpeechRecording : isRecording)
+                isRecording
                   ? "bg-red-500 text-white"
                   : "bg-gray-200 text-gray-600 hover:bg-gray-300"
-              } ${speechLang === "en" && isListening ? "animate-pulse" : ""}`}
+              } ${isListening ? "animate-pulse" : ""}`}
               title={
-                (speechLang === "ko" ? isWebSpeechRecording : isRecording)
-                  ? `음성 입력 중지 (${speechLang === "ko" ? "Web Speech" : "Realtime API"})`
-                  : `음성 입력 시작 (${speechLang === "ko" ? "Web Speech" : "Realtime API"})`
+                isRecording
+                  ? "음성 입력 중지 (Realtime API)"
+                  : "음성 입력 시작 (Realtime API)"
               }
             >
-              {(speechLang === "ko" ? isWebSpeechRecording : isRecording) ? (
+              {isRecording ? (
                 <StopIcon className="h-4 w-4" />
               ) : (
                 <MicrophoneIcon className="h-4 w-4" />
@@ -287,30 +153,22 @@ export default function ConversationInputForm({
           </div>
 
           {/* Recording Status */}
-          {(speechLang === "ko" ? isWebSpeechRecording : isRecording) && (
+          {isRecording && (
             <div
               className={`text-sm p-2 rounded flex items-center gap-2 ${
-                (speechLang === "en" && isListening) ||
-                (speechLang === "ko" && isWebSpeechRecording)
+                isListening
                   ? "text-green-700 bg-green-50 border border-green-200"
                   : "text-blue-700 bg-blue-50 border border-blue-200"
               }`}
             >
               <div
                 className={`w-2 h-2 rounded-full ${
-                  (speechLang === "en" && isListening) ||
-                  (speechLang === "ko" && isWebSpeechRecording)
-                    ? "bg-green-500 animate-pulse"
-                    : "bg-blue-500"
+                  isListening ? "bg-green-500 animate-pulse" : "bg-blue-500"
                 }`}
               ></div>
-              {speechLang === "ko"
-                ? isWebSpeechRecording
-                  ? "음성 인식 중... (Web Speech)"
-                  : "음성 대기 중..."
-                : isListening
-                  ? "음성 감지 중... (Realtime API)"
-                  : "음성 대기 중... (Realtime API)"}
+              {isListening
+                ? "음성 감지 중... (Realtime API)"
+                : "음성 대기 중... (Realtime API)"}
             </div>
           )}
 
