@@ -223,10 +223,10 @@ export default function MyConversationArchive({
               stiffness: 200,
               duration: 0.3,
             }}
-            className="fixed top-0 left-0 right-0 bg-background shadow-lg z-50 h-screen overflow-y-auto"
+            className="fixed top-0 left-0 right-0 bg-white shadow-lg z-50 h-screen overflow-y-auto"
           >
             {/* 헤더 */}
-            <div className="sticky top-0 bg-card border-b border-border px-4 py-3 flex justify-between items-center">
+            <div className="sticky top-0 bg-white border-b border-gray-200 px-4 py-3 flex justify-between items-center">
               <div className="flex items-center gap-3">
                 <ArchiveBoxIcon className="h-6 w-6 text-slate-600" />
                 <h3 className="text-lg font-semibold text-gray-900">
@@ -258,8 +258,8 @@ export default function MyConversationArchive({
                     onClick={() => handleFilterChange(category as any)}
                     className={`px-4 py-2 text-sm font-medium rounded-full transition-all ${
                       filterCategory === category
-                        ? "bg-slate-800 text-white"
-                        : "bg-muted text-muted-foreground hover:bg-muted/80"
+                        ? "bg-slate-700 text-white"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                     }`}
                   >
                     {category === "전체" ? "전체" : category}
@@ -353,7 +353,7 @@ export default function MyConversationArchive({
                               variant="outline"
                               size="sm"
                               onClick={handleUpdateConversation}
-                              className="bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100"
+                              className="bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100"
                             >
                               저장
                             </Button>
@@ -440,7 +440,7 @@ export default function MyConversationArchive({
                               onClick={() =>
                                 handleUseConversation(conv.conversation)
                               }
-                              className="bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100"
+                              className="bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100"
                             >
                               <PaperAirplaneIcon className="h-3 w-3 mr-1" />
                               사용하기
