@@ -1156,7 +1156,7 @@ export default function CallbotChat() {
                           className={`flex ${message.sender === "user" ? "justify-end" : "justify-start"}`}
                         >
                           <div
-                            className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg border ${
+                            className={`max-w-sm md:max-w-md lg:max-w-lg px-4 py-2 rounded-lg border ${
                               message.sender === "user"
                                 ? "border-border bg-muted/70 text-foreground rounded-2xl"
                                 : "border-border bg-card text-foreground"
@@ -1164,7 +1164,7 @@ export default function CallbotChat() {
                           >
                             <p className="text-sm">{message.message}</p>
                             <p
-                              className={`text-xs mt-1 text-muted-foreground`}
+                              className={`text-xs mt-1 text-muted-foreground text-right`}
                             >
                               {message.timestamp}
                             </p>
