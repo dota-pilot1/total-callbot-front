@@ -1109,7 +1109,7 @@ export default function CallbotChat() {
 
               {/* 추가 설정 및 기능 - 연결 후에만 표시 */}
               {isConnected && (
-                <div className="mt-auto pt-6 border-t border-gray-200 space-y-3">
+                <div className="mt-auto pt-6 border-t border-border space-y-3">
                   <Button
                     variant="outline"
                     className="w-full"
@@ -1180,14 +1180,14 @@ export default function CallbotChat() {
                   </div>
 
                   {/* 메시지 입력 */}
-                  <div className="p-4 bg-white border-t border-gray-200 flex-shrink-0">
+                  <div className="p-4 bg-card border-t border-border flex-shrink-0">
                     <div className="flex items-center space-x-4">
                       <button
                         onClick={toggleRecording}
                         className={`p-3 rounded-full transition-colors ${
                           isRecording
                             ? "bg-red-500 text-white animate-pulse"
-                            : "bg-gray-100 hover:bg-gray-200 text-gray-600"
+                            : "border border-border bg-muted/30 hover:bg-muted/40 text-muted-foreground"
                         }`}
                         disabled={!isConnected || !voiceEnabled || isConnecting}
                       >
@@ -1201,7 +1201,7 @@ export default function CallbotChat() {
                       {/* 자동 완성 제안 버튼 */}
                       <button
                         onClick={() => setShowSuggestions(!showSuggestions)}
-                        className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 transition-colors"
+                        className="p-2 rounded-full border border-border bg-muted/30 hover:bg-muted/40 text-muted-foreground transition-colors"
                         title="자동 완성 제안"
                       >
                         <SparklesIcon className="h-4 w-4" />
@@ -1228,7 +1228,7 @@ export default function CallbotChat() {
                             }
                           }}
                           placeholder="메시지를 입력하세요..."
-                          className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                          className="flex-1 px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                         />
                         <Button
                           onClick={handleSendMessage}
@@ -1243,9 +1243,9 @@ export default function CallbotChat() {
 
                     {/* 자동 완성 제안 팝업 */}
                     {showSuggestions && (
-                      <div className="absolute bottom-full left-0 right-0 mb-2 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-64 overflow-y-auto">
+                      <div className="absolute bottom-full left-0 right-0 mb-2 bg-card border border-border rounded-lg shadow-lg z-50 max-h-64 overflow-y-auto">
                         <div className="p-3">
-                          <h4 className="text-sm font-medium text-gray-700 mb-2">
+                          <h4 className="text-sm font-medium text-foreground mb-2">
                             💭 자연스러운 응답 제안
                           </h4>
                           <div className="grid grid-cols-1 gap-1">
@@ -1254,7 +1254,7 @@ export default function CallbotChat() {
                                 <button
                                   key={index}
                                   onClick={() => applySuggestion(suggestion)}
-                                  className="text-left p-2 rounded-md hover:bg-gray-50 text-sm text-gray-700 transition-colors"
+                                  className="text-left p-2 rounded-md hover:bg-muted/30 text-sm text-muted-foreground transition-colors"
                                 >
                                   {suggestion}
                                 </button>
