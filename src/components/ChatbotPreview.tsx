@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Button } from "./ui";
 import { chatApi } from "../features/chatbot/messaging/api/chat";
 import type { ChatRoom } from "../shared/api/chat-types";
 
@@ -140,12 +141,9 @@ const ChatbotPreview: React.FC<ChatbotPreviewProps> = ({ chatbot }) => {
               {chatbot.name}와 대화하기
             </h3>
             <p className="text-gray-600 mb-6">{chatbot.greeting}</p>
-            <button
-              onClick={handleCreateNewChat}
-              className="bg-blue-500 hover:bg-blue-600 text-white px-8 py-3 rounded-lg font-medium text-lg transition-colors"
-            >
+            <Button onClick={handleCreateNewChat} variant="secondary" className="px-6 py-5 text-base">
               연결하기
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -159,7 +157,7 @@ const ChatbotPreview: React.FC<ChatbotPreviewProps> = ({ chatbot }) => {
 
           {loading ? (
             <div className="p-8 text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-foreground/40 mx-auto mb-4"></div>
               <p className="text-gray-600">대화 목록을 불러오는 중...</p>
             </div>
           ) : chatRooms.length === 0 ? (

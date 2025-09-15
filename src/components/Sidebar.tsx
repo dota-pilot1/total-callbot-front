@@ -45,10 +45,10 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
       initial={{ width: 280 }}
       animate={{ width: collapsed ? 60 : 280 }}
       transition={{ duration: 0.3, ease: "easeInOut" }}
-      className="relative bg-white border-r border-gray-200 shadow-sm flex flex-col h-full"
+      className="relative bg-card border-r border-border shadow-sm flex flex-col h-full"
     >
       {/* 헤더 */}
-      <div className="flex items-center justify-between p-4 border-b border-gray-200">
+      <div className="flex items-center justify-between p-4 border-b border-border">
         <AnimatePresence>
           {!collapsed && (
             <motion.div
@@ -65,9 +65,9 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
 
         <button
           onClick={onToggle}
-          className="p-1 rounded-md hover:bg-gray-100 transition-colors"
+          className="p-1 rounded-md hover:bg-muted/30 transition-colors text-muted-foreground"
         >
-          <ChevronLeftIcon className="w-5 h-5 text-gray-600" />
+          <ChevronLeftIcon className="w-5 h-5" />
         </button>
       </div>
 
@@ -87,9 +87,9 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                       onToggle(); // 사이드바 펼치기
                       setOpenCategories([category.id]); // 해당 카테고리만 열기 (독점적)
                     }}
-                    className="relative group flex items-center justify-center w-full px-3 py-3 rounded-lg transition-all duration-200 text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                    className="relative group flex items-center justify-center w-full px-3 py-3 rounded-lg transition-all duration-200 text-muted-foreground hover:bg-muted/30 hover:text-foreground"
                   >
-                    <CategoryIcon className="h-5 w-5 flex-shrink-0 text-gray-500" />
+                    <CategoryIcon className="h-5 w-5 flex-shrink-0" />
 
                     {/* 간단한 카테고리 툴팁 */}
                     <div className="absolute left-full ml-3 px-3 py-2 bg-gray-900 text-white text-sm rounded-md shadow-xl opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none whitespace-nowrap z-[99999] top-1/2 transform -translate-y-1/2">
@@ -114,27 +114,19 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                   {/* 카테고리 헤더 */}
                   <motion.button
                     onClick={() => toggleCategory(category.id)}
-                    className={`flex items-center justify-between w-full px-3 py-2 text-left text-sm font-medium rounded-lg hover:bg-gray-100 transition-colors relative group ${
-                      shouldHighlight
-                        ? "bg-indigo-100 text-indigo-700"
-                        : "text-gray-700"
+                    className={`flex items-center justify-between w-full px-3 py-2 text-left text-sm font-medium rounded-md hover:bg-muted/30 transition-colors relative group ${
+                      shouldHighlight ? "text-foreground" : "text-muted-foreground"
                     }`}
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                   >
                     <div className="flex items-center space-x-3 w-full">
                       <CategoryIcon
-                        className={`h-5 w-5 flex-shrink-0 ${
-                          shouldHighlight ? "text-indigo-600" : "text-gray-500"
-                        }`}
+                        className={`h-5 w-5 flex-shrink-0 ${shouldHighlight ? "text-foreground" : "text-muted-foreground"}`}
                       />
                       <span className="truncate flex-1">{category.name}</span>
                       <span
-                        className={`text-xs px-2 py-0.5 rounded-full ${
-                          shouldHighlight
-                            ? "text-indigo-700 bg-indigo-100"
-                            : "text-gray-400 bg-gray-100"
-                        }`}
+                        className={`text-xs px-2 py-0.5 rounded-full ${shouldHighlight ? "text-foreground bg-muted/40" : "text-muted-foreground bg-muted/20"}`}
                       >
                         {category.bots.length}
                       </span>
@@ -182,10 +174,10 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                             <button
                               key={bot.id}
                               onClick={handleBotClick}
-                              className={`relative group flex items-center space-x-3 w-full px-3 py-2 text-sm rounded-md transition-all duration-200 text-left ${
+                              className={`relative group flex items-center space-x-3 w-full px-3 py-2 text-sm rounded-md transition-all duration-200 text-left border ${
                                 isActive
-                                  ? "bg-blue-200 text-blue-900 font-bold border-2 border-blue-400"
-                                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                                  ? "border-primary bg-muted/60 text-foreground ring-1 ring-primary/30"
+                                  : "border-transparent text-muted-foreground hover:bg-muted/30 hover:text-foreground hover:border-border"
                               }`}
                             >
                               <BotIcon className="h-4 w-4 flex-shrink-0" />
@@ -218,11 +210,11 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="p-4 border-t border-gray-200"
+            className="p-4 border-t border-border"
           >
             <Link
               to="/chatbots"
-              className="flex items-center justify-center w-full px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors"
+              className="flex items-center justify-center w-full px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted/30 rounded-md transition-colors border border-transparent hover:border-border"
             >
               📋 챗봇 목록으로
             </Link>
