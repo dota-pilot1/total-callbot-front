@@ -1,12 +1,18 @@
 import { useState, useEffect, useRef } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { useAuthStore } from "../features/auth";
 import {
   useWebSocketStore,
   type ChatMessage,
 } from "../features/websocket/stores/useWebSocketStore";
 import { Button } from "../components/ui";
-import { ArrowLeftIcon, PaperAirplaneIcon } from "@heroicons/react/24/outline";
+import {
+  ArrowLeftIcon,
+  PaperAirplaneIcon,
+  UsersIcon,
+  ListBulletIcon,
+} from "@heroicons/react/24/outline";
+import { useToast } from "../components/ui/Toast";
 
 // 메시지 컴포넌트
 function MessageBubble({
@@ -71,10 +77,15 @@ function MessageBubble({
 
 export default function Chat() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { roomId } = useParams<{ roomId?: string }>();
   const { getUser } = useAuthStore();
   const user = getUser();
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { showToast, ToastContainer } = useToast();
+
+  // location.state에서 roomName 가져오기
+  const roomNameFromState = location.state?.roomName;
 
   // Zustand 웹소켓 스토어 사용
   const {
@@ -82,10 +93,16 @@ export default function Chat() {
     connecting,
     messages,
     currentRoomId,
+    currentRoomName,
+    participantCount,
+    participants,
+    showParticipantList,
     connect,
     disconnect,
     sendMessage,
     setCurrentRoom,
+    toggleParticipantList,
+    requestParticipantCount,
   } = useWebSocketStore();
 
   // 입력 상태
@@ -101,18 +118,25 @@ export default function Chat() {
   // 룸 변경 시 처리
   useEffect(() => {
     if (currentRoomId !== targetRoomId) {
-      setCurrentRoom(targetRoomId);
+      setCurrentRoom(targetRoomId, roomNameFromState);
       // 기존 연결이 있으면 해제하고 새로 연결
       if (connected) {
         disconnect();
       }
     }
-  }, [targetRoomId, currentRoomId, connected, disconnect, setCurrentRoom]);
+  }, [
+    targetRoomId,
+    currentRoomId,
+    connected,
+    disconnect,
+    setCurrentRoom,
+    roomNameFromState,
+  ]);
 
   // 연결되지 않은 상태에서 연결 시도
   useEffect(() => {
     if (!connected && !connecting) {
-      connect(targetRoomId, currentUserName, userEmail);
+      connect(targetRoomId, currentUserName, userEmail, roomNameFromState);
     }
   }, [
     connected,
@@ -121,6 +145,7 @@ export default function Chat() {
     currentUserName,
     userEmail,
     connect,
+    roomNameFromState,
   ]);
 
   // 컴포넌트 언마운트 시 연결 해제
@@ -164,42 +189,97 @@ export default function Chat() {
     connect(targetRoomId, currentUserName, userEmail);
   };
 
+  // 채팅방 나가기 핸들러
+  const handleLeave = () => {
+    disconnect();
+    showToast(`${currentUserName}님이 채팅방에서 나갔습니다.`, "info", 1500);
+    navigate("/chatbots");
+  };
+
   return (
     <div className="h-screen bg-gray-50 flex flex-col overflow-hidden">
       {/* 헤더 */}
-      <div className="bg-white border-b border-gray-200 p-4 flex-shrink-0">
+      <div className="bg-white border-b border-gray-200 p-3 flex-shrink-0">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <Button
               variant="outline"
-              onClick={() => navigate("/chatbots")}
+              onClick={handleLeave}
+              size="sm"
               className="flex items-center space-x-1"
             >
               <ArrowLeftIcon className="h-4 w-4" />
-              <span>뒤로</span>
+              <span>나가기</span>
             </Button>
-            <h1 className="text-xl font-semibold text-gray-900">
-              {currentRoomId === "general"
-                ? "전체 채팅"
-                : `채팅방 ${currentRoomId}`}
-            </h1>
+            {currentRoomId === "general" && (
+              <Button
+                variant="outline"
+                onClick={() => navigate("/chat/rooms")}
+                size="sm"
+                className="flex items-center space-x-1"
+              >
+                <ListBulletIcon className="h-4 w-4" />
+                <span>목록</span>
+              </Button>
+            )}
+            <div className="flex flex-col">
+              <h1 className="text-lg font-semibold text-gray-900">
+                {currentRoomName}
+              </h1>
+              {currentRoomId !== "general" && (
+                <p className="text-xs text-gray-500 truncate max-w-48">
+                  ID: {currentRoomId}
+                </p>
+              )}
+            </div>
           </div>
           <div className="flex items-center space-x-2">
-            <div
-              className={`px-2 py-1 rounded-full text-xs font-medium ${
+            <button
+              onClick={toggleParticipantList}
+              className={`relative p-2 rounded-full transition-colors ${
                 connected
-                  ? "bg-green-100 text-green-800"
-                  : connecting
-                    ? "bg-yellow-100 text-yellow-800"
-                    : "bg-red-100 text-red-800"
+                  ? "bg-green-100 hover:bg-green-200 text-green-700"
+                  : "bg-red-100 hover:bg-red-200 text-red-700"
               }`}
+              title={`참여자 ${participantCount}명 (클릭하여 목록 보기)`}
             >
-              {connected ? "연결됨" : connecting ? "연결 중..." : "연결 끊김"}
-            </div>
-            {!connected && (
-              <Button onClick={handleReconnect} size="sm" disabled={connecting}>
-                {connecting ? "연결 중..." : "다시 연결"}
-              </Button>
+              <UsersIcon className="h-5 w-5" />
+              {participantCount > 0 && (
+                <span
+                  className={`absolute -top-1 -right-1 min-w-[1.25rem] h-5 text-xs font-medium text-white rounded-full flex items-center justify-center px-1 ${
+                    connected ? "bg-green-600" : "bg-red-600"
+                  }`}
+                >
+                  {participantCount}
+                </span>
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* 슬라이딩 참여자 목록 */}
+      <div
+        className={`bg-white border-b border-gray-200 transition-all duration-300 ease-in-out overflow-hidden ${
+          showParticipantList ? "max-h-40" : "max-h-0"
+        }`}
+      >
+        <div className="p-4">
+          <h3 className="text-sm font-medium text-gray-700 mb-2">
+            참여자 목록 ({participantCount}명)
+          </h3>
+          <div className="space-y-2 max-h-24 overflow-y-auto">
+            {participants.length > 0 ? (
+              participants.map((participant, index) => (
+                <div key={index} className="flex items-center space-x-2">
+                  <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-medium">
+                    {participant.charAt(0).toUpperCase()}
+                  </div>
+                  <span className="text-sm text-gray-700">{participant}</span>
+                </div>
+              ))
+            ) : (
+              <p className="text-sm text-gray-500">참여자가 없습니다.</p>
             )}
           </div>
         </div>
@@ -245,6 +325,9 @@ export default function Chat() {
           </Button>
         </div>
       </div>
+
+      {/* Toast 컨테이너 */}
+      <ToastContainer />
     </div>
   );
 }

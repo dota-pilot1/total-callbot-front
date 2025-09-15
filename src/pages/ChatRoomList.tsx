@@ -170,7 +170,7 @@ function RoomCard({
       </div>
       <div className="flex space-x-2">
         <Button
-          onClick={() => onJoin(room.roomId || room.id)}
+          onClick={() => onJoin(room.roomId || room.id, room.name)}
           size="sm"
           className="flex-1"
           disabled={(room.participantCount || 0) >= room.maxParticipants}
@@ -243,8 +243,10 @@ export default function ChatRoomList() {
   };
 
   // 채팅방 입장
-  const joinRoom = (roomId: string) => {
-    navigate(`/chat/room/${roomId}`);
+  const joinRoom = (roomId: string, roomName?: string) => {
+    navigate(`/chat/room/${roomId}`, {
+      state: { roomName: roomName || `채팅방 ${roomId}` },
+    });
   };
 
   // 검색 필터링 - description이 undefined일 수 있으므로 안전 체크 추가

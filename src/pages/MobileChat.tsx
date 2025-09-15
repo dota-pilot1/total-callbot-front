@@ -12,13 +12,15 @@ import {
   LanguageIcon,
   ArchiveBoxIcon,
   ArrowRightOnRectangleIcon,
+  ChatBubbleLeftRightIcon,
 } from "@heroicons/react/24/outline";
 // no solid icons needed currently
 import { useVoiceConnection } from "../features/chatbot/voice";
 import { useChatMessages } from "../features/chatbot/messaging";
 import VoicePulse from "../components/VoicePulse";
 import MobileSettingsDropdown from "../components/MobileSettingsDropdown";
-import MobileChatDropdown from "../components/MobileChatDropdown";
+import SockJS from "sockjs-client";
+import { Stomp } from "@stomp/stompjs";
 
 import MobileCharacterDialog from "../components/MobileCharacterDialog";
 import { CHARACTER_LIST } from "../features/chatbot/character/characters";
@@ -344,15 +346,20 @@ export default function MobileChat() {
               </div>
             </div>
             <div className="flex items-center space-x-2">
-              {/* 사용자간 채팅 드롭다운 버튼 */}
-              <MobileChatDropdown
-                participantCount={chatParticipantCount}
-                onChatChange={(type) => {
-                  if (type === "general") {
-                    navigate("/chat");
-                  }
-                }}
-              />
+              {/* 전체 채팅방 버튼 */}
+              <Button
+                variant="outline"
+                onClick={() => navigate("/chat")}
+                className="relative p-2"
+                size="sm"
+              >
+                <ChatBubbleLeftRightIcon className="h-5 w-5" />
+                {chatParticipantCount >= 0 && (
+                  <span className="absolute -top-1 -right-1 min-w-[1.25rem] h-5 text-xs font-medium text-white bg-green-600 rounded-full flex items-center justify-center px-1">
+                    {chatParticipantCount}
+                  </span>
+                )}
+              </Button>
 
               {/* 연습장 버튼 */}
               <Button

@@ -21,15 +21,28 @@ interface WebSocketState {
 
   // 현재 룸
   currentRoomId: string;
+  currentRoomName: string;
+
+  // 참여자 정보
+  participantCount: number;
+  participants: string[];
+  showParticipantList: boolean;
 
   // 액션들
-  connect: (roomId: string, userName: string, userEmail: string) => void;
+  connect: (
+    roomId: string,
+    userName: string,
+    userEmail: string,
+    roomName?: string,
+  ) => void;
   disconnect: () => void;
   sendMessage: (content: string, userName: string, userEmail: string) => void;
   addMessage: (message: ChatMessage) => void;
   addSystemMessage: (content: string) => void;
-  setCurrentRoom: (roomId: string) => void;
+  setCurrentRoom: (roomId: string, roomName?: string) => void;
   clearMessages: () => void;
+  toggleParticipantList: () => void;
+  requestParticipantCount: () => void;
 }
 
 export const useWebSocketStore = create<WebSocketState>((set, get) => ({
@@ -39,16 +52,29 @@ export const useWebSocketStore = create<WebSocketState>((set, get) => ({
   stompClient: null,
   messages: [],
   currentRoomId: "general",
+  currentRoomName: "전체 채팅",
+  participantCount: 0,
+  participants: [],
+  showParticipantList: false,
 
   // 현재 룸 설정
-  setCurrentRoom: (roomId: string) => {
-    set({ currentRoomId: roomId });
+  setCurrentRoom: (roomId: string, roomName?: string) => {
+    set({
+      currentRoomId: roomId,
+      currentRoomName:
+        roomName || (roomId === "general" ? "전체 채팅" : `채팅방 ${roomId}`),
+    });
     // 룸 변경시 메시지 초기화
     set({ messages: [] });
   },
 
   // 웹소켓 연결
-  connect: (roomId: string, userName: string, userEmail: string) => {
+  connect: (
+    roomId: string,
+    userName: string,
+    userEmail: string,
+    roomName?: string,
+  ) => {
     const { connected, connecting } = get();
 
     // 이미 연결되어 있거나 연결 중이면 리턴
@@ -75,6 +101,9 @@ export const useWebSocketStore = create<WebSocketState>((set, get) => ({
           connecting: false,
           stompClient: client,
           currentRoomId: roomId,
+          currentRoomName:
+            roomName ||
+            (roomId === "general" ? "전체 채팅" : `채팅방 ${roomId}`),
         });
 
         // 채팅방별 메시지 구독
@@ -113,6 +142,25 @@ export const useWebSocketStore = create<WebSocketState>((set, get) => ({
 
         console.log("📨 Subscription created:", subscription);
 
+        // 참여자 수 구독
+        const participantSubscription = client.subscribe(
+          roomId === "general"
+            ? "/topic/participant-count"
+            : `/topic/participant-count/${roomId}`,
+          (message: any) => {
+            try {
+              const participantData = JSON.parse(message.body);
+              console.log("👥 Participant data received:", participantData);
+              set({
+                participantCount: participantData.count || 0,
+                participants: participantData.participants || [],
+              });
+            } catch (error) {
+              console.error("❌ Error parsing participant data:", error);
+            }
+          },
+        );
+
         // 입장 메시지 전송
         const joinInfo = {
           senderName: userName,
@@ -125,6 +173,17 @@ export const useWebSocketStore = create<WebSocketState>((set, get) => ({
         client.publish({
           destination: joinEndpoint,
           body: JSON.stringify(joinInfo),
+        });
+
+        // 참여자 수 요청
+        const participantCountEndpoint =
+          roomId === "general"
+            ? "/app/chat/participant-count"
+            : `/app/chat/${roomId}/participant-count`;
+
+        client.publish({
+          destination: participantCountEndpoint,
+          body: JSON.stringify({}),
         });
       },
       (error: any) => {
@@ -214,21 +273,65 @@ export const useWebSocketStore = create<WebSocketState>((set, get) => ({
     }));
   },
 
-  // 시스템 메시지 추가
+  // 시스템 메시지 추가 (중복 방지)
   addSystemMessage: (content: string) => {
-    const systemMessage: ChatMessage = {
-      id: Date.now() + Math.random(),
-      content,
-      sender: "other",
-      timestamp: new Date().toLocaleTimeString(),
-      senderName: "시스템",
-    };
+    const { messages } = get();
 
-    get().addMessage(systemMessage);
+    // 최근 5초 이내의 동일한 시스템 메시지가 있는지 확인
+    const fiveSecondsAgo = Date.now() - 5000;
+    const recentDuplicate = messages.find(
+      (msg) =>
+        msg.senderName === "시스템" &&
+        msg.content === content &&
+        Date.now() - msg.id < 5000,
+    );
+
+    if (!recentDuplicate) {
+      const systemMessage: ChatMessage = {
+        id: Date.now() + Math.random(),
+        content,
+        sender: "other",
+        timestamp: new Date().toLocaleTimeString(),
+        senderName: "시스템",
+      };
+
+      get().addMessage(systemMessage);
+
+      // 1.5초 후에 시스템 메시지 제거
+      setTimeout(() => {
+        const currentMessages = get().messages;
+        const updatedMessages = currentMessages.filter(
+          (msg) => msg.id !== systemMessage.id,
+        );
+        set({ messages: updatedMessages });
+      }, 1500);
+    }
   },
 
   // 메시지 초기화
   clearMessages: () => {
     set({ messages: [] });
+  },
+
+  // 참여자 목록 토글
+  toggleParticipantList: () => {
+    set((state) => ({ showParticipantList: !state.showParticipantList }));
+  },
+
+  // 참여자 수 요청
+  requestParticipantCount: () => {
+    const { stompClient, connected, currentRoomId } = get();
+
+    if (stompClient && connected) {
+      const participantCountEndpoint =
+        currentRoomId === "general"
+          ? "/app/chat/participant-count"
+          : `/app/chat/${currentRoomId}/participant-count`;
+
+      stompClient.publish({
+        destination: participantCountEndpoint,
+        body: JSON.stringify({}),
+      });
+    }
   },
 }));
