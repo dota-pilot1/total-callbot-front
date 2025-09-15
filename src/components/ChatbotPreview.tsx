@@ -120,7 +120,7 @@ const ChatbotPreview: React.FC<ChatbotPreviewProps> = ({ chatbot }) => {
                 {chatbot.expertise.map((skill, index) => (
                   <span
                     key={index}
-                    className="px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full"
+                    className="px-3 py-1 text-sm rounded-full bg-muted/30 text-foreground border border-border"
                   >
                     {skill}
                   </span>
