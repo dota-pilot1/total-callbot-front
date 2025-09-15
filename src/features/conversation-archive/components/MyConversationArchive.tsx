@@ -305,14 +305,28 @@ export default function MyConversationArchive({
                             {conv.conversationCategory} #{index + 1}
                           </span>
                         </div>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          onClick={() => handleDeleteConversation(conv.id)}
-                          className="h-8 w-8 text-red-500 hover:bg-red-50"
-                        >
-                          <TrashIcon className="h-4 w-4" />
-                        </Button>
+                        <div className="flex">
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() =>
+                              handleUseConversation(conv.conversation)
+                            }
+                            className="h-8 w-8"
+                            title="사용하기"
+                          >
+                            <PaperAirplaneIcon className="h-4 w-4" />
+                          </Button>
+
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => handleDeleteConversation(conv.id)}
+                            className="h-8 w-8 -ml-px"
+                          >
+                            <TrashIcon className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
 
                       {/* Content */}
@@ -405,18 +419,6 @@ export default function MyConversationArchive({
                                 variant="outline"
                                 size="sm"
                                 onClick={() =>
-                                  handleUseConversation(conv.conversation)
-                                }
-                                className="w-7 h-7 p-0"
-                                title="사용하기"
-                              >
-                                <PaperAirplaneIcon className="h-3 w-3" />
-                              </Button>
-
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() =>
                                   handlePlayPause(conv.id, conv.conversation)
                                 }
                                 className="w-7 h-7 p-0"
@@ -427,6 +429,19 @@ export default function MyConversationArchive({
                                 ) : (
                                   <PlayIcon className="h-3 w-3" />
                                 )}
+                              </Button>
+
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  // 이후 구현 예정: 댓글/질문-답변 기능
+                                  console.log("댓글 기능 - 구현 예정");
+                                }}
+                                className="w-7 h-7 p-0"
+                                title="댓글 (구현 예정)"
+                              >
+                                <ChatBubbleLeftRightIcon className="h-3 w-3" />
                               </Button>
                             </div>
                           </div>

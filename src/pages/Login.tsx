@@ -165,7 +165,7 @@ export default function Login() {
                 />
               </div>
 
-              <Button type="submit" disabled={isLoading} className="w-full h-11" variant="outline">
+              <Button type="submit" disabled={isLoading} className="w-full" size="lg" variant="outline">
                 <span className="flex items-center justify-center space-x-2">
                   <span>{isLoading ? "로그인 중..." : "로그인"}</span>
                   {!isLoading && <ArrowRightIcon className="h-4 w-4" />}

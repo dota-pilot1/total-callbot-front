@@ -491,7 +491,7 @@ export default function MobileChat() {
                   <span className="text-lg">{personaCharacter.emoji}</span>
                 </Button>
                 <div className="relative inline-block">
-                  <RippleButton
+                  <Button
                     onClick={async () => {
                       // 채팅방 연결 (훅 사용)
                       if (!isConnected) {
@@ -510,11 +510,13 @@ export default function MobileChat() {
                         await startVoice();
                       }
                     }}
-                    className="h-12 px-6 text-sm bg-card border border-border hover:bg-muted/50 transition-colors text-foreground disabled:opacity-50 disabled:cursor-not-allowed"
+                    variant="outline"
+                    size="sm"
+                    className="h-12 px-6 text-sm"
                     disabled={isConnecting}
                   >
                     {isConnecting ? "연결중..." : "Start"}
-                  </RippleButton>
+                  </Button>
                   <span
                     className={`absolute -top-1 -right-1 w-3 h-3 rounded-full ring-2 ring-card ${
                       isConnecting

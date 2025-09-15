@@ -139,7 +139,7 @@ const ChatbotPreview: React.FC<ChatbotPreviewProps> = ({ chatbot }) => {
               {chatbot.name}와 대화하기
             </h3>
             <p className="text-muted-foreground mb-6">{chatbot.greeting}</p>
-            <Button onClick={handleCreateNewChat} variant="outline" className="px-6 py-5 text-base">
+            <Button onClick={handleCreateNewChat} variant="outline" size="lg">
               연결하기
             </Button>
           </div>

@@ -1029,8 +1029,9 @@ export default function CallbotChat() {
               <div className="space-y-4">
                 <Button
                   onClick={toggleConnection}
-                  variant={isConnected ? "destructive" : "default"}
-                  className="w-full h-12 text-base font-semibold"
+                  variant={isConnected ? "destructive" : "outline"}
+                  size="lg"
+                  className="w-full text-base font-semibold"
                   disabled={isConnecting}
                 >
                   {isConnecting
