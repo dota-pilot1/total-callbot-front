@@ -1224,7 +1224,7 @@ export default function CallbotChat() {
                             }
                           }}
                           placeholder="메시지를 입력하세요..."
-                          className="flex-1 px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                          className="flex-1 px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-[13px] md:text-sm placeholder:text-muted-foreground placeholder:text-[13px] md:placeholder:text-sm"
                         />
                         <Button
                           onClick={handleSendMessage}
@@ -1232,7 +1232,7 @@ export default function CallbotChat() {
                           size="sm"
                           className="px-3"
                         >
-                          <PaperAirplaneIcon className="h-4 w-4" />
+                          <PaperAirplaneIcon className="h-5 w-5" />
                         </Button>
                       </div>
                     </div>
