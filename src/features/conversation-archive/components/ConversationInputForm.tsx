@@ -22,10 +22,10 @@ interface ConversationInputFormProps {
 
 const CATEGORIES = ["역할", "일상", "비즈니스", "학술"] as const;
 const CATEGORY_COLORS = {
-  역할: "bg-orange-100 text-orange-800 border-orange-200",
-  일상: "bg-green-100 text-green-800 border-green-200",
-  비즈니스: "bg-blue-100 text-blue-800 border-blue-200",
-  학술: "bg-purple-100 text-purple-800 border-purple-200",
+  역할: "bg-orange-50 text-orange-700 border-orange-100",
+  일상: "bg-emerald-50 text-emerald-700 border-emerald-100",
+  비즈니스: "bg-sky-50 text-sky-700 border-sky-100",
+  학술: "bg-rose-50 text-rose-700 border-rose-100",
 } as const;
 
 export default function ConversationInputForm({

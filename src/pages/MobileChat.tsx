@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../features/auth";
 import { Button } from "../components/ui";
+import RippleButton from "../components/ui/RippleButton";
 
 import {
   PaperAirplaneIcon,
@@ -309,34 +310,38 @@ export default function MobileChat() {
   };
 
   return (
-    <div className="h-screen bg-gray-50 flex flex-col">
+    <div className="h-screen bg-background flex flex-col">
       {/* Hidden audio sink for AI voice */}
       <audio ref={audioRef} autoPlay style={{ display: "none" }} />
 
       {/* 고정 헤더 */}
-      <div className="bg-white shadow-sm border-b flex-shrink-0 sticky top-0 z-40">
+      <div className="bg-card border-b border-border flex-shrink-0 sticky top-0 z-40">
         <div className="p-4">
           <div className="flex justify-between items-center">
             <div className="flex items-center space-x-3">
               {/* 간단한 로고 */}
               <div className="flex items-center space-x-2">
-                <div className="w-6 h-6 bg-indigo-500 rounded-md flex items-center justify-center">
-                  <span className="text-white font-bold text-xs">T</span>
+                <div className="w-6 h-6 bg-primary rounded-md flex items-center justify-center">
+                  <span className="text-primary-foreground font-bold text-xs">
+                    T
+                  </span>
                 </div>
-                <h1 className="text-base font-medium text-gray-900">Callbot</h1>
+                <h1 className="text-base font-semibold text-foreground">
+                  Callbot
+                </h1>
               </div>
             </div>
             <div className="flex items-center space-x-2">
               {/* 전체 채팅방 버튼 */}
               <Button
-                variant="outline"
+                variant="ghost"
                 onClick={() => navigate("/chat")}
-                className="relative p-2"
+                className="relative h-9 w-9 p-0"
                 size="sm"
               >
-                <ChatBubbleLeftRightIcon className="h-5 w-5" />
+                <ChatBubbleLeftRightIcon className="h-4 w-4" />
                 {chatParticipantCount >= 0 && (
-                  <span className="absolute -top-1 -right-1 min-w-[1.25rem] h-5 text-xs font-medium text-white bg-green-600 rounded-full flex items-center justify-center px-1">
+                  <span className="absolute -top-1 -right-1 min-w-[1rem] h-4 text-xs font-medium text-primary-foreground bg-primary rounded-full flex items-center justify-center px-1">
                     {chatParticipantCount}
                   </span>
                 )}
@@ -344,46 +349,46 @@ export default function MobileChat() {
 
               {/* 연습장 버튼 */}
               <Button
-                variant="outline"
+                variant="ghost"
                 size="sm"
                 onClick={() => navigate("/practice")}
                 title="한국어 연습"
-                className="w-9 px-0"
+                className="h-9 w-9 p-0"
               >
                 <span className="text-xs font-bold">KR</span>
               </Button>
 
               {/* 나의 대화 아카이브 버튼 */}
               <Button
-                variant="outline"
+                variant="ghost"
                 size="sm"
                 onClick={() => setConversationArchiveDialogOpen(true)}
                 title="나의 대화 아카이브"
-                className="w-9 px-0"
+                className="h-9 w-9 p-0"
               >
                 <ArchiveBoxIcon className="h-4 w-4" />
               </Button>
 
               {/* 설정 버튼 */}
               <Button
-                variant="outline"
+                variant="ghost"
                 size="sm"
                 onClick={() => setSettingsOpen(true)}
                 title="설정"
-                className="w-9 px-0"
+                className="h-9 w-9 p-0"
               >
                 <Cog6ToothIcon className="h-4 w-4" />
               </Button>
 
               <Button
-                variant="outline"
+                variant="ghost"
                 size="sm"
                 onClick={() => {
                   console.log("Logout button clicked in MobileChat");
                   logout();
                 }}
                 title="로그아웃"
-                className="w-9 px-0"
+                className="h-9 w-9 p-0"
               >
                 <ArrowRightOnRectangleIcon className="h-4 w-4" />
               </Button>
@@ -393,7 +398,7 @@ export default function MobileChat() {
       </div>
 
       {/* 챗봇 정보 및 연결 상태 */}
-      <div className="bg-white border-b border-gray-200 p-4 flex-shrink-0">
+      <div className="bg-card border-b border-border p-4 flex-shrink-0">
         <div className="text-center">
           {/* <p className="text-sm text-gray-600 mb-3">{defaultChatbot.description}</p> */}
 
@@ -407,36 +412,36 @@ export default function MobileChat() {
                 {/* 캐릭터 아바타 (역할극용) */}
                 <button
                   onClick={openCharacterDialog}
-                  className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-400 to-yellow-500 flex items-center justify-center border border-amber-300 shadow-sm"
+                  className="w-10 h-10 rounded-full bg-muted hover:bg-muted/80 flex items-center justify-center border border-border shadow-sm transition-colors"
                   title={`${personaCharacter.name} (role-play)`}
                 >
                   <span className="text-base">{personaCharacter.emoji}</span>
                 </button>
                 {/* 음성 파동 + 상태 점 오버레이 (compact) */}
                 <div className="relative">
-                  <div className="bg-white rounded-full p-3 shadow-lg border border-gray-200">
+                  <div className="bg-card rounded-full p-3 shadow-lg border border-border">
                     <VoicePulse
                       active={isListening || isResponding}
                       size={36}
                     />
                   </div>
                   <span
-                    className={`absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full ring-2 ring-white ${
+                    className={`absolute -top-1 -right-1 w-3 h-3 rounded-full ring-2 ring-card ${
                       isConnecting
-                        ? "bg-yellow-500"
+                        ? "bg-amber-500 animate-pulse"
                         : isListening
                           ? "bg-red-500 animate-pulse"
                           : isResponding
                             ? "bg-blue-500 animate-pulse"
                             : isConnected
-                              ? "bg-green-500"
+                              ? "bg-emerald-500"
                               : "bg-gray-400"
                     }`}
                   />
                 </div>
 
                 {/* 중단 버튼 */}
-                <button
+                <Button
                   onClick={() => {
                     stopVoice();
                     setVoiceEnabled(false);
@@ -444,44 +449,50 @@ export default function MobileChat() {
                     // 연결 끊을 때 대화 내용 초기화
                     clearChat();
                   }}
-                  className="w-10 h-10 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center shadow-lg transition-colors"
+                  variant="destructive"
+                  size="sm"
+                  className="w-10 h-10 rounded-full p-0"
                   title="음성 연결 중단"
                 >
                   <XMarkIcon className="h-5 w-5" />
-                </button>
+                </Button>
 
                 {/* 대화 내용 클리어 버튼 (연결된 상태에서만) */}
                 {isConnected && (
-                  <button
+                  <Button
                     onClick={clearChat}
-                    className="w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 transition-colors flex items-center justify-center"
+                    variant="secondary"
+                    size="sm"
+                    className="w-10 h-10 rounded-full p-0"
                     title="대화 내용 지우기"
                   >
                     <TrashIcon className="h-5 w-5" />
-                  </button>
+                  </Button>
                 )}
                 {/* Exam 버튼 (제일 오른쪽으로 이동) */}
-                <button
+                <Button
                   onClick={triggerExam}
-                  className="w-10 h-10 rounded-full bg-white border border-gray-300 hover:bg-gray-50 text-gray-900 transition-colors flex items-center justify-center text-xs font-medium"
+                  variant="outline"
+                  size="sm"
+                  className="w-10 h-10 rounded-full p-0 text-xs font-medium"
                   disabled={isConnecting || examSending}
                   title="시험 모드 시작"
                 >
                   {examSending ? "..." : "E"}
-                </button>
+                </Button>
               </>
             ) : (
               <>
                 {/* 캐릭터 아바타 + Start 버튼 + 상태 점 오버레이 */}
                 <button
                   onClick={openCharacterDialog}
-                  className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-400 to-yellow-500 flex items-center justify-center border border-amber-300 shadow-sm"
+                  className="w-10 h-10 rounded-full bg-muted hover:bg-muted/80 flex items-center justify-center border border-border shadow-sm transition-colors"
                   title={`${personaCharacter.name} (role-play)`}
                 >
                   <span className="text-base">{personaCharacter.emoji}</span>
                 </button>
                 <div className="relative inline-block">
-                  <Button
+                  <RippleButton
                     onClick={async () => {
                       // 채팅방 연결 (훅 사용)
                       if (!isConnected) {
@@ -500,22 +511,21 @@ export default function MobileChat() {
                         await startVoice();
                       }
                     }}
-                    variant="default"
-                    className="h-10 px-6 text-sm rounded-full"
+                    className="h-10 px-6 text-sm rounded-full bg-card border border-border hover:bg-muted/50 transition-colors text-foreground disabled:opacity-50 disabled:cursor-not-allowed"
                     disabled={isConnecting}
                   >
                     {isConnecting ? "연결중..." : "Start"}
-                  </Button>
+                  </RippleButton>
                   <span
-                    className={`absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full ring-2 ring-white ${
+                    className={`absolute -top-1 -right-1 w-3 h-3 rounded-full ring-2 ring-card ${
                       isConnecting
-                        ? "bg-yellow-500"
+                        ? "bg-amber-500 animate-pulse"
                         : isListening
                           ? "bg-red-500 animate-pulse"
                           : isResponding
                             ? "bg-blue-500 animate-pulse"
                             : isConnected
-                              ? "bg-green-500"
+                              ? "bg-emerald-500"
                               : "bg-gray-400"
                     }`}
                   />
