@@ -88,7 +88,7 @@ export default function ConversationInputForm({
     <div className="mb-6">
       {/* Toggle Button */}
       <Button
-        variant="secondary"
+        variant="outline"
         size="sm"
         onClick={onToggleForm}
         className="w-full flex items-center justify-center gap-2 mb-4"

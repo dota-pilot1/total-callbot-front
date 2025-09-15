@@ -10,6 +10,8 @@ import {
   PauseIcon,
   ArrowsRightLeftIcon,
   PaperAirplaneIcon,
+  ChatBubbleLeftRightIcon,
+  CheckIcon,
 } from "@heroicons/react/24/outline";
 import { Button } from "../../../components/ui/Button";
 import { examApi } from "../../chatbot/exam/api/exam";
@@ -304,7 +306,7 @@ export default function MyConversationArchive({
                           </span>
                         </div>
                         <Button
-                          variant="ghost"
+                          variant="outline"
                           size="icon"
                           onClick={() => handleDeleteConversation(conv.id)}
                           className="h-8 w-8 text-red-500 hover:bg-red-50"
@@ -361,21 +363,21 @@ export default function MyConversationArchive({
                         </div>
                       ) : (
                         <>
-                          <div className="relative">
-                            <p className="text-gray-800 whitespace-pre-wrap leading-relaxed pr-16">
+                          <div className="flex items-start justify-between gap-3">
+                            <p className="text-gray-800 whitespace-pre-wrap leading-relaxed flex-1">
                               {conv.conversation}
                             </p>
 
-                            {/* Action Buttons - 우측 상단 2x2 그리드 */}
-                            <div className="absolute top-1 right-1 grid grid-cols-2 gap-0.5">
+                            {/* Action Buttons - 우측 2x2 그리드 */}
+                            <div className="flex-shrink-0 grid grid-cols-2 gap-1">
                               <Button
                                 variant="outline"
                                 size="sm"
                                 onClick={() => startEditing(conv)}
-                                className="w-6 h-6 p-0"
+                                className="w-7 h-7 p-0"
                                 title="수정"
                               >
-                                <PencilIcon className="h-2.5 w-2.5" />
+                                <PencilIcon className="h-3 w-3" />
                               </Button>
 
                               <Button
@@ -385,7 +387,7 @@ export default function MyConversationArchive({
                                   handleTranslate(conv.id, conv.conversation)
                                 }
                                 disabled={translatingIds.has(conv.id)}
-                                className="w-6 h-6 p-0"
+                                className="w-7 h-7 p-0"
                                 title={
                                   translatedTexts[conv.id]
                                     ? "번역 숨기기"
@@ -395,23 +397,7 @@ export default function MyConversationArchive({
                                 {translatingIds.has(conv.id) ? (
                                   <div className="animate-spin rounded-full h-2.5 w-2.5 border border-current border-t-transparent" />
                                 ) : (
-                                  <LanguageIcon className="h-2.5 w-2.5" />
-                                )}
-                              </Button>
-
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() =>
-                                  handlePlayPause(conv.id, conv.conversation)
-                                }
-                                className="w-6 h-6 p-0"
-                                title={playingId === conv.id ? "중지" : "듣기"}
-                              >
-                                {playingId === conv.id ? (
-                                  <PauseIcon className="h-2.5 w-2.5" />
-                                ) : (
-                                  <PlayIcon className="h-2.5 w-2.5" />
+                                  <LanguageIcon className="h-3 w-3" />
                                 )}
                               </Button>
 
@@ -421,10 +407,26 @@ export default function MyConversationArchive({
                                 onClick={() =>
                                   handleUseConversation(conv.conversation)
                                 }
-                                className="w-6 h-6 p-0"
+                                className="w-7 h-7 p-0"
                                 title="사용하기"
                               >
-                                <PaperAirplaneIcon className="h-2.5 w-2.5" />
+                                <PaperAirplaneIcon className="h-3 w-3" />
+                              </Button>
+
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() =>
+                                  handlePlayPause(conv.id, conv.conversation)
+                                }
+                                className="w-7 h-7 p-0"
+                                title={playingId === conv.id ? "중지" : "듣기"}
+                              >
+                                {playingId === conv.id ? (
+                                  <PauseIcon className="h-3 w-3" />
+                                ) : (
+                                  <PlayIcon className="h-3 w-3" />
+                                )}
                               </Button>
                             </div>
                           </div>

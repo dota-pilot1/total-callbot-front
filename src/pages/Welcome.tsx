@@ -73,7 +73,7 @@ export default function Welcome() {
               {tab === 'chatbot' ? (
                 <>
                   <Link to="/chatbots" className="block w-full">
-                    <Button className="w-full" size="lg" variant="secondary">챗봇 둘러보기</Button>
+                    <Button className="w-full" size="lg" variant="outline">챗봇 둘러보기</Button>
                   </Link>
                   <Link to="/login" className="block w-full">
                     <Button variant="outline" className="w-full" size="lg">로그인</Button>
@@ -82,7 +82,7 @@ export default function Welcome() {
               ) : (
                 <>
                   <Link to="/chat" className="block w-full">
-                    <Button className="w-full" size="lg" variant="secondary">채팅 참여</Button>
+                    <Button className="w-full" size="lg" variant="outline">채팅 참여</Button>
                   </Link>
                   <Link to="/login" className="block w-full">
                     <Button variant="outline" className="w-full" size="lg">로그인</Button>

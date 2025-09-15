@@ -1118,7 +1118,7 @@ export default function CallbotChat() {
                   </Button>
 
                   <Button
-                    variant="ghost"
+                    variant="outline"
                     className="w-full text-sm"
                     onClick={handleClearChat}
                   >

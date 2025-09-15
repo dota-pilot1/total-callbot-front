@@ -456,7 +456,7 @@ export default function MobileChat() {
                 {isConnected && (
                   <Button
                     onClick={clearChat}
-                    variant="secondary"
+                    variant="outline"
                     size="sm"
                     className="w-12 h-12 p-0"
                     title="대화 내용 지우기"
@@ -510,7 +510,7 @@ export default function MobileChat() {
                         await startVoice();
                       }
                     }}
-                    className="h-10 px-6 text-sm bg-card border border-border hover:bg-muted/50 transition-colors text-foreground disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="h-12 px-6 text-sm bg-card border border-border hover:bg-muted/50 transition-colors text-foreground disabled:opacity-50 disabled:cursor-not-allowed"
                     disabled={isConnecting}
                   >
                     {isConnecting ? "연결중..." : "Start"}
@@ -626,7 +626,7 @@ export default function MobileChat() {
                 onClick={suggestReply}
                 variant="outline"
                 size="sm"
-                className={`w-10 h-10 p-0 ${suggestLoading ? "animate-pulse" : ""}`}
+                className={`w-12 h-12 p-0 ${suggestLoading ? "animate-pulse" : ""}`}
                 title="AI가 다음 답변을 제안합니다"
                 disabled={suggestLoading}
               >
@@ -637,7 +637,7 @@ export default function MobileChat() {
                 onClick={() => setCustomQuestionDialogOpen(true)}
                 variant="outline"
                 size="sm"
-                className="w-10 h-10 p-0"
+                className="w-12 h-12 p-0"
                 title="커스텀 질문 생성기"
               >
                 🎯
@@ -683,7 +683,7 @@ export default function MobileChat() {
                   disabled={!newMessage.trim()}
                   variant="outline"
                   size="sm"
-                  className="w-10 h-10 p-0 text-green-600 border-green-300 hover:bg-green-50"
+                  className="w-12 h-12 p-0 text-green-600 border-green-300 hover:bg-green-50"
                   title="입력 텍스트 번역하기"
                 >
                   <LanguageIcon className="h-4 w-4" />
@@ -695,7 +695,7 @@ export default function MobileChat() {
                   disabled={!newMessage.trim() || examSending || suggestLoading}
                   variant="outline"
                   size="sm"
-                  className="w-10 h-10 p-0"
+                  className="w-12 h-12 p-0"
                 >
                   <PaperAirplaneIcon className="h-4 w-4" />
                 </Button>

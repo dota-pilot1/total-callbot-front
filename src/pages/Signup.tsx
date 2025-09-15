@@ -58,7 +58,7 @@ export default function Signup() {
                   containerClassName="h-auto"
                 />
               </div>
-              <Button type="submit" disabled={loading} className="w-full h-12" variant="secondary">{loading ? '가입 중...' : '가입하기'}</Button>
+              <Button type="submit" disabled={loading} className="w-full h-12" variant="outline">{loading ? '가입 중...' : '가입하기'}</Button>
             </form>
 
             <div className="mt-6 text-center">

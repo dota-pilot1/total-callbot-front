@@ -215,7 +215,7 @@ export default function MobileCharacterDialog({
               <Button onClick={onClose} variant="outline" size="sm">
                 취소
               </Button>
-              <Button onClick={confirm} size="sm">
+              <Button onClick={confirm} size="sm" variant="outline">
                 확인
               </Button>
             </div>
