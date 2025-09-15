@@ -75,10 +75,13 @@ export const useWebSocketStore = create<WebSocketState>((set, get) => ({
     userEmail: string,
     roomName?: string,
   ) => {
-    const { connected, connecting } = get();
+    const { connected, connecting, stompClient } = get();
 
-    // 이미 연결되어 있거나 연결 중이면 리턴
-    if (connected || connecting) return;
+    // 이미 연결되어 있거나 연결 중이거나 기존 클라이언트가 있으면 리턴
+    if (connected || connecting || stompClient) {
+      console.log("Already connected or connecting, skipping...");
+      return;
+    }
 
     set({ connecting: true });
 
@@ -190,14 +193,7 @@ export const useWebSocketStore = create<WebSocketState>((set, get) => ({
         console.log("Connection error: " + error);
         set({ connected: false, connecting: false });
 
-        // 5초 후 재연결 시도
-        setTimeout(() => {
-          const { connected: isConnected } = get();
-          if (!isConnected) {
-            console.log("Attempting to reconnect...");
-            get().connect(roomId, userName, userEmail);
-          }
-        }, 5000);
+        // 자동 재연결 제거 - 사용자가 수동으로 연결하도록 함
       },
     );
   },

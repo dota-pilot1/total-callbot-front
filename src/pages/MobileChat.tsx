@@ -47,19 +47,15 @@ export default function MobileChat() {
   const { participantCount, connected, connecting, connect, disconnect } =
     useWebSocketStore();
 
-  // WebSocket 연결 초기화
+  // 컴포넌트 언마운트 시에만 연결 해제 (자동 연결 제거)
   useEffect(() => {
-    if (user && !connected) {
-      connect("general", user.name, user.email, "전체 채팅");
-    }
-
     // 컴포넌트 언마운트 시 연결 해제
     return () => {
       if (connected) {
         disconnect();
       }
     };
-  }, [user, connected, connect, disconnect]);
+  }, [connected, disconnect]);
 
   // zustand store에서 캐릭터 상태 가져오기
   const { personaCharacter, personaGender } = useCharacterStore();
