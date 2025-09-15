@@ -52,20 +52,26 @@ export default function Login() {
           <div className="rounded-lg border bg-card p-6 shadow-lg">
             {/* 브랜드 라인 (심플, 공간 채움) */}
             <div className="flex items-center gap-3 mb-3">
-              <img src="/gpt-star.jpeg" alt="콜봇" className="h-6 w-6 rounded-md object-cover" />
-              <span className="text-xs font-medium text-muted-foreground">Total Callbot</span>
+              <img
+                src="/gpt-star.jpeg"
+                alt="콜봇"
+                className="h-6 w-6 rounded-md object-cover"
+              />
+              <span className="text-xs font-medium text-muted-foreground">
+                Total Callbot
+              </span>
             </div>
-            {/* 소개 탭 (챗봇/채팅 간략 소개) */}
-            <div className="mb-3">
-              <div className="flex gap-2 border-b border-border">
+            {/* 탭 */}
+            <div className="mb-4">
+              <div className="flex gap-1 p-1 bg-gray-100 rounded-lg">
                 <button
                   type="button"
                   onClick={() => setSelectedService("chatbot")}
                   aria-pressed={selectedService === "chatbot"}
-                  className={`px-3 py-2 text-sm -mb-px rounded-t-md transition-colors ${
+                  className={`flex-1 px-3 py-2 text-sm rounded-md font-medium transition-all duration-200 ${
                     selectedService === "chatbot"
-                      ? "border-b-2 border-primary text-foreground bg-muted/40"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted/20"
+                      ? "bg-white text-gray-900 shadow-sm border border-gray-200"
+                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
                   }`}
                 >
                   챗봇
@@ -74,56 +80,55 @@ export default function Login() {
                   type="button"
                   onClick={() => setSelectedService("chat")}
                   aria-pressed={selectedService === "chat"}
-                  className={`px-3 py-2 text-sm -mb-px rounded-t-md transition-colors ${
+                  className={`flex-1 px-3 py-2 text-sm rounded-md font-medium transition-all duration-200 ${
                     selectedService === "chat"
-                      ? "border-b-2 border-primary text-foreground bg-muted/40"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted/20"
+                      ? "bg-white text-gray-900 shadow-sm border border-gray-200"
+                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
                   }`}
                 >
                   채팅
                 </button>
               </div>
-              <p className="mt-2 text-xs text-muted-foreground">
-                {selectedService === "chatbot"
-                  ? "AI 챗봇과 대화하며 영어를 간단히 연습하세요."
-                  : "실시간 채팅으로 사용자들과 빠르게 소통하세요."}
-              </p>
             </div>
 
             {/* 서비스 선택 */}
-            <div className="grid grid-cols-2 gap-2 mb-4 bg-muted/20 p-2 rounded-xl">
+            <div className="grid grid-cols-2 gap-3 mb-6">
               <button
                 onClick={() => setSelectedService("chatbot")}
                 aria-pressed={selectedService === "chatbot"}
-                className={`relative flex flex-col items-center p-3 rounded-lg border-2 transition-colors duration-200 ${
+                className={`relative flex flex-col items-center p-4 rounded-xl border-2 transition-all duration-200 ${
                   selectedService === "chatbot"
-                    ? "border-primary bg-muted/60 text-foreground shadow-md ring-1 ring-primary/30"
-                    : "border-border hover:bg-muted/30 hover:text-foreground hover:border-primary/30"
+                    ? "border-blue-500 bg-blue-50 shadow-lg ring-2 ring-blue-200"
+                    : "border-gray-200 hover:bg-gray-50 hover:border-gray-300"
                 }`}
               >
                 {selectedService === "chatbot" && (
-                  <CheckCircleIcon className="absolute top-1 right-1 h-5 w-5 text-primary" />
+                  <CheckCircleIcon className="absolute top-2 right-2 h-5 w-5 text-blue-500" />
                 )}
                 <img
-                  src="/gpt-star.jpeg"
+                  src="/simple-chatbot.png"
                   alt="챗봇"
-                  className="h-8 w-8 rounded-md object-cover"
+                  className="h-16 w-16 rounded-xl object-cover"
                 />
               </button>
 
               <button
                 onClick={() => setSelectedService("chat")}
                 aria-pressed={selectedService === "chat"}
-                className={`relative flex flex-col items-center p-3 rounded-lg border-2 transition-colors duration-200 ${
+                className={`relative flex flex-col items-center p-4 rounded-xl border-2 transition-all duration-200 ${
                   selectedService === "chat"
-                    ? "border-primary bg-muted/60 text-foreground shadow-md ring-1 ring-primary/30"
-                    : "border-border hover:bg-muted/30 hover:text-foreground hover:border-primary/30"
+                    ? "border-blue-500 bg-blue-50 shadow-lg ring-2 ring-blue-200"
+                    : "border-gray-200 hover:bg-gray-50 hover:border-gray-300"
                 }`}
               >
                 {selectedService === "chat" && (
-                  <CheckCircleIcon className="absolute top-1 right-1 h-5 w-5 text-primary" />
+                  <CheckCircleIcon className="absolute top-2 right-2 h-5 w-5 text-blue-500" />
                 )}
-                <ChatBubbleLeftRightIcon className="h-6 w-6" />
+                <img
+                  src="/multi-chat.png"
+                  alt="채팅"
+                  className="h-16 w-16 rounded-xl object-cover"
+                />
               </button>
             </div>
 
@@ -165,7 +170,13 @@ export default function Login() {
                 />
               </div>
 
-              <Button type="submit" disabled={isLoading} className="w-full" size="lg" variant="outline">
+              <Button
+                type="submit"
+                disabled={isLoading}
+                className="w-full"
+                size="lg"
+                variant="outline"
+              >
                 <span className="flex items-center justify-center space-x-2">
                   <span>{isLoading ? "로그인 중..." : "로그인"}</span>
                   {!isLoading && <ArrowRightIcon className="h-4 w-4" />}
