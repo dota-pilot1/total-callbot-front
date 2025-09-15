@@ -1,13 +1,14 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuthStore } from "../features/auth";
-import { Button } from "../components/ui";
+
 import {
   ChatBubbleLeftRightIcon,
   ArrowRightIcon,
   CheckCircleIcon,
 } from "@heroicons/react/24/outline";
 import { RobotIcon } from "../components/icons/RobotIcon";
+import RippleButton from "../components/ui/RippleButton";
 import SockJS from "sockjs-client";
 import { Stomp } from "@stomp/stompjs";
 
@@ -188,15 +189,16 @@ export default function Login() {
                 />
               </div>
 
-              <Button
+              <RippleButton
                 type="submit"
                 disabled={isLoading}
-                className="w-full flex items-center justify-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold"
-                size="lg"
+                className="w-full h-12 bg-gray-900 hover:bg-black text-white font-medium rounded-lg border border-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <span>{isLoading ? "로그인 중..." : "로그인"}</span>
-                {!isLoading && <ArrowRightIcon className="h-4 w-4" />}
-              </Button>
+                <span className="flex items-center justify-center space-x-2">
+                  <span>{isLoading ? "로그인 중..." : "로그인"}</span>
+                  {!isLoading && <ArrowRightIcon className="h-4 w-4" />}
+                </span>
+              </RippleButton>
             </form>
 
             <div className="mt-6 flex items-center justify-between text-sm">

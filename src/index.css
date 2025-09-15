@@ -1,24 +1,22 @@
 @import "tailwindcss";
 
 body {
-  margin: 0;
-  /* Korean-friendly, emoji-safe font stack */
-  font-family:
-    -apple-system, BlinkMacSystemFont,
-    "Apple SD Gothic Neo", "Malgun Gothic",
-    "Noto Sans KR", "Segoe UI", Roboto, Helvetica, Arial,
-    "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji",
-    sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
-  min-width: 320px;
-  min-height: 100vh;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+    margin: 0;
+    /* Korean-friendly, emoji-safe font stack */
+    font-family:
+        -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+        "Malgun Gothic", "Noto Sans KR", "Segoe UI", Roboto, Helvetica, Arial,
+        "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
+    line-height: 1.5;
+    font-weight: 400;
+    min-width: 320px;
+    min-height: 100vh;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
 /* Prevent awkward line breaks in Korean */
 .keep-korean {
-  word-break: keep-all;
+    word-break: keep-all;
 }
