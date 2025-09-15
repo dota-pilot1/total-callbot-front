@@ -2,16 +2,16 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuthStore } from "../features/auth";
 
-import {
-  ChatBubbleLeftRightIcon,
-  ArrowRightIcon,
-  CheckCircleIcon,
-  ChevronDownIcon,
-  EyeIcon,
-  EyeSlashIcon,
-} from "@heroicons/react/24/outline";
+import { PasswordInput } from "../components/ui/PasswordInput";
+
 import RippleButton from "../components/ui/RippleButton";
 import MemberStatusTable from "../components/MemberStatusTable";
+import {
+  CheckCircleIcon,
+  ChatBubbleLeftRightIcon,
+  ArrowRightIcon,
+  ChevronDownIcon,
+} from "@heroicons/react/24/outline";
 // Simplified login; added collapsible full member info box
 
 type ServiceType = "chatbot" | "chat";
@@ -24,7 +24,6 @@ export default function Login() {
   const { login, isLoading } = useAuthStore();
   const navigate = useNavigate();
   const [showMembers, setShowMembers] = useState<boolean>(false);
-  const [showPassword, setShowPassword] = useState<boolean>(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -150,31 +149,14 @@ export default function Login() {
                 >
                   비밀번호
                 </label>
-                <div className="relative">
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    id="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="flex h-10 w-full rounded-md border border-input bg-background pl-3 pr-10 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                    placeholder="••••••••"
-                    required
-                    autoComplete="current-password"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword((v) => !v)}
-                    className="absolute inset-y-0 right-2 flex items-center text-muted-foreground hover:text-foreground"
-                    aria-label={showPassword ? "비밀번호 숨기기" : "비밀번호 보기"}
-                    aria-pressed={showPassword}
-                  >
-                    {showPassword ? (
-                      <EyeSlashIcon className="h-5 w-5" />
-                    ) : (
-                      <EyeIcon className="h-5 w-5" />
-                    )}
-                  </button>
-                </div>
+                <PasswordInput
+                  id="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                  autoComplete="current-password"
+                />
               </div>
 
               <RippleButton

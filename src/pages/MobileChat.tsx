@@ -47,22 +47,13 @@ declare global {
 }
 
 export default function MobileChat() {
-  const { logout, getUser } = useAuthStore();
+  const { logout } = useAuthStore();
   const navigate = useNavigate();
 
   // 사용자 정보 상태
-  const [user, setUser] = useState(getUser());
 
   // 채팅 참여자 수 상태
   const [chatParticipantCount, setChatParticipantCount] = useState(0);
-
-  // 컴포넌트 마운트 시 사용자 정보 확인
-  useEffect(() => {
-    const currentUser = getUser();
-    if (currentUser) {
-      setUser(currentUser);
-    }
-  }, [getUser]);
 
   // 채팅 참여자 수 추적 (WebSocket)
   useEffect(() => {
@@ -326,23 +317,13 @@ export default function MobileChat() {
       <div className="bg-white shadow-sm border-b flex-shrink-0 sticky top-0 z-40">
         <div className="p-4">
           <div className="flex justify-between items-center">
-            <div className="flex items-center space-x-2">
-              {/* 로고 */}
-              <div className="w-8 h-8 bg-indigo-500 rounded-full flex items-center justify-center">
-                <span className="text-white font-bold text-xs">T</span>
-              </div>
-              <div>
-                <h1 className="text-lg font-semibold text-gray-900">
-                  Total Callbot
-                </h1>
-                <p className="text-xs text-gray-600">
-                  {user?.name || user?.email || "게스트"}님
-                  {chatParticipantCount > 0 && (
-                    <span className="ml-2 text-green-600 font-medium">
-                      👥({chatParticipantCount})
-                    </span>
-                  )}
-                </p>
+            <div className="flex items-center space-x-3">
+              {/* 간단한 로고 */}
+              <div className="flex items-center space-x-2">
+                <div className="w-6 h-6 bg-indigo-500 rounded-md flex items-center justify-center">
+                  <span className="text-white font-bold text-xs">T</span>
+                </div>
+                <h1 className="text-base font-medium text-gray-900">Callbot</h1>
               </div>
             </div>
             <div className="flex items-center space-x-2">

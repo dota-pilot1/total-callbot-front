@@ -41,29 +41,24 @@ export default function ConversationInputForm({
   const [lastTranscript, setLastTranscript] = useState("");
 
   // Realtime API를 사용한 음성 인식 (모든 언어)
-  const {
-    isRecording,
-    isListening,
-    transcriptText,
-    startRecording,
-    stopRecording,
-  } = useVoiceToText({
-    onTranscript: (text: string, isFinal: boolean) => {
-      console.log("🔤 Transcript:", text, "isFinal:", isFinal);
-      if (isFinal && text.trim()) {
-        const cleanText = text.trim();
-        // 중복 방지: 같은 내용이면 추가하지 않음
-        if (cleanText !== lastTranscript) {
-          setConversation((prev) => prev + (prev ? " " : "") + cleanText);
-          setLastTranscript(cleanText);
+  const { isRecording, isListening, startRecording, stopRecording } =
+    useVoiceToText({
+      onTranscript: (text: string, isFinal: boolean) => {
+        console.log("🔤 Transcript:", text, "isFinal:", isFinal);
+        if (isFinal && text.trim()) {
+          const cleanText = text.trim();
+          // 중복 방지: 같은 내용이면 추가하지 않음
+          if (cleanText !== lastTranscript) {
+            setConversation((prev) => prev + (prev ? " " : "") + cleanText);
+            setLastTranscript(cleanText);
+          }
         }
-      }
-    },
-    onError: (error: string) => {
-      console.error("❌ Voice recognition error:", error);
-      alert(error);
-    },
-  });
+      },
+      onError: (error: string) => {
+        console.error("❌ Voice recognition error:", error);
+        alert(error);
+      },
+    });
 
   // Realtime API 음성 입력 핸들러
   const handleVoiceToggle = async () => {

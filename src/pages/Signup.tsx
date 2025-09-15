@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui';
+import { PasswordInput } from '../components/ui/PasswordInput';
+
 import { authApi } from '../features/auth/api/auth';
 
 export default function Signup() {
@@ -47,7 +49,15 @@ export default function Signup() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">비밀번호</label>
-                <input type="password" className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" value={password} onChange={(e)=>setPassword(e.target.value)} required />
+                <PasswordInput
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  autoComplete="new-password"
+                  placeholder="비밀번호를 입력하세요"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  containerClassName="h-auto"
+                />
               </div>
               <Button type="submit" disabled={loading} className="w-full" size="lg">{loading ? '가입 중...' : '가입하기'}</Button>
             </form>
