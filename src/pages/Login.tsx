@@ -8,7 +8,6 @@ import { Button } from "../components/ui";
 import MemberStatusTable from "../components/MemberStatusTable";
 import {
   CheckCircleIcon,
-  ChatBubbleLeftRightIcon,
   ArrowRightIcon,
   ChevronDownIcon,
 } from "@heroicons/react/24/outline";
