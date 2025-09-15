@@ -33,6 +33,7 @@ import {
 import { useWebSocketStore } from "../features/websocket/stores/useWebSocketStore";
 import MobileTranslationDialog from "../components/MobileTranslationDialog";
 import CustomQuestionGenerator from "../components/CustomQuestionGenerator";
+import KoreanInputDialog from "../components/KoreanInputDialog";
 import CardForChattingMessageWithTranslation from "../components/CardForChattingMessageWithTranslation";
 import { MyConversationArchive } from "../features/conversation-archive";
 import { useExamMode } from "../features/chatbot/exam";
@@ -92,6 +93,9 @@ export default function MobileChat() {
   // 나의 대화 아카이브 다이얼로그 상태
   const [conversationArchiveDialogOpen, setConversationArchiveDialogOpen] =
     useState(false);
+
+  // 한국어 입력 다이얼로그 상태
+  const [koreanInputDialogOpen, setKoreanInputDialogOpen] = useState(false);
 
   // 캐릭터 선택 훅
   const {
@@ -268,8 +272,8 @@ export default function MobileChat() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => navigate("/practice")}
-                title="한국어 연습"
+                onClick={() => setKoreanInputDialogOpen(true)}
+                title="한국어 입력"
                 className="h-7 w-7 p-0"
               >
                 <span className="text-[10px] font-bold">KR</span>
@@ -701,6 +705,13 @@ export default function MobileChat() {
         open={conversationArchiveDialogOpen}
         onClose={() => setConversationArchiveDialogOpen(false)}
         onInsertConversation={(text: string) => setNewMessage(text)}
+      />
+
+      {/* Korean Input Dialog */}
+      <KoreanInputDialog
+        isOpen={koreanInputDialogOpen}
+        onClose={() => setKoreanInputDialogOpen(false)}
+        onInsertText={(text: string) => setNewMessage(text)}
       />
     </div>
   );
