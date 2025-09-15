@@ -72,7 +72,7 @@ export const useChatMessages = (
   // 사용자 메시지 추가
   const addUserMessage = (text: string) => {
     const userMessage: Message = {
-      id: Date.now(),
+      id: Date.now() + Math.random() * 1000,
       sender: "user",
       message: text.trim(),
       timestamp: createTimestamp(),
@@ -84,7 +84,7 @@ export const useChatMessages = (
   // AI 응답 메시지 추가
   const addAssistantMessage = (text: string) => {
     const assistantMessage: Message = {
-      id: Date.now() + Math.random(),
+      id: Date.now() + Math.random() * 1000,
       sender: "callbot",
       message: text,
       timestamp: createTimestamp(),

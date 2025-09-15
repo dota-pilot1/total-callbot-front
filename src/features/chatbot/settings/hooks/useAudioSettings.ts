@@ -19,8 +19,8 @@ const DEFAULT_AUDIO_SETTINGS: AudioSettings = {
   echoCancellation: true,
   noiseSuppression: true,
   autoGainControl: false,
-  coalesceDelayMs: 800,
-  responseDelayMs: 2000, // 2초 지연 (사용자 메시지 등록 후 적절한 대기시간)
+  coalesceDelayMs: 1500, // 1.5초로 증가 (음성 유실 방지)
+  responseDelayMs: 3000, // 3초로 증가 (사용자 메시지 등록 후 충분한 대기시간)
   debugEvents: false,
   maxSentenceCount: 3, // 초중고 영어 회화용 기본 3문장 제한
   englishLevel: "beginner", // 초보자 수준으로 기본 설정

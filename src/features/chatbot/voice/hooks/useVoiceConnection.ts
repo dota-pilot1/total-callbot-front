@@ -234,6 +234,24 @@ export const useVoiceConnection = (
               // 사용자 메시지를 외부 콜백으로 전달
               onUserMessage?.(finalText);
               lastUserFinalRef.current = finalText;
+
+              // create_response: false이므로 수동으로 응답 생성 (지연 후)
+              setTimeout(() => {
+                try {
+                  conn?.dc?.send(
+                    JSON.stringify({
+                      type: "response.create",
+                      response: {
+                        modalities: ["text", "audio"],
+                        instructions: "Please respond naturally and helpfully.",
+                      },
+                    }),
+                  );
+                  console.log("[음성 디버그] 응답 생성 요청 전송");
+                } catch (e) {
+                  console.error("[음성 디버그] 응답 생성 요청 실패:", e);
+                }
+              }, 1500); // 1.5초 지연 후 응답 생성
             } else {
               console.log("[음성 디버그] 텍스트가 비어있어서 스킵");
             }
@@ -272,6 +290,13 @@ export const useVoiceConnection = (
               type: "session.update",
               session: {
                 instructions: buildPersonaInstructions(),
+                turn_detection: {
+                  type: "server_vad",
+                  threshold: 0.6, // 더 확실한 음성만 감지 (잡음 무시)
+                  prefix_padding_ms: 300, // 음성 시작 전 여유시간
+                  silence_duration_ms: 800, // 침묵 800ms 후 턴 종료 감지
+                  create_response: false, // 자동 응답 비활성화 (수동 제어)
+                },
               },
             }),
           );
@@ -281,7 +306,16 @@ export const useVoiceConnection = (
               conn.dc?.send(
                 JSON.stringify({
                   type: "session.update",
-                  session: { instructions: buildPersonaInstructions() },
+                  session: {
+                    instructions: buildPersonaInstructions(),
+                    turn_detection: {
+                      type: "server_vad",
+                      threshold: 0.6, // 더 확실한 음성만 감지 (잡음 무시)
+                      prefix_padding_ms: 300, // 음성 시작 전 여유시간
+                      silence_duration_ms: 800, // 침묵 800ms 후 턴 종료 감지
+                      create_response: false, // 자동 응답 비활성화 (수동 제어)
+                    },
+                  },
                 }),
               );
             } catch {}

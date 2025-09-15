@@ -153,6 +153,9 @@ export default function MobileChat() {
   // 임시 음성 메시지 상태 (optimistic UI용)
   const [tempVoiceMessage, setTempVoiceMessage] = useState<string | null>(null);
 
+  // 토스트 메시지 상태
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
   // 음성 연결 훅
   const {
     voiceEnabled,
@@ -180,17 +183,23 @@ export default function MobileChat() {
     },
     onAssistantMessage: addAssistantMessage,
     onUserSpeechStart: () => {
-      // 음성 시작 시 임시 메시지 표시
+      // 음성 시작 시 임시 메시지 표시 및 대화 시작 토스트
       console.log("🎤 음성 시작 - 임시 메시지 표시");
       setTempVoiceMessage("🎤 말하는 중...");
+
+      // 대화 시작 토스트 (첫 번째 음성 시작 시에만)
+      if (messages.length === 0) {
+        setToastMessage("🎙️ 대화가 시작되었습니다!");
+        setTimeout(() => setToastMessage(null), 2000);
+      }
     },
     onUserTranscriptUpdate: (text: string, isFinal: boolean) => {
-      // 실시간 텍스트 업데이트
+      // 실시간 텍스트 업데이트만 처리 (중복 방지를 위해 addUserMessage 제거)
       if (!isFinal && text.trim()) {
         console.log("🎤 실시간 업데이트:", text);
         setTempVoiceMessage(text);
       } else if (isFinal) {
-        // 음성 인식 완료 시 임시 메시지 제거
+        // 음성 인식 완료 시 임시 메시지만 제거 (실제 메시지 추가는 onUserMessage에서 처리)
         console.log("🎤 음성 인식 완료 - 임시 메시지 제거");
         setTempVoiceMessage(null);
       }
@@ -247,6 +256,15 @@ export default function MobileChat() {
     <div className="h-screen bg-white flex flex-col">
       {/* Hidden audio sink for AI voice */}
       <audio ref={audioRef} autoPlay style={{ display: "none" }} />
+
+      {/* 토스트 메시지 */}
+      {toastMessage && (
+        <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 animate-pulse">
+          <div className="bg-blue-500 text-white px-4 py-2 rounded-lg shadow-lg text-sm font-medium">
+            {toastMessage}
+          </div>
+        </div>
+      )}
 
       {/* 고정 헤더 */}
       <div className="bg-white border-b border-gray-200 flex-shrink-0 sticky top-0 z-50">
