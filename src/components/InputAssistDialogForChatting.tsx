@@ -1,13 +1,12 @@
 import { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import {
   BookOpenIcon,
   MicrophoneIcon,
-  XMarkIcon,
   LanguageIcon,
   PaperAirplaneIcon,
   PlayIcon,
 } from "@heroicons/react/24/outline";
+import FullScreenSlideDialog from "./ui/FullScreenSlideDialog";
 import { examApi } from "../features/chatbot/exam/api/exam";
 // TODO: GPT Realtime API 통합 예정
 // import { voiceApi } from "../features/chatbot/voice/api/voice";
@@ -410,152 +409,122 @@ Korean: "${koreanText}"`;
         <BookOpenIcon className="h-5 w-5" />
       </button>
 
-      {/* 전체 화면 다이얼로그 */}
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-end"
-            onClick={closeDialog}
-          >
-            <motion.div
-              initial={{ y: "100%" }}
-              animate={{ y: 0 }}
-              exit={{ y: "100%" }}
-              transition={{ type: "spring", damping: 25, stiffness: 500 }}
-              className="w-full bg-white rounded-t-2xl h-[100vh] flex flex-col"
-              onClick={(e) => e.stopPropagation()}
+      {/* FullScreenSlideDialog 사용 */}
+      <FullScreenSlideDialog
+        isOpen={isOpen}
+        onClose={closeDialog}
+        title="한국어 입력기 with Mike"
+        className="h-[100vh] flex flex-col"
+      >
+        <div className="flex-1 overflow-y-auto space-y-6">
+          {/* 마이크 버튼 (맨 위) */}
+          <div className="flex flex-col items-center space-y-2">
+            <button
+              onClick={isListening ? stopListening : startListening}
+              className={`w-16 h-16 rounded-full flex items-center justify-center transition-all duration-200 ${
+                isListening
+                  ? "bg-red-500 hover:bg-red-600 text-white animate-pulse"
+                  : "bg-blue-500 hover:bg-blue-600 text-white"
+              }`}
+              title={isListening ? "GPT 음성인식 중지" : "GPT 음성인식 시작"}
             >
-              {/* 헤더 */}
-              <div className="flex items-center justify-between p-4 border-b border-gray-200 flex-shrink-0">
-                <h3 className="text-lg font-semibold text-gray-900">
-                  음성 입력 연습장
-                </h3>
+              <MicrophoneIcon className="h-8 w-8" />
+            </button>
+            <p className="text-sm text-gray-600 text-center">
+              {isListening
+                ? "GPT가 듣고 있어요..."
+                : "GPT Realtime 마이크로 음성을 입력하세요"}
+            </p>
+          </div>
+
+          {/* 한국어 입력 */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <label className="block text-sm font-medium text-gray-700">
+                한국어 입력
+              </label>
+              <div className="flex items-center space-x-2">
                 <button
-                  onClick={closeDialog}
-                  className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
+                  onClick={() => playText(koreanText)}
+                  disabled={
+                    !koreanText.trim() ||
+                    (isSpeaking && speakingText === koreanText)
+                  }
+                  className="px-2 py-1 bg-green-500 text-white rounded-md text-sm hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center"
+                  title="한국어 음성 재생"
                 >
-                  <XMarkIcon className="h-4 w-4" />
+                  <PlayIcon className="h-3 w-3" />
+                </button>
+                <button
+                  onClick={applyKorean}
+                  disabled={!koreanText.trim()}
+                  className="px-3 py-1 bg-blue-500 text-white rounded-md text-sm hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center space-x-1"
+                >
+                  <PaperAirplaneIcon className="h-3 w-3" />
+                  <span>적용</span>
                 </button>
               </div>
+            </div>
+            <textarea
+              value={koreanText}
+              onChange={(e) => setKoreanText(e.target.value)}
+              placeholder="음성으로 입력되거나 직접 타이핑하세요"
+              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+              rows={4}
+            />
+          </div>
 
-              {/* 컨텐츠 */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-6">
-                {/* 마이크 버튼 (맨 위) */}
-                <div className="flex flex-col items-center space-y-2">
-                  <button
-                    onClick={isListening ? stopListening : startListening}
-                    className={`w-16 h-16 rounded-full flex items-center justify-center transition-all duration-200 ${
-                      isListening
-                        ? "bg-red-500 hover:bg-red-600 text-white animate-pulse"
-                        : "bg-blue-500 hover:bg-blue-600 text-white"
-                    }`}
-                    title={
-                      isListening ? "GPT 음성인식 중지" : "GPT 음성인식 시작"
-                    }
-                  >
-                    <MicrophoneIcon className="h-8 w-8" />
-                  </button>
-                  <p className="text-sm text-gray-600 text-center">
-                    {isListening
-                      ? "GPT가 듣고 있어요..."
-                      : "GPT Realtime 마이크로 음성을 입력하세요"}
-                  </p>
-                </div>
-
-                {/* 한국어 입력 */}
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <label className="block text-sm font-medium text-gray-700">
-                      한국어 입력
-                    </label>
-                    <div className="flex items-center space-x-2">
-                      <button
-                        onClick={() => playText(koreanText)}
-                        disabled={
-                          !koreanText.trim() ||
-                          (isSpeaking && speakingText === koreanText)
-                        }
-                        className="px-2 py-1 bg-green-500 text-white rounded-md text-sm hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center"
-                        title="한국어 음성 재생"
-                      >
-                        <PlayIcon className="h-3 w-3" />
-                      </button>
-                      <button
-                        onClick={applyKorean}
-                        disabled={!koreanText.trim()}
-                        className="px-3 py-1 bg-blue-500 text-white rounded-md text-sm hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center space-x-1"
-                      >
-                        <PaperAirplaneIcon className="h-3 w-3" />
-                        <span>적용</span>
-                      </button>
-                    </div>
-                  </div>
-                  <textarea
-                    value={koreanText}
-                    onChange={(e) => setKoreanText(e.target.value)}
-                    placeholder="음성으로 입력되거나 직접 타이핑하세요"
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-                    rows={4}
-                  />
-                </div>
-
-                {/* 영어 입력 */}
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <label className="block text-sm font-medium text-gray-700">
-                      영어 입력{" "}
-                      {isTranslating && (
-                        <span className="text-blue-500">(번역 중...)</span>
-                      )}
-                    </label>
-                    <div className="flex items-center space-x-2">
-                      <button
-                        onClick={() => playText(englishText)}
-                        disabled={
-                          !englishText.trim() ||
-                          (isSpeaking && speakingText === englishText)
-                        }
-                        className="px-2 py-1 bg-green-500 text-white rounded-md text-sm hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center"
-                        title="영어 음성 재생"
-                      >
-                        <PlayIcon className="h-3 w-3" />
-                      </button>
-                      <button
-                        onClick={applyEnglish}
-                        disabled={!englishText.trim() || isTranslating}
-                        className="px-3 py-1 bg-blue-500 text-white rounded-md text-sm hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center space-x-1"
-                      >
-                        <PaperAirplaneIcon className="h-3 w-3" />
-                        <span>적용</span>
-                      </button>
-                    </div>
-                  </div>
-                  <textarea
-                    value={englishText}
-                    onChange={(e) => setEnglishText(e.target.value)}
-                    placeholder="한글 입력 시 자동으로 영어 번역이 표시됩니다"
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-                    rows={4}
-                  />
-                  {koreanText.trim() && (
-                    <button
-                      onClick={translateToEnglish}
-                      disabled={isTranslating}
-                      className="w-full px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center space-x-2"
-                    >
-                      <LanguageIcon className="h-4 w-4" />
-                      <span>{isTranslating ? "번역 중..." : "다시 번역"}</span>
-                    </button>
-                  )}
-                </div>
+          {/* 영어 입력 */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <label className="block text-sm font-medium text-gray-700">
+                영어 입력{" "}
+                {isTranslating && (
+                  <span className="text-blue-500">(번역 중...)</span>
+                )}
+              </label>
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => playText(englishText)}
+                  disabled={
+                    !englishText.trim() ||
+                    (isSpeaking && speakingText === englishText)
+                  }
+                  className="px-2 py-1 bg-green-500 text-white rounded-md text-sm hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center"
+                  title="영어 음성 재생"
+                >
+                  <PlayIcon className="h-3 w-3" />
+                </button>
+                <button
+                  onClick={applyEnglish}
+                  disabled={!englishText.trim() || isTranslating}
+                  className="px-3 py-1 bg-blue-500 text-white rounded-md text-sm hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center space-x-1"
+                >
+                  <PaperAirplaneIcon className="h-3 w-3" />
+                  <span>적용</span>
+                </button>
               </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            </div>
+            <textarea
+              value={englishText}
+              onChange={(e) => setEnglishText(e.target.value)}
+              placeholder="한글 입력 시 자동으로 영어 번역이 표시됩니다"
+              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+              rows={4}
+            />
+            {koreanText.trim() && (
+              <button
+                onClick={translateToEnglish}
+                disabled={isTranslating}
+                className="w-full px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center space-x-2"
+              >
+                <LanguageIcon className="h-4 w-4" />
+                <span>{isTranslating ? "번역 중..." : "다시 번역"}</span>
+              </button>
+            )}
+          </div>
+        </div>
+      </FullScreenSlideDialog>
     </>
   );
 }
