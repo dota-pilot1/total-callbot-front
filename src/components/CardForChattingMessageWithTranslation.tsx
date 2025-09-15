@@ -214,10 +214,10 @@ export default function CardForChattingMessageWithTranslation({
           {/* 앞면 (원본 메시지) */}
           {!isFlipped && (
             <div
-              className={`px-3 py-2 pb-6 rounded-lg shadow-sm relative ${
+              className={`px-3 py-2 pb-6 rounded-lg shadow-sm relative border ${
                 isUser
-                  ? "bg-indigo-500 text-white"
-                  : "bg-white border border-gray-200 text-gray-900"
+                  ? "border-border bg-muted/70 text-foreground rounded-2xl"
+                  : "border-border bg-card text-foreground"
               }`}
             >
               <p className="text-sm leading-relaxed whitespace-pre-wrap pr-24">
@@ -225,9 +225,7 @@ export default function CardForChattingMessageWithTranslation({
               </p>
               <div className="mt-1">
                 <p
-                  className={`text-xs ${
-                    isUser ? "text-indigo-100" : "text-gray-500"
-                  }`}
+                  className={`text-xs text-muted-foreground`}
                 >
                   {message.timestamp}
                 </p>
@@ -242,11 +240,7 @@ export default function CardForChattingMessageWithTranslation({
                 <button
                   onClick={handleTranslateClick}
                   disabled={isTranslating}
-                  className={`p-1.5 rounded-full border transition-colors ${
-                    isUser
-                      ? "hover:bg-indigo-400 text-indigo-100 border-indigo-200"
-                      : "hover:bg-gray-100 text-gray-600 border-gray-300"
-                  } ${isTranslating ? "opacity-50" : ""}`}
+                  className={`p-1.5 rounded-full border transition-colors text-muted-foreground hover:bg-muted/30 border-border ${isTranslating ? "opacity-50" : ""}`}
                   title="번역"
                 >
                   <LanguageIcon className="h-4 w-4" />
@@ -254,11 +248,7 @@ export default function CardForChattingMessageWithTranslation({
                 <button
                   onClick={handlePlayClick}
                   disabled={isPlaying}
-                  className={`p-1.5 rounded-full border transition-colors ${
-                    isUser
-                      ? "hover:bg-indigo-400 text-indigo-100 border-indigo-200"
-                      : "hover:bg-gray-100 text-gray-600 border-gray-300"
-                  }`}
+                  className={`p-1.5 rounded-full border transition-colors text-muted-foreground hover:bg-muted/30 border-border`}
                   title="음성 재생"
                 >
                   {isPlaying ? (
@@ -269,11 +259,7 @@ export default function CardForChattingMessageWithTranslation({
                 </button>
                 <button
                   onClick={handleSaveClick}
-                  className={`p-1.5 rounded-full border transition-colors ${
-                    isUser
-                      ? "hover:bg-indigo-400 text-indigo-100 border-indigo-200"
-                      : "hover:bg-gray-100 text-gray-600 border-gray-300"
-                  }`}
+                  className={`p-1.5 rounded-full border transition-colors text-muted-foreground hover:bg-muted/30 border-border`}
                   title="저장"
                 >
                   <BookmarkIcon className="h-4 w-4" />

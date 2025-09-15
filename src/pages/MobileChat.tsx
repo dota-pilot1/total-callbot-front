@@ -618,14 +618,14 @@ export default function MobileChat() {
 
       {/* 입력 영역 */}
       {isConnected && (
-        <div className="bg-white border-t border-gray-200 p-4 flex-shrink-0">
+        <div className="bg-card border-t border-border p-4 flex-shrink-0">
           <div className="flex items-center space-x-3">
             {/* 버튼 세로 배치 컨테이너 */}
             <div className="flex flex-col space-y-2">
               {/* 챗봇 제안 버튼 (마이크 대신) */}
               <button
                 onClick={suggestReply}
-                className={`w-10 h-10 rounded-full transition-colors flex items-center justify-center ${suggestLoading ? "bg-indigo-500 text-white animate-pulse" : "bg-gray-100 hover:bg-gray-200 text-gray-600"}`}
+                className={`w-10 h-10 rounded-full transition-colors flex items-center justify-center ${suggestLoading ? "bg-muted/60 text-foreground animate-pulse" : "border border-border bg-muted/30 hover:bg-muted/40 text-muted-foreground"}`}
                 title="AI가 다음 답변을 제안합니다"
                 disabled={suggestLoading}
               >
@@ -634,7 +634,7 @@ export default function MobileChat() {
               {/* 커스텀 질문 생성기 버튼 */}
               <button
                 onClick={() => setCustomQuestionDialogOpen(true)}
-                className="w-10 h-10 rounded-full transition-colors flex items-center justify-center bg-gray-100 hover:bg-gray-200 text-gray-600"
+                className="w-10 h-10 rounded-full transition-colors flex items-center justify-center border border-border bg-muted/30 hover:bg-muted/40 text-muted-foreground"
                 title="커스텀 질문 생성기"
               >
                 🎯
@@ -669,7 +669,7 @@ export default function MobileChat() {
                 placeholder={
                   suggestLoading ? "AI 응답 생성 중…" : "메시지를 입력하세요..."
                 }
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+                className="flex-1 px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring resize-none text-[13px] md:text-sm placeholder:text-muted-foreground"
                 style={{ minHeight: "4.5rem" }}
               />
               {/* 오른쪽 버튼들 (수직 배치) */}
