@@ -337,7 +337,7 @@ export default function MyConversationArchive({
                               onChange={(e) =>
                                 setEditingConversation(e.target.value)
                               }
-                  className="flex-1 rounded-lg border border-border p-3 text-sm focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20 resize-none"
+                              className="flex-1 rounded-lg border border-border p-3 text-sm focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20 resize-none"
                               rows={3}
                             />
                           </div>
@@ -361,91 +361,99 @@ export default function MyConversationArchive({
                         </div>
                       ) : (
                         <>
-                          <p className="text-gray-800 whitespace-pre-wrap leading-relaxed">
-                            {conv.conversation}
-                          </p>
+                          <div className="relative">
+                            <p className="text-gray-800 whitespace-pre-wrap leading-relaxed pr-16">
+                              {conv.conversation}
+                            </p>
+
+                            {/* Action Buttons - 우측 상단 2x2 그리드 */}
+                            <div className="absolute top-1 right-1 grid grid-cols-2 gap-0.5">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => startEditing(conv)}
+                                className="w-6 h-6 p-0"
+                                title="수정"
+                              >
+                                <PencilIcon className="h-2.5 w-2.5" />
+                              </Button>
+
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() =>
+                                  handleTranslate(conv.id, conv.conversation)
+                                }
+                                disabled={translatingIds.has(conv.id)}
+                                className="w-6 h-6 p-0"
+                                title={
+                                  translatedTexts[conv.id]
+                                    ? "번역 숨기기"
+                                    : "번역"
+                                }
+                              >
+                                {translatingIds.has(conv.id) ? (
+                                  <div className="animate-spin rounded-full h-2.5 w-2.5 border border-current border-t-transparent" />
+                                ) : (
+                                  <LanguageIcon className="h-2.5 w-2.5" />
+                                )}
+                              </Button>
+
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() =>
+                                  handlePlayPause(conv.id, conv.conversation)
+                                }
+                                className="w-6 h-6 p-0"
+                                title={playingId === conv.id ? "중지" : "듣기"}
+                              >
+                                {playingId === conv.id ? (
+                                  <PauseIcon className="h-2.5 w-2.5" />
+                                ) : (
+                                  <PlayIcon className="h-2.5 w-2.5" />
+                                )}
+                              </Button>
+
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() =>
+                                  handleUseConversation(conv.conversation)
+                                }
+                                className="w-6 h-6 p-0"
+                                title="사용하기"
+                              >
+                                <PaperAirplaneIcon className="h-2.5 w-2.5" />
+                              </Button>
+                            </div>
+                          </div>
+
                           {translatedTexts[conv.id] && (
-                            <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                            <div className="p-3 bg-blue-50 rounded-lg border border-blue-200 relative mt-3">
                               <p className="text-blue-800 text-sm font-medium mb-1">
                                 번역:
                               </p>
-                              <p className="text-blue-700">
+                              <p className="text-blue-700 pr-10">
                                 {translatedTexts[conv.id]}
                               </p>
-                            </div>
-                          )}
 
-                          {/* Action Buttons */}
-                          <div className="flex flex-wrap gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => startEditing(conv)}
-                            >
-                              <PencilIcon className="h-3 w-3 mr-1" />
-                              수정
-                            </Button>
-
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() =>
-                                handleTranslate(conv.id, conv.conversation)
-                              }
-                              disabled={translatingIds.has(conv.id)}
-                            >
-                              {translatingIds.has(conv.id) ? (
-                                <div className="animate-spin rounded-full h-3 w-3 border-b border-current mr-1" />
-                              ) : (
-                                <LanguageIcon className="h-3 w-3 mr-1" />
-                              )}
-                              {translatedTexts[conv.id]
-                                ? "번역 숨기기"
-                                : "번역"}
-                            </Button>
-
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() =>
-                                handlePlayPause(conv.id, conv.conversation)
-                              }
-                            >
-                              {playingId === conv.id ? (
-                                <PauseIcon className="h-3 w-3 mr-1" />
-                              ) : (
-                                <PlayIcon className="h-3 w-3 mr-1" />
-                              )}
-                              {playingId === conv.id ? "중지" : "듣기"}
-                            </Button>
-
-                            {translatedTexts[conv.id] && (
+                              {/* 번역문 사용 버튼 */}
                               <Button
-                                variant="secondary"
+                                variant="outline"
                                 size="sm"
                                 onClick={() =>
                                   handleUseConversation(
                                     translatedTexts[conv.id],
                                   )
                                 }
+                                className="absolute top-2 right-2 w-8 h-8 p-0"
+                                title="번역문 사용"
                               >
-                                <ArrowsRightLeftIcon className="h-3 w-3 mr-1" />
-                                번역문 사용
+                                <ArrowsRightLeftIcon className="h-3 w-3" />
                               </Button>
-                            )}
-
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() =>
-                                handleUseConversation(conv.conversation)
-                              }
-                              className="bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100"
-                            >
-                              <PaperAirplaneIcon className="h-3 w-3 mr-1" />
-                              사용하기
-                            </Button>
-                          </div>
+                            </div>
+                          )}
                         </>
                       )}
                     </div>

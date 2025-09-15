@@ -49,9 +49,14 @@ export default function Login() {
     <div className="min-h-screen bg-background">
       <div className="flex items-center justify-center min-h-screen px-4 py-8">
         <div className="w-full max-w-sm">
-          <div className="rounded-lg border bg-card p-8 shadow-lg">
+          <div className="rounded-lg border bg-card p-6 shadow-lg">
+            {/* 브랜드 라인 (심플, 공간 채움) */}
+            <div className="flex items-center gap-3 mb-3">
+              <img src="/gpt-star.jpeg" alt="콜봇" className="h-6 w-6 rounded-md object-cover" />
+              <span className="text-xs font-medium text-muted-foreground">Total Callbot</span>
+            </div>
             {/* 소개 탭 (챗봇/채팅 간략 소개) */}
-            <div className="mb-4">
+            <div className="mb-3">
               <div className="flex gap-2 border-b border-border">
                 <button
                   type="button"
@@ -86,11 +91,11 @@ export default function Login() {
             </div>
 
             {/* 서비스 선택 */}
-            <div className="grid grid-cols-2 gap-3 mb-6 bg-muted/20 p-2 rounded-xl">
+            <div className="grid grid-cols-2 gap-2 mb-4 bg-muted/20 p-2 rounded-xl">
               <button
                 onClick={() => setSelectedService("chatbot")}
                 aria-pressed={selectedService === "chatbot"}
-                className={`relative flex flex-col items-center p-4 rounded-lg border-2 transition-colors duration-200 ${
+                className={`relative flex flex-col items-center p-3 rounded-lg border-2 transition-colors duration-200 ${
                   selectedService === "chatbot"
                     ? "border-primary bg-muted/60 text-foreground shadow-md ring-1 ring-primary/30"
                     : "border-border hover:bg-muted/30 hover:text-foreground hover:border-primary/30"
@@ -109,7 +114,7 @@ export default function Login() {
               <button
                 onClick={() => setSelectedService("chat")}
                 aria-pressed={selectedService === "chat"}
-                className={`relative flex flex-col items-center p-4 rounded-lg border-2 transition-colors duration-200 ${
+                className={`relative flex flex-col items-center p-3 rounded-lg border-2 transition-colors duration-200 ${
                   selectedService === "chat"
                     ? "border-primary bg-muted/60 text-foreground shadow-md ring-1 ring-primary/30"
                     : "border-border hover:bg-muted/30 hover:text-foreground hover:border-primary/30"
@@ -123,8 +128,8 @@ export default function Login() {
             </div>
 
             {/* 로그인 폼 */}
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
+            <form onSubmit={handleSubmit} className="space-y-3">
+              <div className="space-y-1">
                 <label
                   htmlFor="email"
                   className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
@@ -136,13 +141,13 @@ export default function Login() {
                   id="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="flex h-10 w-full rounded-md border border-border bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                   placeholder="your@email.com"
                   required
                 />
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-1">
                 <label
                   htmlFor="password"
                   className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
@@ -156,10 +161,11 @@ export default function Login() {
                   placeholder="••••••••"
                   required
                   autoComplete="current-password"
+                  className="border border-border"
                 />
               </div>
 
-              <Button type="submit" disabled={isLoading} className="w-full h-12" variant="secondary">
+              <Button type="submit" disabled={isLoading} className="w-full h-11" variant="outline">
                 <span className="flex items-center justify-center space-x-2">
                   <span>{isLoading ? "로그인 중..." : "로그인"}</span>
                   {!isLoading && <ArrowRightIcon className="h-4 w-4" />}
