@@ -30,117 +30,39 @@ import {
   VOICE_OPTIONS,
   useCharacterSelection,
 } from "../features/chatbot/character";
+import { useWebSocketStore } from "../features/websocket/stores/useWebSocketStore";
 import MobileTranslationDialog from "../components/MobileTranslationDialog";
 import CustomQuestionGenerator from "../components/CustomQuestionGenerator";
 import CardForChattingMessageWithTranslation from "../components/CardForChattingMessageWithTranslation";
 import { MyConversationArchive } from "../features/conversation-archive";
 import { useExamMode } from "../features/chatbot/exam";
 import { useAudioSettings } from "../features/chatbot/settings";
-import { useConnectionState } from "../features/chatbot/connection";
-
-// STOMP와 SockJS 라이브러리 임포트
-declare global {
-  interface Window {
-    SockJS: any;
-    Stomp: any;
-  }
-}
 
 export default function MobileChat() {
-  const { logout } = useAuthStore();
+  const { logout, getUser } = useAuthStore();
+  const user = getUser();
   const navigate = useNavigate();
 
-  // 사용자 정보 상태
+  // WebSocket Store 사용 (중복 연결 제거)
+  const { participantCount, connected, connecting, connect, disconnect } =
+    useWebSocketStore();
 
-  // 채팅 참여자 수 상태
-  const [chatParticipantCount, setChatParticipantCount] = useState(0);
-
-  // 채팅 참여자 수 추적 (WebSocket)
+  // WebSocket 연결 초기화
   useEffect(() => {
-    let stompClient: any = null;
-
-    const connectToChatRoom = async () => {
-      // CDN에서 라이브러리 로드
-      if (!window.SockJS) {
-        const sockjsScript = document.createElement("script");
-        sockjsScript.src =
-          "https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js";
-        document.head.appendChild(sockjsScript);
-        await new Promise((resolve) => {
-          sockjsScript.onload = resolve;
-        });
-      }
-      if (!window.Stomp) {
-        const stompScript = document.createElement("script");
-        stompScript.src =
-          "https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js";
-        document.head.appendChild(stompScript);
-        await new Promise((resolve) => {
-          stompScript.onload = resolve;
-        });
-      }
-
-      // WebSocket 연결 (참여자 수 추적용)
-      const host = window.location.hostname;
-      const isLocal = host === "localhost" || host === "127.0.0.1";
-      const wsUrl = isLocal
-        ? "http://localhost:8080/ws-stomp"
-        : "https://api.total-callbot.cloud/ws-stomp";
-
-      const socket = new window.SockJS(wsUrl);
-      const client = window.Stomp.over(socket);
-
-      client.connect(
-        {},
-        () => {
-          stompClient = client;
-
-          // 참여자 수 구독 - 정확한 백엔드 API 사용
-          client.subscribe("/topic/participant-count", (message: any) => {
-            const participantData = JSON.parse(message.body);
-            setChatParticipantCount(participantData.count || 0);
-          });
-
-          // 현재 참여자 수 요청
-          client.send("/app/chat/participant-count", {}, {});
-        },
-        (error: any) => {
-          console.error("Chat participant tracking connection error:", error);
-        },
-      );
-    };
-
-    connectToChatRoom();
+    if (user && !connected) {
+      connect("general", user.name, user.email, "전체 채팅");
+    }
 
     // 컴포넌트 언마운트 시 연결 해제
     return () => {
-      if (stompClient) {
-        stompClient.disconnect();
+      if (connected) {
+        disconnect();
       }
     };
-  }, []);
-
-  // 기본 챗봇 설정 (선택 없이 바로 연결)
-  const defaultChatbot = {
-    id: "total-callbot",
-    name: "Total Callbot",
-    description: "AI 음성 대화 전문 어시스턴트",
-    color: "from-indigo-500 to-purple-600",
-  };
+  }, [user, connected, connect, disconnect]);
 
   // zustand store에서 캐릭터 상태 가져오기
   const { personaCharacter, personaGender } = useCharacterStore();
-
-  // 채팅방 연결 상태 훅
-  const {
-    isConnected,
-    isConnecting,
-    connectToChatRoom,
-    disconnect,
-    ensureChatRoomConnected,
-  } = useConnectionState({
-    chatbotConfig: defaultChatbot,
-  });
 
   // 오디오 설정 훅 (responseDelayMs: 2초로 설정하여 사용자 메시지 등록 후 적절한 대기시간 제공)
   const {
@@ -275,8 +197,15 @@ export default function MobileChat() {
   const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
   const ensureConnectedAndReady = async () => {
-    // Ensure chat room joined (using connection hook)
-    await ensureChatRoomConnected();
+    // Ensure WebSocket connection
+    if (user && !connected) {
+      connect("general", user.name, user.email, "전체 채팅");
+      // Wait for connection
+      for (let i = 0; i < 20; i++) {
+        if (connected) break;
+        await sleep(200);
+      }
+    }
 
     // Ensure voice connection
     if (!voiceEnabled || !voiceConn) {
@@ -332,9 +261,9 @@ export default function MobileChat() {
                 size="sm"
               >
                 <ChatBubbleLeftRightIcon className="h-3 w-3" />
-                {chatParticipantCount >= 0 && (
+                {participantCount >= 0 && (
                   <span className="absolute -top-1 -right-1 min-w-[0.75rem] h-3 text-[10px] font-medium text-primary-foreground bg-primary rounded-full flex items-center justify-center px-0.5">
-                    {chatParticipantCount}
+                    {participantCount}
                   </span>
                 )}
               </Button>
@@ -392,7 +321,7 @@ export default function MobileChat() {
       {/* 챗봇 정보 및 연결 상태 */}
       <div className="bg-card border-b border-border p-4 flex-shrink-0">
         <div className="text-center">
-          {/* <p className="text-sm text-gray-600 mb-3">{defaultChatbot.description}</p> */}
+          {/* <p className="text-sm text-gray-600 mb-3">AI 음성 대화 전문 어시스턴트</p> */}
 
           {/* 상단 배지는 제거하고, 마이크/버튼에 상태 점을 오버레이로 표시 */}
           <div className="mb-2" />
@@ -421,13 +350,13 @@ export default function MobileChat() {
                   </div>
                   <span
                     className={`absolute -top-1 -right-1 w-3 h-3 rounded-full ring-2 ring-card ${
-                      isConnecting
+                      connecting
                         ? "bg-amber-500 animate-pulse"
                         : isListening
                           ? "bg-red-500 animate-pulse"
                           : isResponding
                             ? "bg-blue-500 animate-pulse"
-                            : isConnected
+                            : connected
                               ? "bg-emerald-500"
                               : "bg-gray-400"
                     }`}
@@ -452,7 +381,7 @@ export default function MobileChat() {
                 </Button>
 
                 {/* 대화 내용 클리어 버튼 (연결된 상태에서만) */}
-                {isConnected && (
+                {connected && (
                   <Button
                     onClick={clearChat}
                     variant="outline"
@@ -469,7 +398,7 @@ export default function MobileChat() {
                   variant="outline"
                   size="sm"
                   className="w-12 h-12 p-0"
-                  disabled={isConnecting || examSending}
+                  disabled={connecting || examSending}
                   title="시험 모드 시작"
                 >
                   <span className="text-sm font-bold">
@@ -492,15 +421,9 @@ export default function MobileChat() {
                 <div className="relative inline-block">
                   <Button
                     onClick={async () => {
-                      // 채팅방 연결 (훅 사용)
-                      if (!isConnected) {
-                        try {
-                          await connectToChatRoom();
-                        } catch (error) {
-                          console.error("채팅방 연결 실패:", error);
-                          alert("채팅방 연결에 실패했습니다.");
-                          return;
-                        }
+                      // WebSocket 연결 확인 (자동으로 useEffect에서 처리됨)
+                      if (user && !connected) {
+                        connect("general", user.name, user.email, "전체 채팅");
                       }
 
                       // 음성 시작
@@ -512,19 +435,19 @@ export default function MobileChat() {
                     variant="outline"
                     size="sm"
                     className="h-12 px-6 text-sm"
-                    disabled={isConnecting}
+                    disabled={connecting}
                   >
-                    {isConnecting ? "연결중..." : "Start"}
+                    {connecting ? "연결중..." : "Start"}
                   </Button>
                   <span
                     className={`absolute -top-1 -right-1 w-3 h-3 rounded-full ring-2 ring-card ${
-                      isConnecting
+                      connecting
                         ? "bg-amber-500 animate-pulse"
                         : isListening
                           ? "bg-red-500 animate-pulse"
                           : isResponding
                             ? "bg-blue-500 animate-pulse"
-                            : isConnected
+                            : connected
                               ? "bg-emerald-500"
                               : "bg-gray-400"
                     }`}
@@ -617,7 +540,7 @@ export default function MobileChat() {
       </div>
 
       {/* 입력 영역 */}
-      {isConnected && (
+      {connected && (
         <div className="bg-card border-t border-border p-4 flex-shrink-0">
           <div className="flex items-center space-x-2">
             {/* 왼쪽 미니 버튼들 */}
