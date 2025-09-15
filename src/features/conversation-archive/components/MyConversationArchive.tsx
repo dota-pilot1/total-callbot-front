@@ -305,26 +305,26 @@ export default function MyConversationArchive({
                             {conv.conversationCategory} #{index + 1}
                           </span>
                         </div>
-                        <div className="flex">
+                        <div className="flex gap-1">
                           <Button
                             variant="outline"
                             size="icon"
                             onClick={() =>
                               handleUseConversation(conv.conversation)
                             }
-                            className="h-8 w-8"
+                            className="h-6 w-6"
                             title="사용하기"
                           >
-                            <PaperAirplaneIcon className="h-4 w-4" />
+                            <PaperAirplaneIcon className="h-3 w-3" />
                           </Button>
 
                           <Button
                             variant="outline"
                             size="icon"
                             onClick={() => handleDeleteConversation(conv.id)}
-                            className="h-8 w-8 -ml-px"
+                            className="h-6 w-6"
                           >
-                            <TrashIcon className="h-4 w-4" />
+                            <TrashIcon className="h-3 w-3" />
                           </Button>
                         </div>
                       </div>

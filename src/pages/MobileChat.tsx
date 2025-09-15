@@ -620,88 +620,85 @@ export default function MobileChat() {
       {/* 입력 영역 */}
       {isConnected && (
         <div className="bg-card border-t border-border p-4 flex-shrink-0">
-          <div className="flex items-center space-x-3">
-            {/* 버튼 세로 배치 컨테이너 */}
-            <div className="flex flex-col space-y-2">
-              {/* 챗봇 제안 버튼 (마이크 대신) */}
+          <div className="flex items-center space-x-2">
+            {/* 왼쪽 미니 버튼들 */}
+            <div className="flex flex-col space-y-1">
               <Button
                 onClick={suggestReply}
                 variant="outline"
                 size="sm"
-                className={`w-12 h-12 p-0 ${suggestLoading ? "animate-pulse" : ""}`}
-                title="AI가 다음 답변을 제안합니다"
+                className={`w-8 h-8 p-0 ${suggestLoading ? "animate-pulse" : ""}`}
+                title="AI 제안"
                 disabled={suggestLoading}
               >
-                <SparklesIcon className="h-5 w-5" />
+                <SparklesIcon className="h-3 w-3" />
               </Button>
-              {/* 커스텀 질문 생성기 버튼 */}
+
               <Button
                 onClick={() => setCustomQuestionDialogOpen(true)}
                 variant="outline"
                 size="sm"
-                className="w-12 h-12 p-0"
-                title="커스텀 질문 생성기"
+                className="w-8 h-8 p-0"
+                title="질문 생성"
               >
-                🎯
+                <span className="text-xs">🎯</span>
               </Button>
             </div>
 
             {/* 텍스트 입력 */}
-            <div className="flex-1 flex items-center space-x-2">
-              <textarea
-                rows={3}
-                value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-                onCompositionStart={() => setIsIMEComposing(true)}
-                onCompositionEnd={() => setIsIMEComposing(false)}
-                onKeyDown={(e) => {
-                  const anyEvt = e.nativeEvent as any;
-                  const composing =
-                    isIMEComposing ||
-                    anyEvt?.isComposing ||
-                    anyEvt?.keyCode === 229;
-                  if (
-                    e.key === "Enter" &&
-                    !e.shiftKey &&
-                    !composing &&
-                    !examSending &&
-                    !suggestLoading
-                  ) {
-                    e.preventDefault();
-                    sendMessage();
-                  }
-                }}
-                placeholder={
-                  suggestLoading ? "AI 응답 생성 중…" : "메시지를 입력하세요..."
+            <textarea
+              rows={3}
+              value={newMessage}
+              onChange={(e) => setNewMessage(e.target.value)}
+              onCompositionStart={() => setIsIMEComposing(true)}
+              onCompositionEnd={() => setIsIMEComposing(false)}
+              onKeyDown={(e) => {
+                const anyEvt = e.nativeEvent as any;
+                const composing =
+                  isIMEComposing ||
+                  anyEvt?.isComposing ||
+                  anyEvt?.keyCode === 229;
+                if (
+                  e.key === "Enter" &&
+                  !e.shiftKey &&
+                  !composing &&
+                  !examSending &&
+                  !suggestLoading
+                ) {
+                  e.preventDefault();
+                  sendMessage();
                 }
-                className="flex-1 px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring resize-none text-[13px] md:text-sm placeholder:text-muted-foreground"
-                style={{ minHeight: "4.5rem" }}
-              />
-              {/* 오른쪽 버튼들 (수직 배치) */}
-              <div className="flex flex-col space-y-2">
-                {/* 번역 버튼 */}
-                <Button
-                  onClick={() => openTranslation(newMessage)}
-                  disabled={!newMessage.trim()}
-                  variant="outline"
-                  size="sm"
-                  className="w-12 h-12 p-0 text-green-600 border-green-300 hover:bg-green-50"
-                  title="입력 텍스트 번역하기"
-                >
-                  <LanguageIcon className="h-4 w-4" />
-                </Button>
+              }}
+              placeholder={
+                suggestLoading ? "AI 응답 생성 중…" : "메시지를 입력하세요..."
+              }
+              className="flex-1 px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring resize-none text-[13px] md:text-sm placeholder:text-muted-foreground"
+              style={{ minHeight: "4.5rem" }}
+            />
 
-                {/* 전송 버튼 */}
-                <Button
-                  onClick={sendMessage}
-                  disabled={!newMessage.trim() || examSending || suggestLoading}
-                  variant="outline"
-                  size="sm"
-                  className="w-12 h-12 p-0"
-                >
-                  <PaperAirplaneIcon className="h-4 w-4" />
-                </Button>
-              </div>
+            {/* 오른쪽 미니 버튼들 */}
+            <div className="flex flex-col space-y-1">
+              <Button
+                onClick={() => openTranslation(newMessage)}
+                disabled={!newMessage.trim()}
+                variant="outline"
+                size="sm"
+                className="w-8 h-8 p-0"
+                title="번역"
+              >
+                <LanguageIcon className="h-3 w-3" />
+              </Button>
+
+              <Button
+                onClick={sendMessage}
+                disabled={!newMessage.trim() || examSending || suggestLoading}
+                variant="outline"
+                size="sm"
+                className="w-8 h-8 p-0"
+                title="전송"
+              >
+                <PaperAirplaneIcon className="h-3 w-3" />
+              </Button>
             </div>
           </div>
         </div>
