@@ -13,6 +13,8 @@ export interface UseChatMessagesOptions {
   onSendMessage?: (text: string) => void; // 메시지 전송 시 콜백 (음성 연결 등)
   responseDelayMs?: number; // 시뮬레이션 응답 지연 (기본값: 3초)
   selectedCharacterId?: string; // AI 제안 시 캐릭터 컨텍스트
+  maxSentenceCount?: number; // 최대 응답 문장 수 (기본값: 3)
+  englishLevel?: "beginner" | "intermediate" | "advanced"; // 영어 수준 (기본값: beginner)
 }
 
 export interface UseChatMessagesReturn {
@@ -46,6 +48,8 @@ export const useChatMessages = (
     onSendMessage,
     responseDelayMs = 3000,
     selectedCharacterId,
+    maxSentenceCount = 3,
+    englishLevel = "beginner",
   } = options;
 
   // 채팅 메시지 상태들
@@ -150,14 +154,48 @@ export const useChatMessages = (
         ? `Selected Character: ${selectedCharacterId}`
         : "";
 
+      const levelDescriptions = {
+        beginner:
+          "Use simple words, basic grammar, and common everyday expressions. Avoid complex vocabulary or advanced grammar structures.",
+        intermediate:
+          "Use moderate vocabulary and grammar. Include some less common words but keep sentences clear and understandable.",
+        advanced:
+          "Use sophisticated vocabulary and complex grammar structures. Feel free to use idiomatic expressions and advanced concepts.",
+      };
+
+      // 캐릭터별 질문 제안 가이드
+      const getCharacterQuestionGuide = (characterId: string) => {
+        const guides = {
+          "steve-jobs":
+            "Ask about innovation, technology, Apple products, design philosophy, entrepreneurship, or personal motivation",
+          "kim-jong-un":
+            "Ask about leadership, North Korea, policies, international relations, or personal interests",
+          spark:
+            "Ask about AI technology, machine learning, digital transformation, or future predictions",
+          buddy:
+            "Ask casual, friendly questions about daily life, hobbies, entertainment, or general conversation topics",
+        };
+        return (
+          guides[characterId as keyof typeof guides] ||
+          "Ask engaging questions that match the character's background and expertise"
+        );
+      };
+
+      const characterQuestionGuide = selectedCharacterId
+        ? getCharacterQuestionGuide(selectedCharacterId)
+        : "";
+
       const enhancedContext = `${characterInfo ? characterInfo + "\n\n" : ""}Recent conversation:
 ${tail}
 
-Please suggest an appropriate question or response that:
-1. Continues the conversation naturally
-2. Is relevant to the selected character (if any)
-3. Encourages meaningful dialogue
-4. Considers the character's historical background, expertise, or personality`;
+Please suggest an appropriate QUESTION (not response) for the user to ask that:
+1. ${characterQuestionGuide}
+2. Continues the conversation naturally based on recent messages
+3. Is engaging and encourages meaningful dialogue
+4. Considers the selected character's expertise, background, or personality traits
+5. IMPORTANT: Keep your suggestion to MAXIMUM ${maxSentenceCount} sentence${maxSentenceCount > 1 ? "s" : ""} for English conversation practice
+6. LANGUAGE LEVEL: ${englishLevel.toUpperCase()} - ${levelDescriptions[englishLevel]}
+7. FORMAT: Provide only the question/statement the user should ask, without explanations or additional text`;
 
       const resp = await examApi.getSampleAnswers({
         question,

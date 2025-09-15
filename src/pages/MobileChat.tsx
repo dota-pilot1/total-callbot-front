@@ -71,6 +71,8 @@ export default function MobileChat() {
       coalesceDelayMs,
       responseDelayMs,
       debugEvents,
+      maxSentenceCount,
+      englishLevel,
     },
     setSpeechLang,
     setEchoCancellation,
@@ -79,6 +81,8 @@ export default function MobileChat() {
     setCoalesceDelayMs,
     setResponseDelayMs,
     setDebugEvents,
+    setMaxSentenceCount,
+    setEnglishLevel,
   } = useAudioSettings();
   const [settingsOpen, setSettingsOpen] = useState(false);
 
@@ -127,6 +131,8 @@ export default function MobileChat() {
   } = useChatMessages({
     responseDelayMs,
     selectedCharacterId,
+    maxSentenceCount,
+    englishLevel,
     onSendMessage: (text: string) => {
       // 음성 연결이 있으면 음성으로 전송
       try {
@@ -659,6 +665,10 @@ export default function MobileChat() {
         onResponseDelayChange={setResponseDelayMs}
         debugEvents={debugEvents}
         onDebugEventsChange={setDebugEvents}
+        maxSentenceCount={maxSentenceCount}
+        onMaxSentenceCountChange={setMaxSentenceCount}
+        englishLevel={englishLevel}
+        onEnglishLevelChange={setEnglishLevel}
         onClearChat={clearChat}
       />
 

@@ -27,6 +27,12 @@ interface MobileSettingsDropdownProps {
   onResponseDelayChange: (ms: number) => void;
   debugEvents: boolean;
   onDebugEventsChange: (enabled: boolean) => void;
+  maxSentenceCount: number;
+  onMaxSentenceCountChange: (count: number) => void;
+  englishLevel: "beginner" | "intermediate" | "advanced";
+  onEnglishLevelChange: (
+    level: "beginner" | "intermediate" | "advanced",
+  ) => void;
   onClearChat: () => void;
 }
 
@@ -55,6 +61,10 @@ export default function MobileSettingsDropdown({
   onResponseDelayChange,
   debugEvents: _debugEvents,
   onDebugEventsChange: _onDebugEventsChange,
+  maxSentenceCount,
+  onMaxSentenceCountChange,
+  englishLevel,
+  onEnglishLevelChange,
   onClearChat: _onClearChat,
 }: MobileSettingsDropdownProps) {
   // 토글 스위치 컴포넌트
@@ -133,14 +143,14 @@ export default function MobileSettingsDropdown({
                 <h4 className="text-md font-medium text-gray-900 border-b border-gray-200 pb-2">
                   캐릭터 선택
                 </h4>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-5 gap-2">
                   {characterOptions.map((c) => {
                     const selected = c.id === selectedCharacterId;
                     return (
                       <button
                         key={c.id}
                         onClick={() => onSelectCharacter(c.id)}
-                        className={`flex flex-col items-center justify-center rounded-md border text-xs py-2 transition-colors ${
+                        className={`flex flex-col items-center justify-center rounded-md border text-xs py-1 transition-colors ${
                           selected
                             ? "border-blue-500 bg-blue-50 text-gray-900 ring-1 ring-blue-200"
                             : "border-gray-200 bg-gray-50 text-gray-600 hover:bg-gray-100"
@@ -148,8 +158,10 @@ export default function MobileSettingsDropdown({
                         style={{ aspectRatio: "1 / 1" }}
                         title={c.name}
                       >
-                        <div className="text-lg mb-1">{c.emoji || "🤖"}</div>
-                        <div className="truncate max-w-[3.2rem]">{c.name}</div>
+                        <div className="text-sm mb-0.5">{c.emoji || "🤖"}</div>
+                        <div className="truncate max-w-[2.5rem] text-xs">
+                          {c.name}
+                        </div>
                       </button>
                     );
                   })}
@@ -256,6 +268,68 @@ export default function MobileSettingsDropdown({
                     />
                   </div>
                 ))}
+              </div>
+
+              {/* 영어 회화 설정 */}
+              <div className="space-y-4">
+                <h4 className="text-md font-medium text-gray-900 border-b border-gray-200 pb-2">
+                  📚 영어 회화 설정
+                </h4>
+
+                {/* 영어 수준 설정 */}
+                <div className="flex items-center justify-between py-2">
+                  <div className="flex-1">
+                    <div className="font-medium text-gray-900">영어 수준</div>
+                    <div className="text-sm text-gray-600">
+                      초보자/중급자/고급자 수준에 맞는 어휘와 문법 사용
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <select
+                      value={englishLevel}
+                      onChange={(e) =>
+                        onEnglishLevelChange(
+                          e.target.value as
+                            | "beginner"
+                            | "intermediate"
+                            | "advanced",
+                        )
+                      }
+                      className="px-3 py-1 rounded border border-gray-300 text-sm"
+                    >
+                      <option value="beginner">초보자</option>
+                      <option value="intermediate">중급자</option>
+                      <option value="advanced">고급자</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* 영어 답변 문장 수 제한 */}
+                <div className="flex items-center justify-between py-2">
+                  <div className="flex-1">
+                    <div className="font-medium text-gray-900">
+                      영어 답변 문장 수 제한
+                    </div>
+                    <div className="text-sm text-gray-600">
+                      초중고 영어 회화 연습을 위한 간결한 답변 (1-5문장)
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <select
+                      value={maxSentenceCount}
+                      onChange={(e) =>
+                        onMaxSentenceCountChange(Number(e.target.value))
+                      }
+                      className="px-3 py-1 rounded border border-gray-300 text-sm"
+                    >
+                      <option value={1}>1문장</option>
+                      <option value={2}>2문장</option>
+                      <option value={3}>3문장</option>
+                      <option value={4}>4문장</option>
+                      <option value={5}>5문장</option>
+                    </select>
+                  </div>
+                </div>
               </div>
 
               {/* 고급 설정 */}

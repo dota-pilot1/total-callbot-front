@@ -9,6 +9,8 @@ export interface AudioSettings {
   coalesceDelayMs: number;
   responseDelayMs: number;
   debugEvents: boolean;
+  maxSentenceCount: number;
+  englishLevel: "beginner" | "intermediate" | "advanced";
 }
 
 // 기본 오디오 설정값
@@ -20,6 +22,8 @@ const DEFAULT_AUDIO_SETTINGS: AudioSettings = {
   coalesceDelayMs: 800,
   responseDelayMs: 2000, // 2초 지연 (사용자 메시지 등록 후 적절한 대기시간)
   debugEvents: false,
+  maxSentenceCount: 3, // 초중고 영어 회화용 기본 3문장 제한
+  englishLevel: "beginner", // 초보자 수준으로 기본 설정
 };
 
 export interface UseAudioSettingsReturn {
@@ -34,6 +38,8 @@ export interface UseAudioSettingsReturn {
   setCoalesceDelayMs: (value: number) => void;
   setResponseDelayMs: (value: number) => void;
   setDebugEvents: (value: boolean) => void;
+  setMaxSentenceCount: (value: number) => void;
+  setEnglishLevel: (value: "beginner" | "intermediate" | "advanced") => void;
 
   // 편의 함수들
   updateSetting: <K extends keyof AudioSettings>(
@@ -99,6 +105,19 @@ export const useAudioSettings = (
     setSettings((prev) => ({ ...prev, debugEvents: value }));
   }, []);
 
+  const setMaxSentenceCount = useCallback((value: number) => {
+    // 범위 검증 (1-5문장)
+    const clampedValue = Math.max(1, Math.min(5, value));
+    setSettings((prev) => ({ ...prev, maxSentenceCount: clampedValue }));
+  }, []);
+
+  const setEnglishLevel = useCallback(
+    (value: "beginner" | "intermediate" | "advanced") => {
+      setSettings((prev) => ({ ...prev, englishLevel: value }));
+    },
+    [],
+  );
+
   // 범용 설정 업데이트 함수
   const updateSetting = useCallback(
     <K extends keyof AudioSettings>(key: K, value: AudioSettings[K]) => {
@@ -133,6 +152,8 @@ export const useAudioSettings = (
     setCoalesceDelayMs,
     setResponseDelayMs,
     setDebugEvents,
+    setMaxSentenceCount,
+    setEnglishLevel,
     updateSetting,
     resetToDefaults,
     resetVoiceSettings,
