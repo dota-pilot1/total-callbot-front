@@ -170,7 +170,7 @@ function RoomCard({
       </div>
       <div className="flex space-x-2">
         <Button
-          onClick={() => onJoin(room.roomId || room.id, room.name)}
+          onClick={() => onJoin(room.roomId || room.id)}
           size="sm"
           className="flex-1"
           disabled={(room.participantCount || 0) >= room.maxParticipants}

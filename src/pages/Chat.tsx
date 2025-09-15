@@ -102,7 +102,7 @@ export default function Chat() {
     sendMessage,
     setCurrentRoom,
     toggleParticipantList,
-    requestParticipantCount,
+    // requestParticipantCount,
   } = useWebSocketStore();
 
   // 입력 상태
@@ -185,9 +185,9 @@ export default function Chat() {
   };
 
   // 다시 연결 핸들러
-  const handleReconnect = () => {
-    connect(targetRoomId, currentUserName, userEmail);
-  };
+  // const handleReconnect = () => {
+  //   connect(targetRoomId, currentUserName, userEmail);
+  // };
 
   // 채팅방 나가기 핸들러
   const handleLeave = () => {

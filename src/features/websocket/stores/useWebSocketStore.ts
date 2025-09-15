@@ -143,7 +143,7 @@ export const useWebSocketStore = create<WebSocketState>((set, get) => ({
         console.log("📨 Subscription created:", subscription);
 
         // 참여자 수 구독
-        const participantSubscription = client.subscribe(
+        client.subscribe(
           roomId === "general"
             ? "/topic/participant-count"
             : `/topic/participant-count/${roomId}`,
@@ -278,7 +278,7 @@ export const useWebSocketStore = create<WebSocketState>((set, get) => ({
     const { messages } = get();
 
     // 최근 5초 이내의 동일한 시스템 메시지가 있는지 확인
-    const fiveSecondsAgo = Date.now() - 5000;
+    // const fiveSecondsAgo = Date.now() - 5000;
     const recentDuplicate = messages.find(
       (msg) =>
         msg.senderName === "시스템" &&

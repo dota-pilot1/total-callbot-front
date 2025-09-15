@@ -1,16 +1,22 @@
-import React, { useEffect, useState } from 'react';
-import { createPortal } from 'react-dom';
-import { XMarkIcon } from '@heroicons/react/24/outline';
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
+import { XMarkIcon } from "@heroicons/react/24/outline";
 
 export interface ToastProps {
   id: string;
   message: string;
-  type?: 'info' | 'success' | 'warning' | 'error';
+  type?: "info" | "success" | "warning" | "error";
   duration?: number;
   onClose: (id: string) => void;
 }
 
-export function Toast({ id, message, type = 'info', duration = 2000, onClose }: ToastProps) {
+export function Toast({
+  id,
+  message,
+  type = "info",
+  duration = 2000,
+  onClose,
+}: ToastProps) {
   const [isVisible, setIsVisible] = useState(true);
   const [isAnimating, setIsAnimating] = useState(false);
 
@@ -36,14 +42,14 @@ export function Toast({ id, message, type = 'info', duration = 2000, onClose }: 
 
   const getTypeStyles = () => {
     switch (type) {
-      case 'success':
-        return 'bg-green-500 text-white';
-      case 'warning':
-        return 'bg-yellow-500 text-white';
-      case 'error':
-        return 'bg-red-500 text-white';
+      case "success":
+        return "bg-green-500 text-white";
+      case "warning":
+        return "bg-yellow-500 text-white";
+      case "error":
+        return "bg-red-500 text-white";
       default:
-        return 'bg-gray-700 text-white';
+        return "bg-gray-700 text-white";
     }
   };
 
@@ -56,7 +62,7 @@ export function Toast({ id, message, type = 'info', duration = 2000, onClose }: 
         px-4 py-3 rounded-lg shadow-lg flex items-center space-x-3
         transition-all duration-300 ease-in-out
         ${getTypeStyles()}
-        ${isAnimating ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'}
+        ${isAnimating ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-2"}
       `}
     >
       <span className="text-sm font-medium">{message}</span>
@@ -76,27 +82,31 @@ export function Toast({ id, message, type = 'info', duration = 2000, onClose }: 
 export interface ToastState {
   id: string;
   message: string;
-  type?: 'info' | 'success' | 'warning' | 'error';
+  type?: "info" | "success" | "warning" | "error";
   duration?: number;
 }
 
 export function useToast() {
   const [toasts, setToasts] = useState<ToastState[]>([]);
 
-  const showToast = (message: string, type: ToastState['type'] = 'info', duration = 2000) => {
+  const showToast = (
+    message: string,
+    type: ToastState["type"] = "info",
+    duration = 2000,
+  ) => {
     const id = Date.now().toString();
     const newToast: ToastState = { id, message, type, duration };
 
-    setToasts(prev => [...prev, newToast]);
+    setToasts((prev) => [...prev, newToast]);
   };
 
   const removeToast = (id: string) => {
-    setToasts(prev => prev.filter(toast => toast.id !== id));
+    setToasts((prev) => prev.filter((toast) => toast.id !== id));
   };
 
   const ToastContainer = () => (
     <>
-      {toasts.map(toast => (
+      {toasts.map((toast) => (
         <Toast
           key={toast.id}
           id={toast.id}

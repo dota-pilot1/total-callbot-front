@@ -19,8 +19,8 @@ import { useVoiceConnection } from "../features/chatbot/voice";
 import { useChatMessages } from "../features/chatbot/messaging";
 import VoicePulse from "../components/VoicePulse";
 import MobileSettingsDropdown from "../components/MobileSettingsDropdown";
-import SockJS from "sockjs-client";
-import { Stomp } from "@stomp/stompjs";
+// import SockJS from "sockjs-client";
+// import { Stomp } from "@stomp/stompjs";
 
 import MobileCharacterDialog from "../components/MobileCharacterDialog";
 import { CHARACTER_LIST } from "../features/chatbot/character/characters";
