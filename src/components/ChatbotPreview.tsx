@@ -95,10 +95,10 @@ const ChatbotPreview: React.FC<ChatbotPreviewProps> = ({ chatbot }) => {
   }
 
   return (
-    <div className="flex-1 bg-gray-50 p-6">
+    <div className="flex-1 bg-background p-6">
       <div className="max-w-4xl mx-auto">
         {/* 챗봇 정보 헤더 */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+        <div className="rounded-lg border border-border bg-card p-6 shadow-sm mb-6">
           <div className="flex items-center space-x-4 mb-4">
             <div
               className={`w-16 h-16 rounded-full bg-gradient-to-br ${chatbot.color} flex items-center justify-center text-white text-2xl font-bold`}
@@ -106,16 +106,16 @@ const ChatbotPreview: React.FC<ChatbotPreviewProps> = ({ chatbot }) => {
               {chatbot.name.charAt(0)}
             </div>
             <div className="flex-1">
-              <h2 className="text-2xl font-bold text-gray-900">
+              <h2 className="text-2xl font-bold text-foreground">
                 {chatbot.name}
               </h2>
-              <p className="text-gray-600 mt-1">{chatbot.description}</p>
+              <p className="text-muted-foreground mt-1">{chatbot.description}</p>
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <h4 className="font-medium text-gray-900 mb-2">💡 전문 분야</h4>
+              <h4 className="font-medium text-foreground mb-2">💡 전문 분야</h4>
               <div className="flex flex-wrap gap-2">
                 {chatbot.expertise.map((skill, index) => (
                   <span
@@ -128,19 +128,19 @@ const ChatbotPreview: React.FC<ChatbotPreviewProps> = ({ chatbot }) => {
               </div>
             </div>
             <div>
-              <h4 className="font-medium text-gray-900 mb-2">👋 인사말</h4>
-              <p className="text-sm text-gray-600 italic">{chatbot.greeting}</p>
+              <h4 className="font-medium text-foreground mb-2">👋 인사말</h4>
+              <p className="text-sm text-muted-foreground italic">{chatbot.greeting}</p>
             </div>
           </div>
         </div>
 
         {/* 연결 영역 */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+        <div className="rounded-lg border border-border bg-card p-6 shadow-sm mb-6">
           <div className="text-center">
-            <h3 className="text-xl font-semibold text-gray-900 mb-4">
+            <h3 className="text-xl font-semibold text-foreground mb-4">
               {chatbot.name}와 대화하기
             </h3>
-            <p className="text-gray-600 mb-6">{chatbot.greeting}</p>
+            <p className="text-muted-foreground mb-6">{chatbot.greeting}</p>
             <Button onClick={handleCreateNewChat} variant="secondary" className="px-6 py-5 text-base">
               연결하기
             </Button>
@@ -148,9 +148,9 @@ const ChatbotPreview: React.FC<ChatbotPreviewProps> = ({ chatbot }) => {
         </div>
 
         {/* 기존 대화 목록 */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-          <div className="border-b border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900">
+        <div className="rounded-lg border border-border bg-card shadow-sm">
+          <div className="border-b border-border p-6">
+            <h3 className="text-lg font-semibold text-foreground">
               이전 대화 목록
             </h3>
           </div>
@@ -158,11 +158,11 @@ const ChatbotPreview: React.FC<ChatbotPreviewProps> = ({ chatbot }) => {
           {loading ? (
             <div className="p-8 text-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-foreground/40 mx-auto mb-4"></div>
-              <p className="text-gray-600">대화 목록을 불러오는 중...</p>
+              <p className="text-muted-foreground">대화 목록을 불러오는 중...</p>
             </div>
           ) : chatRooms.length === 0 ? (
             <div className="p-8 text-center">
-              <div className="text-gray-400 mb-4">
+              <div className="text-muted-foreground mb-4">
                 <svg
                   className="w-12 h-12 mx-auto"
                   fill="none"
@@ -177,7 +177,7 @@ const ChatbotPreview: React.FC<ChatbotPreviewProps> = ({ chatbot }) => {
                   />
                 </svg>
               </div>
-              <p className="text-gray-500">
+              <p className="text-muted-foreground">
                 {chatbot.name}와 아직 대화한 기록이 없습니다.
                 <br />
                 위의 "연결하기" 버튼을 눌러 첫 대화를 시작해보세요!
@@ -193,15 +193,15 @@ const ChatbotPreview: React.FC<ChatbotPreviewProps> = ({ chatbot }) => {
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
-                      <h4 className="text-lg font-medium text-gray-900">
+                      <h4 className="text-lg font-medium text-foreground">
                         {room.name || `${chatbot.name}와의 대화`}
                       </h4>
-                      <p className="text-sm text-gray-500 mt-1">
+                      <p className="text-sm text-muted-foreground mt-1">
                         {room.lastMessageAt &&
                           `마지막 활동: ${new Date(room.lastMessageAt).toLocaleDateString()}`}
                       </p>
                     </div>
-                    <div className="flex items-center text-gray-400">
+                    <div className="flex items-center text-muted-foreground">
                       <svg
                         className="w-5 h-5"
                         fill="none"
