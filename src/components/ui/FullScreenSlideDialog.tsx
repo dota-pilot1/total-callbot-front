@@ -42,19 +42,17 @@ export default function FullScreenSlideDialog({
               stiffness: 200,
               duration: 0.3,
             }}
-            className={`fixed top-0 left-0 right-0 bg-card border-b border-border shadow-lg z-50 max-h-screen overflow-y-auto ${className}`}
+            className={`fixed top-0 left-0 right-0 bg-white border-b border-gray-200 shadow-lg z-50 max-h-screen overflow-y-auto ${className}`}
           >
             <div className="p-4">
               {/* 헤더 */}
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-lg font-semibold text-foreground">
-                  {title}
-                </h2>
+                <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
                 <button
                   onClick={onClose}
-                  className="p-2 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
+                  className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors"
                 >
-                  <XMarkIcon className="h-5 w-5" />
+                  <XMarkIcon className="h-5 w-5 text-gray-600" />
                 </button>
               </div>
 
