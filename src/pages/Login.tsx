@@ -4,7 +4,7 @@ import { useAuthStore } from "../features/auth";
 
 import { PasswordInput } from "../components/ui/PasswordInput";
 
-import RippleButton from "../components/ui/RippleButton";
+import { Button } from "../components/ui";
 import MemberStatusTable from "../components/MemberStatusTable";
 import {
   CheckCircleIcon,
@@ -159,16 +159,12 @@ export default function Login() {
                 />
               </div>
 
-              <RippleButton
-                type="submit"
-                disabled={isLoading}
-                className="w-full h-12 bg-gray-900 hover:bg-black text-white font-medium rounded-lg border border-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
+              <Button type="submit" disabled={isLoading} className="w-full h-12">
                 <span className="flex items-center justify-center space-x-2">
                   <span>{isLoading ? "로그인 중..." : "로그인"}</span>
                   {!isLoading && <ArrowRightIcon className="h-4 w-4" />}
                 </span>
-              </RippleButton>
+              </Button>
             </form>
 
             <div className="mt-6 flex items-center justify-between text-sm">
@@ -187,7 +183,7 @@ export default function Login() {
             </div>
 
             {/* 전체 회원 정보 (접이식) */}
-            <div className="mt-6 rounded-lg border">
+            <div className="mt-6 rounded-lg border border-border bg-card">
               <button
                 type="button"
                 onClick={() => setShowMembers((v) => !v)}
