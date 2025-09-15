@@ -52,7 +52,7 @@ export default function Login() {
           <div className="rounded-lg border bg-card p-8 shadow-lg">
             {/* 소개 탭 (챗봇/채팅 간략 소개) */}
             <div className="mb-4">
-              <div className="flex gap-2 border-b">
+              <div className="flex gap-2 border-b border-border">
                 <button
                   type="button"
                   onClick={() => setSelectedService("chatbot")}
