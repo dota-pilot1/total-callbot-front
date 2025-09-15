@@ -11,7 +11,6 @@ import {
   ArrowsRightLeftIcon,
   PaperAirplaneIcon,
   ChatBubbleLeftRightIcon,
-  CheckIcon,
 } from "@heroicons/react/24/outline";
 import { Button } from "../../../components/ui/Button";
 import { examApi } from "../../chatbot/exam/api/exam";

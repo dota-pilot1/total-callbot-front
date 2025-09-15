@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../features/auth";
 import { Button } from "../components/ui";
-import RippleButton from "../components/ui/RippleButton";
 
 import {
   PaperAirplaneIcon,
