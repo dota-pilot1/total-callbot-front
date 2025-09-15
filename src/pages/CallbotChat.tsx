@@ -891,11 +891,11 @@ export default function CallbotChat() {
   };
 
   return (
-    <div className="h-screen bg-gray-50 flex flex-col overflow-hidden">
+    <div className="h-screen bg-background flex flex-col overflow-hidden">
       {/* Hidden audio sink for AI voice */}
       <audio ref={audioRef} autoPlay style={{ display: "none" }} />
       {/* 헤더 */}
-      <nav className="bg-white shadow-sm border-b flex-shrink-0">
+      <nav className="bg-card shadow-sm border-b border-border flex-shrink-0">
         <div className="px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-3">
@@ -904,7 +904,7 @@ export default function CallbotChat() {
                   {chatbot?.name.slice(0, 2) || "콜"}
                 </span>
               </div>
-              <h1 className="text-xl font-semibold text-gray-900">
+              <h1 className="text-xl font-semibold text-foreground">
                 {chatbot?.name || "콜봇"} 채팅
               </h1>
             </div>
@@ -923,7 +923,7 @@ export default function CallbotChat() {
                   </span>
                 )}
               </Button>
-              <span className="text-sm text-gray-600">
+              <span className="text-sm text-muted-foreground">
                 {user?.name || user?.email || "게스트"}님
               </span>
               <Button
@@ -953,7 +953,7 @@ export default function CallbotChat() {
           {/* 메인 콘텐츠 */}
           <main className="flex flex-1 overflow-hidden">
             {/* 왼쪽: 콜봇 아바타 및 연결 */}
-            <div className="w-80 bg-white border-r border-gray-200 p-6 flex flex-col">
+            <div className="w-80 bg-card border-r border-border p-6 flex flex-col">
               <div className="text-center mb-8">
                 <div
                   className={`w-28 h-28 mx-auto mb-4 bg-gradient-to-br ${chatbot?.color || "from-indigo-500 to-purple-600"} rounded-full flex items-center justify-center shadow-lg`}
@@ -967,11 +967,11 @@ export default function CallbotChat() {
                     <span className="text-white text-2xl font-bold">콜봇</span>
                   )}
                 </div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-3">
+                <h3 className="text-2xl font-bold text-foreground mb-3">
                   {chatbot?.name || "AI 콜봇"}
                 </h3>
                 {chatbot && (
-                  <p className="text-sm text-gray-600 mb-4 leading-relaxed px-2">
+                  <p className="text-sm text-muted-foreground mb-4 leading-relaxed px-2">
                     {chatbot.description}
                   </p>
                 )}
@@ -1139,13 +1139,13 @@ export default function CallbotChat() {
                     {/* 음성 인식 시 상단 우측에 파동 표시 */}
                     {isRecording && (
                       <div className="absolute right-6 top-4 z-10">
-                        <div className="bg-white rounded-full p-3 shadow-lg border border-gray-200">
+                        <div className="bg-card rounded-full p-3 shadow-lg border border-border">
                           <VoicePulse active={true} size={48} />
                         </div>
                       </div>
                     )}
                     {messages.length === 0 ? (
-                      <div className="text-center text-gray-400 mt-8">
+                      <div className="text-center text-muted-foreground mt-8">
                         대화를 시작해 보세요. 음성 인식 모드를 켜거나, 아래
                         입력창에 메시지를 입력하세요.
                       </div>
@@ -1156,19 +1156,15 @@ export default function CallbotChat() {
                           className={`flex ${message.sender === "user" ? "justify-end" : "justify-start"}`}
                         >
                           <div
-                            className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                            className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg border ${
                               message.sender === "user"
-                                ? "bg-indigo-500 text-white"
-                                : "bg-white border border-gray-200 text-gray-900"
+                                ? "border-border bg-muted/60 text-foreground"
+                                : "border-border bg-card text-foreground"
                             }`}
                           >
                             <p className="text-sm">{message.message}</p>
                             <p
-                              className={`text-xs mt-1 ${
-                                message.sender === "user"
-                                  ? "text-indigo-100"
-                                  : "text-gray-500"
-                              }`}
+                              className={`text-xs mt-1 text-muted-foreground`}
                             >
                               {message.timestamp}
                             </p>
@@ -1268,10 +1264,10 @@ export default function CallbotChat() {
                 </>
               ) : (
                 /* 연결 전: 챗봇 소개 및 안내 */
-                <div className="flex-1 overflow-y-auto p-6 bg-gradient-to-br from-gray-50 to-white">
+                <div className="flex-1 overflow-y-auto p-6 bg-background">
                   {/* 챗봇 소개 카드 */}
                   <div className="max-w-2xl mx-auto space-y-6">
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <div className="rounded-xl shadow-sm border border-border bg-card p-6">
                       <div className="text-center mb-6">
                         <div
                           className={`w-20 h-20 mx-auto mb-4 bg-gradient-to-br ${chatbot?.color || "from-indigo-500 to-purple-600"} rounded-full flex items-center justify-center shadow-lg`}
@@ -1291,10 +1287,10 @@ export default function CallbotChat() {
                             </span>
                           )}
                         </div>
-                        <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                        <h2 className="text-2xl font-bold text-foreground mb-2">
                           {chatbot?.name || "AI 콜봇"}과의 대화
                         </h2>
-                        <p className="text-gray-600 leading-relaxed">
+                        <p className="text-muted-foreground leading-relaxed">
                           {chatbot?.description || "전문 AI 어시스턴트"}와
                           대화해보세요.
                           <br />
@@ -1302,32 +1298,32 @@ export default function CallbotChat() {
                         </p>
                       </div>
 
-                      <div className="bg-gray-50 rounded-lg p-4">
-                        <h3 className="font-semibold text-gray-900 mb-3">
+                      <div className="bg-muted/20 rounded-lg p-4">
+                        <h3 className="font-semibold text-foreground mb-3">
                           주요 기능
                         </h3>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                           <div className="flex items-center space-x-2">
                             <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                            <span className="text-sm text-gray-700">
+                            <span className="text-sm text-muted-foreground">
                               실시간 음성 대화
                             </span>
                           </div>
                           <div className="flex items-center space-x-2">
                             <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                            <span className="text-sm text-gray-700">
+                            <span className="text-sm text-muted-foreground">
                               텍스트 채팅
                             </span>
                           </div>
                           <div className="flex items-center space-x-2">
                             <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                            <span className="text-sm text-gray-700">
+                            <span className="text-sm text-muted-foreground">
                               전문 영역 상담
                             </span>
                           </div>
                           <div className="flex items-center space-x-2">
                             <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                            <span className="text-sm text-gray-700">
+                            <span className="text-sm text-muted-foreground">
                               대화 내역 저장
                             </span>
                           </div>
@@ -1337,11 +1333,11 @@ export default function CallbotChat() {
 
                     {/* 이전 대화 목록 */}
                     {chatRooms.length > 0 && (
-                      <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-                        <div className="border-b border-gray-200 p-4">
-                          <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                      <div className="rounded-xl shadow-sm border border-border bg-card">
+                        <div className="border-b border-border p-4">
+                          <h3 className="text-lg font-semibold text-foreground flex items-center">
                             <svg
-                              className="w-5 h-5 mr-2 text-gray-500"
+                              className="w-5 h-5 mr-2 text-muted-foreground"
                               fill="none"
                               stroke="currentColor"
                               viewBox="0 0 24 24"
@@ -1359,32 +1355,32 @@ export default function CallbotChat() {
 
                         {loadingRooms ? (
                           <div className="p-8 text-center">
-                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500 mx-auto mb-4"></div>
-                            <p className="text-gray-600">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-foreground/40 mx-auto mb-4"></div>
+                            <p className="text-muted-foreground">
                               대화 목록을 불러오는 중...
                             </p>
                           </div>
                         ) : (
-                          <div className="divide-y divide-gray-200">
+                          <div className="divide-y divide-border">
                             {chatRooms.map((room) => (
                               <div
                                 key={room.id}
                                 onClick={() => handleRoomSelect(room)}
-                                className="p-4 hover:bg-gray-50 cursor-pointer transition-colors"
+                                className="p-4 hover:bg-muted/30 cursor-pointer transition-colors"
                               >
                                 <div className="flex items-center justify-between">
                                   <div className="flex-1">
-                                    <h4 className="font-medium text-gray-900">
+                                    <h4 className="font-medium text-foreground">
                                       {(room as any).name ||
                                         `${chatbot?.name}와의 대화`}
                                     </h4>
-                                    <p className="text-sm text-gray-500 mt-1">
+                                    <p className="text-sm text-muted-foreground mt-1">
                                       {(room as any).lastMessageAt &&
                                         `마지막 활동: ${new Date((room as any).lastMessageAt).toLocaleDateString()}`}
                                     </p>
                                   </div>
                                   <svg
-                                    className="w-5 h-5 text-gray-400"
+                                    className="w-5 h-5 text-muted-foreground"
                                     fill="none"
                                     stroke="currentColor"
                                     viewBox="0 0 24 24"
