@@ -410,16 +410,18 @@ export default function MobileChat() {
             {voiceEnabled && isRecording ? (
               <>
                 {/* 캐릭터 아바타 (역할극용) */}
-                <button
+                <Button
                   onClick={openCharacterDialog}
-                  className="w-10 h-10 rounded-full bg-muted hover:bg-muted/80 flex items-center justify-center border border-border shadow-sm transition-colors"
+                  variant="outline"
+                  size="sm"
+                  className="w-10 h-10 p-0"
                   title={`${personaCharacter.name} (role-play)`}
                 >
                   <span className="text-base">{personaCharacter.emoji}</span>
-                </button>
+                </Button>
                 {/* 음성 파동 + 상태 점 오버레이 (compact) */}
                 <div className="relative">
-                  <div className="bg-card rounded-full p-3 shadow-lg border border-border">
+                  <div className="bg-card rounded-lg p-3 shadow-lg border border-border">
                     <VoicePulse
                       active={isListening || isResponding}
                       size={36}
@@ -451,7 +453,7 @@ export default function MobileChat() {
                   }}
                   variant="destructive"
                   size="sm"
-                  className="w-10 h-10 rounded-full p-0"
+                  className="w-10 h-10 p-0"
                   title="음성 연결 중단"
                 >
                   <XMarkIcon className="h-5 w-5" />
@@ -463,7 +465,7 @@ export default function MobileChat() {
                     onClick={clearChat}
                     variant="secondary"
                     size="sm"
-                    className="w-10 h-10 rounded-full p-0"
+                    className="w-10 h-10 p-0"
                     title="대화 내용 지우기"
                   >
                     <TrashIcon className="h-5 w-5" />
@@ -474,7 +476,7 @@ export default function MobileChat() {
                   onClick={triggerExam}
                   variant="outline"
                   size="sm"
-                  className="w-10 h-10 rounded-full p-0 text-xs font-medium"
+                  className="w-10 h-10 p-0 text-xs font-medium"
                   disabled={isConnecting || examSending}
                   title="시험 모드 시작"
                 >
@@ -484,13 +486,15 @@ export default function MobileChat() {
             ) : (
               <>
                 {/* 캐릭터 아바타 + Start 버튼 + 상태 점 오버레이 */}
-                <button
+                <Button
                   onClick={openCharacterDialog}
-                  className="w-10 h-10 rounded-full bg-muted hover:bg-muted/80 flex items-center justify-center border border-border shadow-sm transition-colors"
+                  variant="outline"
+                  size="sm"
+                  className="w-10 h-10 p-0"
                   title={`${personaCharacter.name} (role-play)`}
                 >
                   <span className="text-base">{personaCharacter.emoji}</span>
-                </button>
+                </Button>
                 <div className="relative inline-block">
                   <RippleButton
                     onClick={async () => {
@@ -511,7 +515,7 @@ export default function MobileChat() {
                         await startVoice();
                       }
                     }}
-                    className="h-10 px-6 text-sm rounded-full bg-card border border-border hover:bg-muted/50 transition-colors text-foreground disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="h-10 px-6 text-sm bg-card border border-border hover:bg-muted/50 transition-colors text-foreground disabled:opacity-50 disabled:cursor-not-allowed"
                     disabled={isConnecting}
                   >
                     {isConnecting ? "연결중..." : "Start"}

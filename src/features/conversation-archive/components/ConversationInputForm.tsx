@@ -114,7 +114,7 @@ export default function ConversationInputForm({
                 key={category}
                 type="button"
                 onClick={() => setSelectedCategory(category)}
-                className={`px-3 py-1 text-xs rounded-full border transition-colors ${
+                className={`px-3 py-1 text-xs rounded-md border transition-colors ${
                   selectedCategory === category
                     ? CATEGORY_COLORS[category]
                     : "bg-gray-100 text-gray-600 border-gray-200"
@@ -128,7 +128,7 @@ export default function ConversationInputForm({
             <button
               type="button"
               onClick={handleVoiceToggle}
-              className={`ml-auto p-2 rounded-full transition-colors ${
+              className={`ml-auto p-2 rounded-md transition-colors ${
                 isRecording
                   ? "bg-red-500 text-white"
                   : "bg-gray-200 text-gray-600 hover:bg-gray-300"

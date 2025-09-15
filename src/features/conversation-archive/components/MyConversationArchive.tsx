@@ -256,7 +256,7 @@ export default function MyConversationArchive({
                   <button
                     key={category}
                     onClick={() => handleFilterChange(category as any)}
-                    className={`px-4 py-2 text-sm font-medium rounded-full transition-all ${
+                    className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${
                       filterCategory === category
                         ? "bg-slate-700 text-white"
                         : "bg-gray-100 text-gray-700 hover:bg-gray-200"
@@ -322,7 +322,7 @@ export default function MyConversationArchive({
                                 <button
                                   key={cat}
                                   onClick={() => setEditingCategory(cat)}
-                                  className={`px-2 py-1 text-xs rounded-full border transition-all ${
+                                  className={`px-2 py-1 text-xs rounded-md border transition-all ${
                                     editingCategory === cat
                                       ? CATEGORY_COLORS[cat]
                                       : "bg-gray-50 text-gray-600 border-gray-200"

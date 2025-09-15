@@ -1064,10 +1064,10 @@ export default function CallbotChat() {
                             stopVoice();
                           }
                         }}
-                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${voiceEnabled ? "bg-indigo-600" : "bg-gray-300"}`}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${voiceEnabled ? "bg-muted/60" : "bg-muted/30"}`}
                       >
                         <span
-                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                          className={`inline-block h-4 w-4 transform rounded-full bg-background transition-transform ${
                             voiceEnabled ? "translate-x-6" : "translate-x-1"
                           }`}
                         />
