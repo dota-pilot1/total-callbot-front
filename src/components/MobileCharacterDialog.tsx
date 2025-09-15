@@ -84,17 +84,19 @@ export default function MobileCharacterDialog({
         >
           <div className="absolute inset-0 bg-black/40" onClick={onClose} />
           <motion.div
-            className="absolute inset-0 bg-card md:rounded-t-xl md:top-auto md:bottom-0 md:h-[90vh] shadow-xl border-t md:border border-border"
+            className="absolute inset-0 bg-white md:rounded-t-xl md:top-auto md:bottom-0 md:h-[90vh] shadow-xl border-t md:border border-gray-200"
             initial={{ y: "-100%" }}
             animate={{ y: 0 }}
             exit={{ y: "-100%" }}
             transition={{ type: "spring", stiffness: 220, damping: 28 }}
           >
-            <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-              <div className="font-semibold text-foreground">캐릭터/상황 설정</div>
+            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
+              <div className="font-semibold text-gray-900">
+                캐릭터/상황 설정
+              </div>
               <button
                 onClick={onClose}
-                className="p-2 rounded hover:bg-muted/30 text-muted-foreground"
+                className="p-2 rounded hover:bg-gray-100 text-gray-600"
                 aria-label="닫기"
               >
                 <XMarkIcon className="w-5 h-5" />
@@ -104,7 +106,7 @@ export default function MobileCharacterDialog({
             <div className="p-4 space-y-6 overflow-y-auto h-[calc(100%-7rem)]">
               {/* 캐릭터 선택 */}
               <div>
-                <div className="text-sm font-medium text-foreground mb-2">
+                <div className="text-sm font-medium text-gray-900 mb-2">
                   캐릭터
                 </div>
                 <div className="grid grid-cols-5 gap-2">
@@ -124,8 +126,8 @@ export default function MobileCharacterDialog({
                         }}
                         className={`flex flex-col items-center justify-center rounded-md border py-3 transition-colors ${
                           selected
-                            ? "border-primary bg-muted/60 text-foreground ring-1 ring-primary/30"
-                            : "border-border bg-muted/20 text-muted-foreground hover:bg-muted/30"
+                            ? "border-blue-500 bg-blue-50 text-gray-900 ring-1 ring-blue-200"
+                            : "border-gray-200 bg-gray-50 text-gray-600 hover:bg-gray-100"
                         }`}
                         style={{ aspectRatio: "1 / 1" }}
                         title={c.name}
@@ -142,10 +144,10 @@ export default function MobileCharacterDialog({
 
               {/* 선택 캐릭터 성격/배경 미리보기 */}
               <div>
-                <div className="text-sm font-medium text-foreground mb-2">
+                <div className="text-sm font-medium text-gray-900 mb-2">
                   성격/배경
                 </div>
-                <div className="text-xs text-muted-foreground whitespace-pre-wrap">
+                <div className="text-xs text-gray-600 whitespace-pre-wrap">
                   {(() => {
                     const sel = CHARACTER_LIST.find(
                       (c) => c.id === characterId,
@@ -158,7 +160,7 @@ export default function MobileCharacterDialog({
 
               {/* 성별 */}
               <div>
-                <div className="text-sm font-medium text-foreground mb-2">
+                <div className="text-sm font-medium text-gray-900 mb-2">
                   성별
                 </div>
                 <div className="flex items-center space-x-3">
@@ -167,8 +169,8 @@ export default function MobileCharacterDialog({
                       key={g}
                       className={`inline-flex items-center space-x-2 px-3 py-2 rounded-md border transition-colors ${
                         gender === g
-                          ? "border-primary bg-muted/60 text-foreground"
-                          : "border-border text-muted-foreground hover:bg-muted/20"
+                          ? "border-blue-500 bg-blue-50 text-gray-900"
+                          : "border-gray-200 text-gray-600 hover:bg-gray-100"
                       }`}
                     >
                       <input
@@ -185,7 +187,7 @@ export default function MobileCharacterDialog({
 
               {/* 목소리 선택 (3종) */}
               <div>
-                <div className="text-sm font-medium text-foreground mb-2">
+                <div className="text-sm font-medium text-gray-900 mb-2">
                   목소리
                 </div>
                 <div className="flex items-center space-x-3">
@@ -194,8 +196,8 @@ export default function MobileCharacterDialog({
                       key={v}
                       className={`inline-flex items-center space-x-2 px-3 py-2 rounded-md border transition-colors ${
                         voice === v
-                          ? "border-primary bg-muted/60 text-foreground"
-                          : "border-border text-muted-foreground hover:bg-muted/20"
+                          ? "border-blue-500 bg-blue-50 text-gray-900"
+                          : "border-gray-200 text-gray-600 hover:bg-gray-100"
                       }`}
                     >
                       <input
