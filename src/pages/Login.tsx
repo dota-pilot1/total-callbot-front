@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuthStore } from "../features/auth";
 
@@ -6,72 +6,25 @@ import {
   ChatBubbleLeftRightIcon,
   ArrowRightIcon,
   CheckCircleIcon,
+  ChevronDownIcon,
+  EyeIcon,
+  EyeSlashIcon,
 } from "@heroicons/react/24/outline";
-import { RobotIcon } from "../components/icons/RobotIcon";
 import RippleButton from "../components/ui/RippleButton";
 import MemberStatusTable from "../components/MemberStatusTable";
-import SockJS from "sockjs-client";
-import { Stomp } from "@stomp/stompjs";
+// Simplified login; added collapsible full member info box
 
 type ServiceType = "chatbot" | "chat";
 
 export default function Login() {
-  const [email, setEmail] = useState("terecal@daum.net");
-  const [password, setPassword] = useState("123456");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [selectedService, setSelectedService] =
     useState<ServiceType>("chatbot");
-  const [participantCount, setParticipantCount] = useState(0);
   const { login, isLoading } = useAuthStore();
   const navigate = useNavigate();
-
-  // 접속자 수 실시간 조회
-  useEffect(() => {
-    const host = window.location.hostname;
-    const isLocal = host === "localhost" || host === "127.0.0.1";
-    const wsUrl = isLocal
-      ? "http://localhost:8080/ws-stomp"
-      : "https://api.total-callbot.cloud/ws-stomp";
-
-    const socket = new SockJS(wsUrl);
-    const client = Stomp.over(socket);
-
-    client.connect(
-      {},
-      () => {
-        // 전체 채팅방 참여자 수 구독
-        client.subscribe("/topic/participant-count", (message: any) => {
-          try {
-            const participantData = JSON.parse(message.body);
-            console.log(
-              "Login page - Participant data received:",
-              participantData,
-            );
-            console.log("Setting participant count to:", participantData.count);
-            setParticipantCount(participantData.count || 0);
-          } catch (error) {
-            console.error("Error parsing participant data:", error);
-          }
-        });
-
-        // 참여자 수 요청 (약간의 지연 후)
-        setTimeout(() => {
-          client.publish({
-            destination: "/app/chat/participant-count",
-            body: JSON.stringify({}),
-          });
-        }, 1000);
-      },
-      (error: any) => {
-        console.log("Connection error:", error);
-      },
-    );
-
-    return () => {
-      if (client) {
-        client.disconnect();
-      }
-    };
-  }, []);
+  const [showMembers, setShowMembers] = useState<boolean>(false);
+  const [showPassword, setShowPassword] = useState<boolean>(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -98,57 +51,73 @@ export default function Login() {
       <div className="flex items-center justify-center min-h-screen px-4 py-8">
         <div className="w-full max-w-sm">
           <div className="rounded-lg border bg-card p-8 shadow-lg">
-            {/* 헤더 */}
-            <div className="text-center mb-8">
-              <h1 className="text-2xl font-semibold tracking-tight mb-2">
+            {/* 소개 탭 (챗봇/채팅 간략 소개) */}
+            <div className="mb-4">
+              <div className="flex gap-4 border-b">
+                <button
+                  type="button"
+                  onClick={() => setSelectedService("chatbot")}
+                  className={`px-1 py-2 text-sm -mb-px ${
+                    selectedService === "chatbot"
+                      ? "border-b-2 border-primary text-foreground"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  챗봇
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedService("chat")}
+                  className={`px-1 py-2 text-sm -mb-px ${
+                    selectedService === "chat"
+                      ? "border-b-2 border-primary text-foreground"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  채팅
+                </button>
+              </div>
+              <p className="mt-2 text-xs text-muted-foreground">
                 {selectedService === "chatbot"
-                  ? "챗봇 트레이너"
-                  : "채팅 서비스"}
-              </h1>
-              <p className="text-sm text-muted-foreground">
-                {selectedService === "chatbot"
-                  ? "AI 챗봇과 영어 학습!"
-                  : "실시간 채팅으로 소통하세요"}
+                  ? "AI 챗봇과 대화하며 영어를 간단히 연습하세요."
+                  : "실시간 채팅으로 사용자들과 빠르게 소통하세요."}
               </p>
             </div>
 
             {/* 서비스 선택 */}
-            <div className="grid grid-cols-2 gap-3 mb-6">
+            <div className="grid grid-cols-2 gap-3 mb-6 bg-muted/20 p-2 rounded-xl">
               <button
                 onClick={() => setSelectedService("chatbot")}
-                className={`relative flex flex-col items-center p-4 rounded-lg border-2 transition-all ${
+                aria-pressed={selectedService === "chatbot"}
+                className={`relative flex flex-col items-center p-4 rounded-lg border-2 transition-colors duration-200 ${
                   selectedService === "chatbot"
-                    ? "border-primary bg-primary/10 text-primary shadow-md scale-105"
-                    : "border-border hover:bg-accent hover:text-accent-foreground hover:border-primary/30"
+                    ? "border-primary bg-muted/60 text-foreground shadow-md ring-1 ring-primary/30"
+                    : "border-border hover:bg-muted/30 hover:text-foreground hover:border-primary/30"
                 }`}
               >
                 {selectedService === "chatbot" && (
                   <CheckCircleIcon className="absolute top-1 right-1 h-5 w-5 text-primary" />
                 )}
-                <RobotIcon className="h-6 w-6 mb-2" />
-                <span className="text-sm font-medium">챗봇</span>
+                <img
+                  src="/gpt-star.jpeg"
+                  alt="챗봇"
+                  className="h-8 w-8 rounded-md object-cover"
+                />
               </button>
 
               <button
                 onClick={() => setSelectedService("chat")}
-                className={`relative flex flex-col items-center p-4 rounded-lg border-2 transition-all ${
+                aria-pressed={selectedService === "chat"}
+                className={`relative flex flex-col items-center p-4 rounded-lg border-2 transition-colors duration-200 ${
                   selectedService === "chat"
-                    ? "border-primary bg-primary/10 text-primary shadow-md scale-105"
-                    : "border-border hover:bg-accent hover:text-accent-foreground hover:border-primary/30"
+                    ? "border-primary bg-muted/60 text-foreground shadow-md ring-1 ring-primary/30"
+                    : "border-border hover:bg-muted/30 hover:text-foreground hover:border-primary/30"
                 }`}
               >
                 {selectedService === "chat" && (
                   <CheckCircleIcon className="absolute top-1 right-1 h-5 w-5 text-primary" />
                 )}
-                <div className="relative">
-                  <ChatBubbleLeftRightIcon className="h-6 w-6 mb-2" />
-                  {participantCount >= 0 && (
-                    <span className="absolute -top-3 -right-3 min-w-[1.5rem] h-6 text-sm font-medium text-white bg-green-500 rounded-full flex items-center justify-center px-1 shadow-lg border-2 border-white">
-                      {participantCount}
-                    </span>
-                  )}
-                </div>
-                <span className="text-sm font-medium">채팅</span>
+                <ChatBubbleLeftRightIcon className="h-6 w-6" />
               </button>
             </div>
 
@@ -179,15 +148,31 @@ export default function Login() {
                 >
                   비밀번호
                 </label>
-                <input
-                  type="password"
-                  id="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                  placeholder="••••••••"
-                  required
-                />
+                <div className="relative">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    id="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="flex h-10 w-full rounded-md border border-input bg-background pl-3 pr-10 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    placeholder="••••••••"
+                    required
+                    autoComplete="current-password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((v) => !v)}
+                    className="absolute inset-y-0 right-2 flex items-center text-muted-foreground hover:text-foreground"
+                    aria-label={showPassword ? "비밀번호 숨기기" : "비밀번호 보기"}
+                    aria-pressed={showPassword}
+                  >
+                    {showPassword ? (
+                      <EyeSlashIcon className="h-5 w-5" />
+                    ) : (
+                      <EyeIcon className="h-5 w-5" />
+                    )}
+                  </button>
+                </div>
               </div>
 
               <RippleButton
@@ -217,17 +202,28 @@ export default function Login() {
               </Link>
             </div>
 
-            <div className="mt-6 p-4 bg-muted/50 rounded-lg border">
-              <p className="text-xs text-muted-foreground mb-1 font-medium">
-                테스트 계정
-              </p>
-              <p className="text-xs text-muted-foreground/80 font-mono">
-                terecal@daum.net / 123456
-              </p>
+            {/* 전체 회원 정보 (접이식) */}
+            <div className="mt-6 rounded-lg border">
+              <button
+                type="button"
+                onClick={() => setShowMembers((v) => !v)}
+                className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium"
+                aria-expanded={showMembers}
+                aria-controls="member-info-panel"
+              >
+                <span>전체 회원 정보</span>
+                <ChevronDownIcon
+                  className={`h-5 w-5 transition-transform ${showMembers ? "rotate-180" : "rotate-0"}`}
+                />
+              </button>
+              {showMembers && (
+                <div id="member-info-panel" className="px-4 pb-4 border-t">
+                  <div className="pt-3">
+                    <MemberStatusTable bordered={false} />
+                  </div>
+                </div>
+              )}
             </div>
-
-            {/* 회원 접속 현황 테이블 */}
-            <MemberStatusTable />
           </div>
         </div>
       </div>

@@ -10,7 +10,11 @@ interface MemberStatus {
   connectionTime?: Date;
 }
 
-export default function MemberStatusTable() {
+interface MemberStatusTableProps {
+  bordered?: boolean;
+}
+
+export default function MemberStatusTable({ bordered = true }: MemberStatusTableProps) {
   const [members, setMembers] = useState<MemberStatus[]>([]);
 
   useEffect(() => {
@@ -98,7 +102,13 @@ export default function MemberStatusTable() {
   };
 
   return (
-    <div className="mt-6 p-4 bg-muted/30 rounded-lg border">
+    <div
+      className={
+        bordered
+          ? "mt-6 p-4 bg-muted/30 rounded-lg border"
+          : "pt-1"
+      }
+    >
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-sm font-medium text-foreground">회원 접속 현황</h3>
         <span className="text-xs text-muted-foreground">
@@ -106,7 +116,7 @@ export default function MemberStatusTable() {
         </span>
       </div>
 
-      <div className="overflow-hidden rounded-md border bg-background">
+      <div className={`overflow-hidden rounded-md bg-background ${bordered ? "border" : ""}`}>
         <table className="w-full text-xs">
           <thead>
             <tr className="border-b bg-muted/50">
