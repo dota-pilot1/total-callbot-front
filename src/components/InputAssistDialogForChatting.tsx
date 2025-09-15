@@ -430,11 +430,6 @@ Korean: "${koreanText}"`;
             >
               <MicrophoneIcon className="h-8 w-8" />
             </button>
-            <p className="text-sm text-gray-600 text-center">
-              {isListening
-                ? "GPT가 듣고 있어요..."
-                : "GPT Realtime 마이크로 음성을 입력하세요"}
-            </p>
           </div>
 
           {/* 한국어 입력 */}
@@ -468,7 +463,7 @@ Korean: "${koreanText}"`;
             <textarea
               value={koreanText}
               onChange={(e) => setKoreanText(e.target.value)}
-              placeholder="음성으로 입력되거나 직접 타이핑하세요"
+              placeholder="한국어 입력"
               className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
               rows={4}
             />
@@ -508,7 +503,7 @@ Korean: "${koreanText}"`;
             <textarea
               value={englishText}
               onChange={(e) => setEnglishText(e.target.value)}
-              placeholder="한글 입력 시 자동으로 영어 번역이 표시됩니다"
+              placeholder="영어 입력"
               className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
               rows={4}
             />
