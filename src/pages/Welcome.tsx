@@ -21,7 +21,7 @@ export default function Welcome() {
 
             {/* 소개 탭 */}
             <div className="mb-4">
-              <div className="flex gap-2 border-b">
+              <div className="flex gap-2 border-b border-border">
                 <button
                   type="button"
                   onClick={() => setTab('chatbot')}

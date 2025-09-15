@@ -168,7 +168,7 @@ export default function MobileSettingsDropdown({
                       <button
                         key={v}
                         onClick={() => onSelectVoice(v)}
-                        className={`px-3 py-1 rounded-md text-sm border ${selected ? 'bg-indigo-100 text-indigo-700 border-indigo-300' : 'bg-gray-100 text-gray-700 border-gray-300'}`}
+                        className={`px-3 py-1 rounded-md text-sm border ${selected ? 'border-primary bg-muted/60 text-foreground' : 'border-border bg-muted/20 text-muted-foreground hover:bg-muted/30'}`}
                       >
                         {v}
                       </button>
@@ -181,7 +181,7 @@ export default function MobileSettingsDropdown({
 
               {/* 음성 인식 기본 설정 */}
               <div className="space-y-2">
-                <h4 className="text-md font-medium text-foreground border-b border-border pb-ㅂ">
+                <h4 className="text-md font-medium text-foreground border-b border-border pb-2">
                   인식 언어
                 </h4>
 

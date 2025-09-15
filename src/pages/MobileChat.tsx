@@ -319,29 +319,22 @@ export default function MobileChat() {
         <div className="p-4">
           <div className="flex justify-between items-center">
             <div className="flex items-center space-x-3">
-              {/* 간단한 로고 */}
-              <div className="flex items-center space-x-1">
-                <div className="w-6 h-6 bg-primary rounded-md flex items-center justify-center">
-                  <span className="text-primary-foreground font-bold text-xs">
-                    T
-                  </span>
-                </div>
-                <h1 className="text-base font-semibold text-foreground">
-                  Callbot
-                </h1>
-              </div>
+              {/* 로봇 로고만 */}
+              <Button variant="outline" size="sm" className="w-8 h-8 p-0">
+                <span className="text-lg">🤖</span>
+              </Button>
             </div>
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-1">
               {/* 전체 채팅방 버튼 */}
               <Button
                 variant="outline"
                 onClick={() => navigate("/chat")}
-                className="relative h-9 w-9 p-0"
+                className="relative h-7 w-7 p-0"
                 size="sm"
               >
-                <ChatBubbleLeftRightIcon className="h-4 w-4" />
+                <ChatBubbleLeftRightIcon className="h-3 w-3" />
                 {chatParticipantCount >= 0 && (
-                  <span className="absolute -top-1 -right-1 min-w-[1rem] h-4 text-xs font-medium text-primary-foreground bg-primary rounded-full flex items-center justify-center px-1">
+                  <span className="absolute -top-1 -right-1 min-w-[0.75rem] h-3 text-[10px] font-medium text-primary-foreground bg-primary rounded-full flex items-center justify-center px-0.5">
                     {chatParticipantCount}
                   </span>
                 )}
@@ -353,9 +346,9 @@ export default function MobileChat() {
                 size="sm"
                 onClick={() => navigate("/practice")}
                 title="한국어 연습"
-                className="h-9 w-9 p-0"
+                className="h-7 w-7 p-0"
               >
-                <span className="text-xs font-bold">KR</span>
+                <span className="text-[10px] font-bold">KR</span>
               </Button>
 
               {/* 나의 대화 아카이브 버튼 */}
@@ -364,9 +357,9 @@ export default function MobileChat() {
                 size="sm"
                 onClick={() => setConversationArchiveDialogOpen(true)}
                 title="나의 대화 아카이브"
-                className="h-9 w-9 p-0"
+                className="h-7 w-7 p-0"
               >
-                <ArchiveBoxIcon className="h-4 w-4" />
+                <ArchiveBoxIcon className="h-3 w-3" />
               </Button>
 
               {/* 설정 버튼 */}
@@ -375,9 +368,9 @@ export default function MobileChat() {
                 size="sm"
                 onClick={() => setSettingsOpen(true)}
                 title="설정"
-                className="h-9 w-9 p-0"
+                className="h-7 w-7 p-0"
               >
-                <Cog6ToothIcon className="h-4 w-4" />
+                <Cog6ToothIcon className="h-3 w-3" />
               </Button>
 
               <Button
@@ -388,9 +381,9 @@ export default function MobileChat() {
                   logout();
                 }}
                 title="로그아웃"
-                className="h-9 w-9 p-0"
+                className="h-7 w-7 p-0"
               >
-                <ArrowRightOnRectangleIcon className="h-4 w-4" />
+                <ArrowRightOnRectangleIcon className="h-3 w-3" />
               </Button>
             </div>
           </div>
@@ -414,10 +407,10 @@ export default function MobileChat() {
                   onClick={openCharacterDialog}
                   variant="outline"
                   size="sm"
-                  className="w-10 h-10 p-0"
+                  className="w-12 h-12 p-0"
                   title={`${personaCharacter.name} (role-play)`}
                 >
-                  <span className="text-base">{personaCharacter.emoji}</span>
+                  <span className="text-lg">{personaCharacter.emoji}</span>
                 </Button>
                 {/* 음성 파동 + 상태 점 오버레이 (compact) */}
                 <div className="relative">
@@ -453,10 +446,10 @@ export default function MobileChat() {
                   }}
                   variant="destructive"
                   size="sm"
-                  className="w-10 h-10 p-0"
+                  className="w-12 h-12 p-0"
                   title="음성 연결 중단"
                 >
-                  <XMarkIcon className="h-5 w-5" />
+                  <XMarkIcon className="h-4 w-4" />
                 </Button>
 
                 {/* 대화 내용 클리어 버튼 (연결된 상태에서만) */}
@@ -465,10 +458,10 @@ export default function MobileChat() {
                     onClick={clearChat}
                     variant="secondary"
                     size="sm"
-                    className="w-10 h-10 p-0"
+                    className="w-12 h-12 p-0"
                     title="대화 내용 지우기"
                   >
-                    <TrashIcon className="h-5 w-5" />
+                    <TrashIcon className="h-4 w-4" />
                   </Button>
                 )}
                 {/* Exam 버튼 (제일 오른쪽으로 이동) */}
@@ -476,11 +469,13 @@ export default function MobileChat() {
                   onClick={triggerExam}
                   variant="outline"
                   size="sm"
-                  className="w-10 h-10 p-0 text-xs font-medium"
+                  className="w-12 h-12 p-0"
                   disabled={isConnecting || examSending}
                   title="시험 모드 시작"
                 >
-                  {examSending ? "..." : "E"}
+                  <span className="text-sm font-bold">
+                    {examSending ? "..." : "E"}
+                  </span>
                 </Button>
               </>
             ) : (
@@ -490,10 +485,10 @@ export default function MobileChat() {
                   onClick={openCharacterDialog}
                   variant="outline"
                   size="sm"
-                  className="w-10 h-10 p-0"
+                  className="w-12 h-12 p-0"
                   title={`${personaCharacter.name} (role-play)`}
                 >
-                  <span className="text-base">{personaCharacter.emoji}</span>
+                  <span className="text-lg">{personaCharacter.emoji}</span>
                 </Button>
                 <div className="relative inline-block">
                   <RippleButton
@@ -627,22 +622,26 @@ export default function MobileChat() {
             {/* 버튼 세로 배치 컨테이너 */}
             <div className="flex flex-col space-y-2">
               {/* 챗봇 제안 버튼 (마이크 대신) */}
-              <button
+              <Button
                 onClick={suggestReply}
-                className={`w-10 h-10 rounded-full transition-colors flex items-center justify-center ${suggestLoading ? "bg-muted/60 text-foreground animate-pulse" : "border border-border bg-muted/30 hover:bg-muted/40 text-muted-foreground"}`}
+                variant="outline"
+                size="sm"
+                className={`w-10 h-10 p-0 ${suggestLoading ? "animate-pulse" : ""}`}
                 title="AI가 다음 답변을 제안합니다"
                 disabled={suggestLoading}
               >
                 <SparklesIcon className="h-5 w-5" />
-              </button>
+              </Button>
               {/* 커스텀 질문 생성기 버튼 */}
-              <button
+              <Button
                 onClick={() => setCustomQuestionDialogOpen(true)}
-                className="w-10 h-10 rounded-full transition-colors flex items-center justify-center border border-border bg-muted/30 hover:bg-muted/40 text-muted-foreground"
+                variant="outline"
+                size="sm"
+                className="w-10 h-10 p-0"
                 title="커스텀 질문 생성기"
               >
                 🎯
-              </button>
+              </Button>
             </div>
 
             {/* 텍스트 입력 */}
@@ -679,21 +678,24 @@ export default function MobileChat() {
               {/* 오른쪽 버튼들 (수직 배치) */}
               <div className="flex flex-col space-y-2">
                 {/* 번역 버튼 */}
-                <button
+                <Button
                   onClick={() => openTranslation(newMessage)}
                   disabled={!newMessage.trim()}
-                  className="p-2 rounded-lg bg-green-100 hover:bg-green-200 text-green-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  variant="outline"
+                  size="sm"
+                  className="w-10 h-10 p-0 text-green-600 border-green-300 hover:bg-green-50"
                   title="입력 텍스트 번역하기"
                 >
                   <LanguageIcon className="h-4 w-4" />
-                </button>
+                </Button>
 
                 {/* 전송 버튼 */}
                 <Button
                   onClick={sendMessage}
                   disabled={!newMessage.trim() || examSending || suggestLoading}
+                  variant="outline"
                   size="sm"
-                  className="px-3"
+                  className="w-10 h-10 p-0"
                 >
                   <PaperAirplaneIcon className="h-4 w-4" />
                 </Button>
