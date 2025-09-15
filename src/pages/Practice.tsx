@@ -51,9 +51,16 @@ export default function Practice() {
         window.SpeechRecognition || window.webkitSpeechRecognition;
       const recognition = new SpeechRecognition();
 
+      // 더 견고한 설정
       recognition.lang = "ko-KR";
-      recognition.continuous = false;
-      recognition.interimResults = false;
+      recognition.continuous = true; // 연속 인식 활성화
+      recognition.interimResults = true; // 중간 결과 포함
+      recognition.maxAlternatives = 1;
+
+      // 타임아웃 설정
+      if ("webkitSpeechRecognition" in window) {
+        (recognition as any).webkitSpeechRecognition = true;
+      }
 
       recognition.onstart = () => {
         setIsListening(true);
@@ -61,20 +68,54 @@ export default function Practice() {
       };
 
       recognition.onresult = (event: any) => {
-        const transcript = event.results[0][0].transcript;
-        console.log("🎤 음성인식 결과:", transcript);
-        setKoreanText(transcript); // 기존 내용 날리고 새로 입력
-        setIsListening(false);
+        let finalTranscript = "";
+        let interimTranscript = "";
+
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const transcript = event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+            finalTranscript += transcript;
+          } else {
+            interimTranscript += transcript;
+          }
+        }
+
+        if (finalTranscript) {
+          console.log("🎤 최종 음성인식 결과:", finalTranscript);
+          setKoreanText(finalTranscript.trim());
+          setIsListening(false);
+          if (recognitionRef.current) {
+            recognitionRef.current.stop();
+          }
+        } else if (interimTranscript) {
+          console.log("🎤 중간 음성인식 결과:", interimTranscript);
+          // 중간 결과는 UI에 표시하지 않음 (혼란 방지)
+        }
       };
 
       recognition.onerror = (event: any) => {
         console.error("음성인식 오류:", event.error);
-        if (event.error === "no-speech") {
-          console.log("음성이 감지되지 않았습니다.");
-        } else if (event.error === "not-allowed") {
-          alert(
-            "마이크 권한이 필요합니다. 브라우저에서 마이크 접근을 허용해주세요.",
-          );
+
+        switch (event.error) {
+          case "no-speech":
+            console.log("음성이 감지되지 않았습니다. 다시 시도해주세요.");
+            // no-speech 오류 시 자동 재시작하지 않음 (무한 루프 방지)
+            break;
+          case "not-allowed":
+            alert(
+              "마이크 권한이 필요합니다. 브라우저에서 마이크 접근을 허용해주세요.",
+            );
+            break;
+          case "audio-capture":
+            alert(
+              "마이크를 찾을 수 없습니다. 마이크가 연결되어 있는지 확인해주세요.",
+            );
+            break;
+          case "network":
+            console.log("네트워크 오류가 발생했습니다.");
+            break;
+          default:
+            console.log(`음성인식 오류: ${event.error}`);
         }
         setIsListening(false);
       };
