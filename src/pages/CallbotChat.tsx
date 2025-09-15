@@ -899,8 +899,8 @@ export default function CallbotChat() {
         <div className="px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-indigo-500 rounded-full flex items-center justify-center">
-                <span className="text-white font-bold text-sm">
+              <div className="w-8 h-8 bg-muted/60 border border-border rounded-full flex items-center justify-center">
+                <span className="text-foreground font-bold text-sm">
                   {chatbot?.name.slice(0, 2) || "콜"}
                 </span>
               </div>
@@ -955,16 +955,14 @@ export default function CallbotChat() {
             {/* 왼쪽: 콜봇 아바타 및 연결 */}
             <div className="w-80 bg-card border-r border-border p-6 flex flex-col">
               <div className="text-center mb-8">
-                <div
-                  className={`w-28 h-28 mx-auto mb-4 bg-gradient-to-br ${chatbot?.color || "from-indigo-500 to-purple-600"} rounded-full flex items-center justify-center shadow-lg`}
-                >
+                <div className="w-28 h-28 mx-auto mb-4 rounded-full flex items-center justify-center shadow-lg border border-border bg-muted/40">
                   {chatbot?.id ? (
                     (() => {
                       const IconComponent = getIconComponent(chatbot.id);
-                      return <IconComponent className="h-14 w-14 text-white" />;
+                      return <IconComponent className="h-14 w-14 text-foreground" />;
                     })()
                   ) : (
-                    <span className="text-white text-2xl font-bold">콜봇</span>
+                    <span className="text-foreground text-2xl font-bold">콜봇</span>
                   )}
                 </div>
                 <h3 className="text-2xl font-bold text-foreground mb-3">
@@ -1224,7 +1222,7 @@ export default function CallbotChat() {
                             }
                           }}
                           placeholder="메시지를 입력하세요..."
-                          className="flex-1 px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-[13px] md:text-sm placeholder:text-muted-foreground placeholder:text-[13px] md:placeholder:text-sm"
+                          className="flex-1 px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring text-[13px] md:text-sm placeholder:text-muted-foreground placeholder:text-[13px] md:placeholder:text-sm"
                         />
                         <Button
                           onClick={handleSendMessage}
@@ -1304,25 +1302,25 @@ export default function CallbotChat() {
                         </h3>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                           <div className="flex items-center space-x-2">
-                            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                            <div className="w-2 h-2 bg-muted-foreground rounded-full"></div>
                             <span className="text-sm text-muted-foreground">
                               실시간 음성 대화
                             </span>
                           </div>
                           <div className="flex items-center space-x-2">
-                            <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                            <div className="w-2 h-2 bg-muted-foreground rounded-full"></div>
                             <span className="text-sm text-muted-foreground">
                               텍스트 채팅
                             </span>
                           </div>
                           <div className="flex items-center space-x-2">
-                            <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                            <div className="w-2 h-2 bg-muted-foreground rounded-full"></div>
                             <span className="text-sm text-muted-foreground">
                               전문 영역 상담
                             </span>
                           </div>
                           <div className="flex items-center space-x-2">
-                            <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                            <div className="w-2 h-2 bg-muted-foreground rounded-full"></div>
                             <span className="text-sm text-muted-foreground">
                               대화 내역 저장
                             </span>

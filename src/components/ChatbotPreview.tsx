@@ -100,9 +100,7 @@ const ChatbotPreview: React.FC<ChatbotPreviewProps> = ({ chatbot }) => {
         {/* 챗봇 정보 헤더 */}
         <div className="rounded-lg border border-border bg-card p-6 shadow-sm mb-6">
           <div className="flex items-center space-x-4 mb-4">
-            <div
-              className={`w-16 h-16 rounded-full bg-gradient-to-br ${chatbot.color} flex items-center justify-center text-white text-2xl font-bold`}
-            >
+            <div className="w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold border border-border bg-muted/40 text-foreground">
               {chatbot.name.charAt(0)}
             </div>
             <div className="flex-1">
