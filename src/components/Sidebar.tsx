@@ -114,15 +114,15 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                   {/* 카테고리 헤더 */}
                   <motion.button
                     onClick={() => toggleCategory(category.id)}
-                    className={`flex items-center justify-between w-full px-3 py-2 text-left text-sm font-medium rounded-md hover:bg-muted/30 transition-colors relative group ${
-                      shouldHighlight ? "text-foreground" : "text-muted-foreground"
+                    className={`flex items-center justify-between w-full px-3 py-2 text-left text-sm font-medium rounded-md transition-colors relative group hover:bg-muted/30 ${
+                      isOpen ? "bg-muted/40 text-foreground" : shouldHighlight ? "text-foreground" : "text-muted-foreground"
                     }`}
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                   >
                     <div className="flex items-center space-x-3 w-full">
                       <CategoryIcon
-                        className={`h-5 w-5 flex-shrink-0 ${shouldHighlight ? "text-foreground" : "text-muted-foreground"}`}
+                        className={`h-5 w-5 flex-shrink-0 ${isOpen ? "text-foreground" : shouldHighlight ? "text-foreground" : "text-muted-foreground"}`}
                       />
                       <span className="truncate flex-1">{category.name}</span>
                       <span
@@ -180,7 +180,9 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                                   : "border-transparent text-muted-foreground hover:bg-muted/30 hover:text-foreground hover:border-border"
                               }`}
                             >
-                              <BotIcon className="h-4 w-4 flex-shrink-0" />
+                              <span className={`h-7 w-7 rounded-full flex items-center justify-center ${isActive ? "bg-primary/10" : "bg-muted/30"}`}>
+                                <BotIcon className="h-4 w-4 flex-shrink-0" />
+                              </span>
                               <span className="truncate">{bot.name}</span>
 
                               {/* 간단한 봇 툴팁 */}
