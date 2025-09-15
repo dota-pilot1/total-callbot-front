@@ -76,11 +76,11 @@ export default function MobileSettingsDropdown({
       <button
         onClick={() => onChange(!enabled)}
         className={`relative inline-flex items-center rounded-full transition-colors ${switchSize} ${
-          enabled ? "bg-muted/60" : "bg-muted/30"
+          enabled ? "bg-blue-500" : "bg-gray-300"
         }`}
       >
         <span
-          className={`inline-block transform rounded-full bg-background transition-transform ${circleSize} ${
+          className={`inline-block transform rounded-full bg-white transition-transform ${circleSize} ${
             enabled ? translateDistance : "translate-x-0.5"
           }`}
         />
@@ -98,7 +98,7 @@ export default function MobileSettingsDropdown({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 bg-black bg-opacity-25 z-40"
+            className="fixed inset-0 bg-black bg-opacity-50 z-40"
             onClick={onClose}
           />
 
@@ -113,14 +113,14 @@ export default function MobileSettingsDropdown({
               stiffness: 200,
               duration: 0.3,
             }}
-            className="fixed top-0 left-0 right-0 bg-card border-b border-border shadow-lg z-50 h-screen overflow-y-auto"
+            className="fixed top-0 left-0 right-0 bg-white border-b border-gray-200 shadow-lg z-50 h-screen overflow-y-auto"
           >
             {/* 헤더 */}
-            <div className="sticky top-0 bg-card border-b border-border px-4 py-3 flex justify-between items-center">
-              <h3 className="text-lg font-semibold text-foreground">채팅 설정</h3>
+            <div className="sticky top-0 bg-white border-b border-gray-200 px-4 py-3 flex justify-between items-center">
+              <h3 className="text-lg font-semibold text-gray-900">채팅 설정</h3>
               <button
                 onClick={onClose}
-                className="p-2 rounded-lg hover:bg-muted/30 transition-colors text-muted-foreground"
+                className="p-2 rounded-lg hover:bg-gray-100 transition-colors text-gray-600"
               >
                 <XMarkIcon className="h-5 w-5" />
               </button>
@@ -130,7 +130,7 @@ export default function MobileSettingsDropdown({
             <div className="p-4 space-y-6">
               {/* 캐릭터 선택 */}
               <div className="space-y-2">
-                <h4 className="text-md font-medium text-foreground border-b border-border pb-2">
+                <h4 className="text-md font-medium text-gray-900 border-b border-gray-200 pb-2">
                   캐릭터 선택
                 </h4>
                 <div className="grid grid-cols-3 gap-2">
@@ -142,8 +142,8 @@ export default function MobileSettingsDropdown({
                         onClick={() => onSelectCharacter(c.id)}
                         className={`flex flex-col items-center justify-center rounded-md border text-xs py-2 transition-colors ${
                           selected
-                            ? "border-primary bg-muted/60 text-foreground ring-1 ring-primary/30"
-                            : "border-border bg-muted/20 text-muted-foreground hover:bg-muted/30"
+                            ? "border-blue-500 bg-blue-50 text-gray-900 ring-1 ring-blue-200"
+                            : "border-gray-200 bg-gray-50 text-gray-600 hover:bg-gray-100"
                         }`}
                         style={{ aspectRatio: "1 / 1" }}
                         title={c.name}
@@ -181,7 +181,7 @@ export default function MobileSettingsDropdown({
 
               {/* 음성 인식 기본 설정 */}
               <div className="space-y-2">
-                <h4 className="text-md font-medium text-foreground border-b border-border pb-2">
+                <h4 className="text-md font-medium text-gray-900 border-b border-gray-200 pb-2">
                   인식 언어
                 </h4>
 
@@ -197,8 +197,8 @@ export default function MobileSettingsDropdown({
                         onClick={() => onSpeechLangChange(option.key)}
                         className={`px-3 py-1 rounded-md text-sm font-medium transition-colors border ${
                           speechLang === option.key
-                            ? "border-primary bg-muted/60 text-foreground"
-                            : "border-border bg-muted/20 text-muted-foreground hover:bg-muted/30"
+                            ? "border-blue-500 bg-blue-50 text-gray-900"
+                            : "border-gray-200 bg-gray-50 text-gray-600 hover:bg-gray-100"
                         }`}
                       >
                         {option.label}
@@ -210,7 +210,7 @@ export default function MobileSettingsDropdown({
 
               {/* 오디오 최적화 설정 */}
               <div className="space-y-4">
-                <h4 className="text-md font-medium text-foreground border-b border-border pb-2">
+                <h4 className="text-md font-medium text-gray-900 border-b border-gray-200 pb-2">
                   🔊 오디오 최적화
                 </h4>
 
@@ -242,10 +242,10 @@ export default function MobileSettingsDropdown({
                     className="flex items-center justify-between py-2"
                   >
                     <div className="flex-1">
-                      <div className="font-medium text-foreground">
+                      <div className="font-medium text-gray-900">
                         {setting.label}
                       </div>
-                      <div className="text-sm text-muted-foreground">
+                      <div className="text-sm text-gray-600">
                         {setting.description}
                       </div>
                     </div>
@@ -259,8 +259,8 @@ export default function MobileSettingsDropdown({
               </div>
 
               {/* 고급 설정 */}
-              <div className="space-y-4 bg-white">
-                <h4 className="text-md font-medium text-gray-900 border-b border-gray-100 pb-2">
+              <div className="space-y-4">
+                <h4 className="text-md font-medium text-gray-900 border-b border-gray-200 pb-2">
                   ⚙️ 고급 설정
                 </h4>
 
