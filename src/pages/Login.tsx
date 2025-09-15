@@ -53,14 +53,15 @@ export default function Login() {
           <div className="rounded-lg border bg-card p-8 shadow-lg">
             {/* 소개 탭 (챗봇/채팅 간략 소개) */}
             <div className="mb-4">
-              <div className="flex gap-4 border-b">
+              <div className="flex gap-2 border-b">
                 <button
                   type="button"
                   onClick={() => setSelectedService("chatbot")}
-                  className={`px-1 py-2 text-sm -mb-px ${
+                  aria-pressed={selectedService === "chatbot"}
+                  className={`px-3 py-2 text-sm -mb-px rounded-t-md transition-colors ${
                     selectedService === "chatbot"
-                      ? "border-b-2 border-primary text-foreground"
-                      : "text-muted-foreground hover:text-foreground"
+                      ? "border-b-2 border-primary text-foreground bg-muted/40"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted/20"
                   }`}
                 >
                   챗봇
@@ -68,10 +69,11 @@ export default function Login() {
                 <button
                   type="button"
                   onClick={() => setSelectedService("chat")}
-                  className={`px-1 py-2 text-sm -mb-px ${
+                  aria-pressed={selectedService === "chat"}
+                  className={`px-3 py-2 text-sm -mb-px rounded-t-md transition-colors ${
                     selectedService === "chat"
-                      ? "border-b-2 border-primary text-foreground"
-                      : "text-muted-foreground hover:text-foreground"
+                      ? "border-b-2 border-primary text-foreground bg-muted/40"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted/20"
                   }`}
                 >
                   채팅
