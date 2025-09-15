@@ -238,12 +238,12 @@ export default function MobileChat() {
   };
 
   return (
-    <div className="h-screen bg-background flex flex-col">
+    <div className="h-screen bg-white flex flex-col">
       {/* Hidden audio sink for AI voice */}
       <audio ref={audioRef} autoPlay style={{ display: "none" }} />
 
       {/* 고정 헤더 */}
-      <div className="bg-card border-b border-border flex-shrink-0 sticky top-0 z-40">
+      <div className="bg-white border-b border-gray-200 flex-shrink-0 sticky top-0 z-50">
         <div className="p-4">
           <div className="flex justify-between items-center">
             <div className="flex items-center space-x-3">
