@@ -305,7 +305,7 @@ Please respond in this exact JSON format:
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
+            transition={{ duration: 0.3 }}
             className="fixed inset-0 bg-black/30"
             onClick={onClose}
           />
@@ -318,9 +318,9 @@ Please respond in this exact JSON format:
               exit={{ y: "-100%", opacity: 0 }}
               transition={{
                 type: "spring",
-                damping: 25,
-                stiffness: 200,
-                duration: 0.3,
+                damping: 30,
+                stiffness: 150,
+                duration: 0.5,
               }}
               className="max-w-lg w-full bg-white rounded-lg shadow-xl"
             >
