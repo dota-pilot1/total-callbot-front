@@ -4,6 +4,10 @@ import { XMarkIcon } from "@heroicons/react/24/outline";
 import { CHARACTER_LIST } from "../features/chatbot/character/characters";
 import { Button } from "./ui";
 
+export type CharacterOption = { id: string; name: string; emoji: string };
+export type ScenarioOption = { id: string; name: string; desc: string };
+export type GenderOption = "male" | "female";
+
 // 공통 캐릭터 버튼 컴포넌트
 interface CharacterButtonProps {
   character: CharacterOption;
@@ -39,10 +43,6 @@ const CharacterButton = ({
     </div>
   </button>
 );
-
-export type CharacterOption = { id: string; name: string; emoji: string };
-export type ScenarioOption = { id: string; name: string; desc: string };
-export type GenderOption = "male" | "female";
 
 interface MobileCharacterDialogProps {
   open: boolean;
@@ -141,6 +141,13 @@ export default function MobileCharacterDialog({
     onClose();
   };
 
+  const handleCharacterSelect = (id: string) => {
+    setCharacterId(id);
+    const meta = CHARACTER_LIST.find((x) => x.id === id);
+    if (meta?.voice) setVoice(meta.voice);
+    if (meta?.defaultGender) setGender(meta.defaultGender);
+  };
+
   return (
     <AnimatePresence>
       {open && (
@@ -187,37 +194,14 @@ export default function MobileCharacterDialog({
                 </button>
                 {expandedSections.general && (
                   <div className="grid grid-cols-5 gap-3 mb-4">
-                    {GENERAL_CHARACTERS.map((c) => {
-                      const selected = c.id === characterId;
-                      return (
-                        <button
-                          key={c.id}
-                          onClick={() => {
-                            setCharacterId(c.id);
-                            const meta = CHARACTER_LIST.find(
-                              (x) => x.id === c.id,
-                            );
-                            if (meta?.voice) setVoice(meta.voice);
-                            if (meta?.defaultGender)
-                              setGender(meta.defaultGender);
-                          }}
-                          className={`flex flex-col items-center justify-center rounded-lg border py-4 min-h-[80px] transition-colors ${
-                            selected
-                              ? "border-blue-500 bg-blue-50 text-gray-900 ring-1 ring-blue-200"
-                              : "border-gray-200 bg-gray-50 text-gray-600 hover:bg-gray-100"
-                          }`}
-                          style={{ aspectRatio: "1 / 1" }}
-                          title={c.name}
-                        >
-                          <div className="text-3xl mb-2 leading-none">
-                            {c.emoji}
-                          </div>
-                          <div className="text-[10px] leading-tight text-center px-1 truncate w-full">
-                            {c.name}
-                          </div>
-                        </button>
-                      );
-                    })}
+                    {GENERAL_CHARACTERS.map((c) => (
+                      <CharacterButton
+                        key={c.id}
+                        character={c}
+                        selected={c.id === characterId}
+                        onClick={() => handleCharacterSelect(c.id)}
+                      />
+                    ))}
                   </div>
                 )}
               </div>
@@ -235,37 +219,14 @@ export default function MobileCharacterDialog({
                 </button>
                 {expandedSections.quiz && (
                   <div className="grid grid-cols-5 gap-3 mb-4">
-                    {QUIZ_CHARACTERS.map((c) => {
-                      const selected = c.id === characterId;
-                      return (
-                        <button
-                          key={c.id}
-                          onClick={() => {
-                            setCharacterId(c.id);
-                            const meta = CHARACTER_LIST.find(
-                              (x) => x.id === c.id,
-                            );
-                            if (meta?.voice) setVoice(meta.voice);
-                            if (meta?.defaultGender)
-                              setGender(meta.defaultGender);
-                          }}
-                          className={`flex flex-col items-center justify-center rounded-lg border py-4 min-h-[80px] transition-colors ${
-                            selected
-                              ? "border-blue-500 bg-blue-50 text-gray-900 ring-1 ring-blue-200"
-                              : "border-gray-200 bg-gray-50 text-gray-600 hover:bg-gray-100"
-                          }`}
-                          style={{ aspectRatio: "1 / 1" }}
-                          title={c.name}
-                        >
-                          <div className="text-3xl mb-2 leading-none">
-                            {c.emoji}
-                          </div>
-                          <div className="text-[10px] leading-tight text-center px-1 truncate w-full">
-                            {c.name}
-                          </div>
-                        </button>
-                      );
-                    })}
+                    {QUIZ_CHARACTERS.map((c) => (
+                      <CharacterButton
+                        key={c.id}
+                        character={c}
+                        selected={c.id === characterId}
+                        onClick={() => handleCharacterSelect(c.id)}
+                      />
+                    ))}
                   </div>
                 )}
               </div>
@@ -283,37 +244,14 @@ export default function MobileCharacterDialog({
                 </button>
                 {expandedSections.roleplay && (
                   <div className="grid grid-cols-5 gap-3 mb-4">
-                    {ROLEPLAY_CHARACTERS.map((c) => {
-                      const selected = c.id === characterId;
-                      return (
-                        <button
-                          key={c.id}
-                          onClick={() => {
-                            setCharacterId(c.id);
-                            const meta = CHARACTER_LIST.find(
-                              (x) => x.id === c.id,
-                            );
-                            if (meta?.voice) setVoice(meta.voice);
-                            if (meta?.defaultGender)
-                              setGender(meta.defaultGender);
-                          }}
-                          className={`flex flex-col items-center justify-center rounded-lg border py-4 min-h-[80px] transition-colors ${
-                            selected
-                              ? "border-blue-500 bg-blue-50 text-gray-900 ring-1 ring-blue-200"
-                              : "border-gray-200 bg-gray-50 text-gray-600 hover:bg-gray-100"
-                          }`}
-                          style={{ aspectRatio: "1 / 1" }}
-                          title={c.name}
-                        >
-                          <div className="text-3xl mb-2 leading-none">
-                            {c.emoji}
-                          </div>
-                          <div className="text-[10px] leading-tight text-center px-1 truncate w-full">
-                            {c.name}
-                          </div>
-                        </button>
-                      );
-                    })}
+                    {ROLEPLAY_CHARACTERS.map((c) => (
+                      <CharacterButton
+                        key={c.id}
+                        character={c}
+                        selected={c.id === characterId}
+                        onClick={() => handleCharacterSelect(c.id)}
+                      />
+                    ))}
                   </div>
                 )}
               </div>
@@ -331,38 +269,15 @@ export default function MobileCharacterDialog({
                 </button>
                 {expandedSections.news && (
                   <div className="grid grid-cols-5 gap-3 mb-4">
-                    {NEWS_CHARACTERS.map((c) => {
-                      const selected = c.id === characterId;
-                      return (
-                        <button
-                          key={c.id}
-                          onClick={() => {
-                            setCharacterId(c.id);
-                            const meta = CHARACTER_LIST.find(
-                              (x) => x.id === c.id,
-                            );
-                            if (meta?.voice) setVoice(meta.voice);
-                            if (meta?.defaultGender)
-                              setGender(meta.defaultGender);
-                          }}
-                          className={`flex flex-col items-center justify-center rounded-lg border py-4 min-h-[80px] transition-colors opacity-50 cursor-not-allowed ${
-                            selected
-                              ? "border-blue-500 bg-blue-50 text-gray-900 ring-1 ring-blue-200"
-                              : "border-gray-200 bg-gray-50 text-gray-600"
-                          }`}
-                          style={{ aspectRatio: "1 / 1" }}
-                          title={`${c.name} (구현 예정)`}
-                          disabled
-                        >
-                          <div className="text-3xl mb-2 leading-none">
-                            {c.emoji}
-                          </div>
-                          <div className="text-[10px] leading-tight text-center px-1 truncate w-full">
-                            {c.name}
-                          </div>
-                        </button>
-                      );
-                    })}
+                    {NEWS_CHARACTERS.map((c) => (
+                      <CharacterButton
+                        key={c.id}
+                        character={c}
+                        selected={c.id === characterId}
+                        disabled={true}
+                        onClick={() => handleCharacterSelect(c.id)}
+                      />
+                    ))}
                   </div>
                 )}
               </div>
