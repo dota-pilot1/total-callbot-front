@@ -7,6 +7,7 @@ import { Button } from "./ui";
 export type CharacterOption = { id: string; name: string; emoji: string };
 export type ScenarioOption = { id: string; name: string; desc: string };
 export type GenderOption = "male" | "female";
+export type ExamTypeOption = "none" | "general" | "history" | "coding";
 
 // 공통 캐릭터 버튼 컴포넌트
 interface CharacterButtonProps {
@@ -52,12 +53,14 @@ interface MobileCharacterDialogProps {
     scenarioId?: string;
     gender: GenderOption;
     voice?: "verse" | "alloy" | "sage";
+    examType?: ExamTypeOption;
   };
   onConfirm: (v: {
     characterId: string;
     scenarioId?: string;
     gender: GenderOption;
     voice: "verse" | "alloy" | "sage";
+    examType: ExamTypeOption;
   }) => void;
 }
 
@@ -66,9 +69,7 @@ const GENERAL_CHARACTERS: CharacterOption[] = CHARACTER_LIST.filter(
   (c) => c.category === "general",
 ).map((c) => ({ id: c.id, name: c.name, emoji: c.emoji }));
 
-const QUIZ_CHARACTERS: CharacterOption[] = CHARACTER_LIST.filter(
-  (c) => c.category === "quiz",
-).map((c) => ({ id: c.id, name: c.name, emoji: c.emoji }));
+// 퀴즈 캐릭터는 제거됨 (옵션으로 이동)
 
 const ROLEPLAY_CHARACTERS: CharacterOption[] = CHARACTER_LIST.filter(
   (c) => c.category === "roleplay",
@@ -80,7 +81,6 @@ const NEWS_CHARACTERS: CharacterOption[] = CHARACTER_LIST.filter(
 
 const ALL_CHARACTERS = [
   ...GENERAL_CHARACTERS,
-  ...QUIZ_CHARACTERS,
   ...ROLEPLAY_CHARACTERS,
   ...NEWS_CHARACTERS,
 ];
@@ -112,6 +112,9 @@ export default function MobileCharacterDialog({
   const [voice, setVoice] = useState<"verse" | "alloy" | "sage">(
     value?.voice || "verse",
   );
+  const [examType, setExamType] = useState<ExamTypeOption>(
+    value?.examType || "none",
+  );
 
   // 카테고리별 접기/열기 상태
   const [expandedSections, setExpandedSections] = useState({
@@ -137,7 +140,7 @@ export default function MobileCharacterDialog({
   };
 
   const confirm = () => {
-    onConfirm({ characterId, scenarioId, gender, voice });
+    onConfirm({ characterId, scenarioId, gender, voice, examType });
     onClose();
   };
 
@@ -208,27 +211,42 @@ export default function MobileCharacterDialog({
 
               {/* 📚 퀴즈 */}
               <div>
-                <button
-                  onClick={() => toggleSection("quiz")}
-                  className="flex items-center justify-between w-full text-left text-sm font-medium text-gray-900 mb-2"
-                >
-                  <span>📚 퀴즈 ({QUIZ_CHARACTERS.length})</span>
-                  <span className="text-gray-500">
-                    {expandedSections.quiz ? "▼" : "▶"}
-                  </span>
-                </button>
-                {expandedSections.quiz && (
-                  <div className="grid grid-cols-5 gap-3 mb-4">
-                    {QUIZ_CHARACTERS.map((c) => (
-                      <CharacterButton
-                        key={c.id}
-                        character={c}
-                        selected={c.id === characterId}
-                        onClick={() => handleCharacterSelect(c.id)}
-                      />
+                <div className="text-sm font-medium text-gray-900 mb-2">
+                  📚 시험 옵션
+                </div>
+                <div className="p-3 bg-blue-50 rounded-lg mb-4">
+                  <div className="text-sm text-blue-700 mb-2">
+                    시험 유형 선택:
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    {(
+                      [
+                        "none",
+                        "general",
+                        "history",
+                        "coding",
+                      ] as ExamTypeOption[]
+                    ).map((type) => (
+                      <button
+                        key={type}
+                        onClick={() => setExamType(type)}
+                        className={`px-3 py-2 text-xs rounded-md border transition-colors ${
+                          examType === type
+                            ? "border-blue-500 bg-blue-100 text-blue-700"
+                            : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
+                        }`}
+                      >
+                        {type === "none"
+                          ? "없음"
+                          : type === "general"
+                            ? "상식"
+                            : type === "history"
+                              ? "역사"
+                              : "개발"}
+                      </button>
                     ))}
                   </div>
-                )}
+                </div>
               </div>
 
               {/* 🎭 상황극 */}

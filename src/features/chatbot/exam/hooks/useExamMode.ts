@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { getRandomExamTopic, buildExamPrompt } from '../lib/examUtils';
+import { useState } from "react";
+import { getRandomExamTopic, buildExamPrompt } from "../lib/examUtils";
 
 // 음성 연결 타입 (useVoiceConnection에서 반환되는 타입)
 interface VoiceConnection {
@@ -10,8 +10,8 @@ export interface UseExamModeOptions {
   // 의존성들
   voiceConnection?: VoiceConnection | null;
   selectedVoice: string;
-  onAddAssistantMessage: (message: string) => void;
   ensureConnectedAndReady: () => Promise<void>;
+  onAddAssistantMessage: (message: string) => void;
 }
 
 export interface UseExamModeReturn {
@@ -29,8 +29,8 @@ export const useExamMode = (options: UseExamModeOptions): UseExamModeReturn => {
   const {
     voiceConnection,
     selectedVoice,
-    onAddAssistantMessage,
     ensureConnectedAndReady,
+    onAddAssistantMessage,
   } = options;
 
   // 시험 전송 중 상태
@@ -54,7 +54,7 @@ export const useExamMode = (options: UseExamModeOptions): UseExamModeReturn => {
       await ensureConnectedAndReady();
     } catch (e) {
       alert(
-        '연결에 실패했습니다. 마이크 권한 또는 네트워크 상태를 확인해주세요.'
+        "연결에 실패했습니다. 마이크 권한 또는 네트워크 상태를 확인해주세요.",
       );
       setExamSending(false);
       return;
@@ -66,45 +66,43 @@ export const useExamMode = (options: UseExamModeOptions): UseExamModeReturn => {
 
     try {
       // 3. 사용자에게 시험 안내 메시지 표시
-      onAddAssistantMessage(
-        `이번 시험 주제: ${topic.ko}\n총 5문항으로 진행됩니다.`
-      );
+      onAddAssistantMessage(`🎓 시험 주제: ${topic.ko} (총 3문항)`);
     } catch (error) {
-      console.warn('시험 안내 메시지 표시 실패:', error);
+      console.warn("시험 안내 메시지 표시 실패:", error);
     }
 
     try {
       // 4. OpenAI Realtime API를 통한 시험 지시 전송
-      if (!voiceConnection?.dc || voiceConnection.dc.readyState !== 'open') {
-        throw new Error('음성 연결이 준비되지 않았습니다');
+      if (!voiceConnection?.dc || voiceConnection.dc.readyState !== "open") {
+        throw new Error("음성 연결이 준비되지 않았습니다");
       }
 
       // 대화 컨텍스트에 시험 지시사항 추가
       voiceConnection.dc.send(
         JSON.stringify({
-          type: 'conversation.item.create',
+          type: "conversation.item.create",
           item: {
-            type: 'message',
-            role: 'user',
-            content: [{ type: 'input_text', text: prompt }],
+            type: "message",
+            role: "user",
+            content: [{ type: "input_text", text: prompt }],
           },
-        })
+        }),
       );
 
       // AI 응답 요청 (오디오 + 텍스트)
       voiceConnection.dc.send(
         JSON.stringify({
-          type: 'response.create',
+          type: "response.create",
           response: {
-            modalities: ['audio', 'text'],
-            conversation: 'auto',
+            modalities: ["audio", "text"],
+            conversation: "auto",
             voice: selectedVoice,
           },
-        })
+        }),
       );
     } catch (error) {
-      console.error('Exam 트리거 실패:', error);
-      alert('Exam 지시를 전송하지 못했습니다. 다시 시도해주세요.');
+      console.error("Exam 트리거 실패:", error);
+      alert("Exam 지시를 전송하지 못했습니다. 다시 시도해주세요.");
     } finally {
       setExamSending(false);
     }

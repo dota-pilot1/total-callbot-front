@@ -20,3 +20,10 @@ body {
 .keep-korean {
     word-break: keep-all;
 }
+
+/* Add black border to buttons that lack any Tailwind border class */
+@layer base {
+    button:not([class*="border"]):not([data-no-border]) {
+        @apply border border-black;
+    }
+}

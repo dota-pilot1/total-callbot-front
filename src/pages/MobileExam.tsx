@@ -12,43 +12,31 @@ import {
   LanguageIcon,
   ArchiveBoxIcon,
   ArrowRightOnRectangleIcon,
-  ChatBubbleLeftRightIcon,
+  AcademicCapIcon,
 } from "@heroicons/react/24/outline";
-// no solid icons needed currently
 import { useVoiceConnection } from "../features/chatbot/voice";
 import { useChatMessages } from "../features/chatbot/messaging";
 import VoicePulse from "../components/VoicePulse";
-import MobileSettingsDropdown from "../components/MobileSettingsDropdown";
-// import SockJS from "sockjs-client";
-// import { Stomp } from "@stomp/stompjs";
 
-import MobileCharacterDialog from "../components/MobileCharacterDialog";
-import { CHARACTER_LIST } from "../features/chatbot/character/characters";
-import {
-  useCharacterStore,
-  CHARACTER_PRESETS,
-  VOICE_OPTIONS,
-  useCharacterSelection,
-} from "../features/chatbot/character";
 import { useWebSocketStore } from "../features/websocket/stores/useWebSocketStore";
 import MobileTranslationDialog from "../components/MobileTranslationDialog";
 import CustomQuestionGenerator from "../components/CustomQuestionGenerator";
 import KoreanInputDialog from "../components/KoreanInputDialog";
 import CardForChattingMessageWithTranslation from "../components/CardForChattingMessageWithTranslation";
 import { MyConversationArchive } from "../features/conversation-archive";
-
 import { useAudioSettings } from "../features/chatbot/settings";
-import ExamResultsSlideDown from "../components/ExamResultsSlideDown";
-import { useExamMode } from "../features/chatbot/exam";
 
-export default function MobileChat() {
+import { useExamMode } from "../features/chatbot/exam";
+import MobileExamSettingsDropdown from "../features/exam/components/MobileExamSettingsDropdown";
+import { useExamSettingsHook } from "../features/exam/hooks/useExamSettings";
+
+export default function MobileExam() {
   const { logout, getUser } = useAuthStore();
   const user = getUser();
   const navigate = useNavigate();
 
   // WebSocket Store 사용 (중복 연결 제거)
-  const { participantCount, connected, connecting, connect, disconnect } =
-    useWebSocketStore();
+  const { connected, connecting, connect, disconnect } = useWebSocketStore();
 
   // 컴포넌트 언마운트 시에만 연결 해제 (자동 연결 제거)
   useEffect(() => {
@@ -60,8 +48,17 @@ export default function MobileChat() {
     };
   }, [connected, disconnect]);
 
-  // zustand store에서 캐릭터 상태 가져오기
-  const { personaCharacter, personaGender } = useCharacterStore();
+  // 시험 페이지는 기본 캐릭터 고정
+  const personaCharacter = {
+    id: "examiner",
+    name: "시험관",
+    emoji: "👨‍🏫",
+    personality: "전문적이고 공정한 영어 시험관",
+    background: "영어 교육 전문가로 학습자의 실력을 정확히 평가합니다",
+    defaultGender: "male" as const,
+  };
+  const personaGender = "male";
+  const selectedCharacterId = "examiner";
 
   // 오디오 설정 훅 (responseDelayMs: 2초로 설정하여 사용자 메시지 등록 후 적절한 대기시간 제공)
   const {
@@ -70,23 +67,26 @@ export default function MobileChat() {
       echoCancellation,
       noiseSuppression,
       autoGainControl,
-      coalesceDelayMs,
       responseDelayMs,
-      debugEvents,
-      maxSentenceCount,
       englishLevel,
     },
     setSpeechLang,
     setEchoCancellation,
     setNoiseSuppression,
     setAutoGainControl,
-    setCoalesceDelayMs,
     setResponseDelayMs,
-    setDebugEvents,
-    setMaxSentenceCount,
     setEnglishLevel,
   } = useAudioSettings();
   const [settingsOpen, setSettingsOpen] = useState(false);
+
+  // 시험 설정 훅
+  const {
+    settings: examSettings,
+    setExamDifficulty,
+    setExamDuration,
+    setAutoStartExam,
+    setShowScoreAfterEach,
+  } = useExamSettingsHook();
 
   // Translation dialog state (mobile)
   const [translationOpen, setTranslationOpen] = useState(false);
@@ -104,21 +104,9 @@ export default function MobileChat() {
   const [koreanInputDialogOpen, setKoreanInputDialogOpen] = useState(false);
 
   // 시험 결과 슬라이드 다운 상태
-  const [examResultsVisible, setExamResultsVisible] = useState(false);
-  const [examResultsText, setExamResultsText] = useState("");
 
-  // 캐릭터 선택 훅
-  const {
-    selectedCharacterId,
-    selectedVoice,
-    characterDialogOpen,
-    setSelectedCharacterId,
-    setSelectedVoice,
-    openCharacterDialog,
-    closeCharacterDialog,
-    applyCharacterSettings,
-    getCurrentDialogValue,
-  } = useCharacterSelection();
+  // 시험 페이지는 기본 음성 설정
+  const selectedVoice = "alloy"; // 기본 음성
 
   // 채팅 메시지 훅
   const {
@@ -137,7 +125,6 @@ export default function MobileChat() {
   } = useChatMessages({
     responseDelayMs,
     selectedCharacterId,
-    maxSentenceCount,
     englishLevel,
     onSendMessage: (text: string) => {
       // 음성 연결이 있으면 음성으로 전송
@@ -155,50 +142,11 @@ export default function MobileChat() {
   const handleAssistantMessage = (message: string) => {
     addAssistantMessage(message);
 
-    // 시험 완료 감지
-    if (detectExamCompletion(message)) {
-      setExamResultsText(message);
-      // 약간의 지연 후 슬라이드 다운 표시 (자연스러운 UX)
-      setTimeout(() => {
-        setExamResultsVisible(true);
-      }, 1000);
-    }
-  };
-
-  // CHARACTER_LIST에서 실제 캐릭터 찾기
-  const actualPersonaCharacter =
-    CHARACTER_LIST.find((c) => c.id === personaCharacter.id) ||
-    CHARACTER_LIST[0];
-
-  /**
-   * 시험 완료 여부를 감지하는 함수
-   * 메시지에서 "Total:", "Level:", "Key phrases" 등의 키워드를 찾아 시험 결과인지 판단
-   */
-  const detectExamCompletion = (message: string): boolean => {
-    const examCompletionIndicators = [
-      "Total:",
-      "Scores by question:",
-      "Level:",
-      "Key phrases to study",
-      "References:",
-      /Q[1-3]\s+\d+\/10/, // Q1 8/10 패턴
-      /\d+\/30/, // 총점 패턴 (예: 22/30)
-    ];
-
-    return examCompletionIndicators.some((indicator) => {
-      if (typeof indicator === "string") {
-        return message.includes(indicator);
-      } else {
-        return indicator.test(message);
-      }
-    });
+    // 시험 완료 메시지는 일반 채팅 메시지로 표시
   };
 
   // 임시 음성 메시지 상태 (optimistic UI용)
   const [tempVoiceMessage, setTempVoiceMessage] = useState<string | null>(null);
-
-  // 토스트 메시지 상태
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // 음성 연결 훅
   const {
@@ -218,7 +166,7 @@ export default function MobileChat() {
     noiseSuppression,
     autoGainControl,
     selectedVoice,
-    personaCharacter: actualPersonaCharacter,
+    personaCharacter: personaCharacter,
     personaGender,
     onUserMessage: (text: string) => {
       // 최종 메시지가 오면 임시 메시지 제거하고 정식 메시지 추가
@@ -227,15 +175,9 @@ export default function MobileChat() {
     },
     onAssistantMessage: handleAssistantMessage,
     onUserSpeechStart: () => {
-      // 음성 시작 시 임시 메시지 표시 및 대화 시작 토스트
+      // 음성 시작 시 임시 메시지 표시 및 시험시험 시작 토스트
       console.log("🎤 음성 시작 - 임시 메시지 표시");
       setTempVoiceMessage("🎤 말하는 중...");
-
-      // 대화 시작 토스트 (첫 번째 음성 시작 시에만)
-      if (messages.length === 0) {
-        setToastMessage("🎙️ 대화가 시작되었습니다!");
-        setTimeout(() => setToastMessage(null), 2000);
-      }
     },
     onUserTranscriptUpdate: (text: string, isFinal: boolean) => {
       // 실시간 텍스트 업데이트만 처리 (중복 방지를 위해 addUserMessage 제거)
@@ -249,8 +191,6 @@ export default function MobileChat() {
       }
     },
   });
-
-  // 캐릭터 변경 시 기본 음성 동기화는 useCharacterSelection 훅에서 처리
 
   // 시험 연결 및 준비 함수 (원래 exam 버튼과 동일)
   const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -291,6 +231,39 @@ export default function MobileChat() {
     onAddAssistantMessage: handleAssistantMessage,
   });
 
+  // 연결만 담당하는 함수
+  const startConnection = async () => {
+    try {
+      // WebSocket 연결 확인 (자동으로 useEffect에서 처리됨)
+      if (user && !connected) {
+        connect("general", user.name, user.email, "전체 채팅");
+      }
+      // 음성 시작
+      if (!voiceEnabled) {
+        setVoiceEnabled(true);
+        await startVoice();
+      }
+    } catch (error) {
+      console.error("❌ 연결 실패:", error);
+      alert("연결을 시작할 수 없습니다.");
+    }
+  };
+
+  // 시험 시작 전용 함수 (연결 후 호출)
+  const startExam = async () => {
+    if (examSending) return;
+
+    try {
+      // 기존 대화 내용 지우기
+      clearChat();
+      // 시험 시작
+      await triggerExam();
+    } catch (error) {
+      console.error("시험 시작 실패:", error);
+      alert("시험을 시작할 수 없습니다.");
+    }
+  };
+
   const openTranslation = (text: string) => {
     setTranslationText(text);
     setTranslationOpen(true);
@@ -300,40 +273,26 @@ export default function MobileChat() {
     <div className="h-screen bg-white flex flex-col">
       {/* Hidden audio sink for AI voice */}
       <audio ref={audioRef} autoPlay style={{ display: "none" }} />
-
-      {/* 토스트 메시지 */}
-      {toastMessage && (
-        <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 animate-pulse">
-          <div className="bg-blue-500 text-white px-4 py-2 rounded-lg shadow-lg text-sm font-medium">
-            {toastMessage}
-          </div>
-        </div>
-      )}
-
-      {/* 고정 헤더 */}
+      {/* 고정 헤더 - 시험용으로 수정 */}
       <div className="bg-white border-b border-gray-200 flex-shrink-0 sticky top-0 z-50">
         <div className="p-4">
           <div className="flex justify-between items-center">
             <div className="flex items-center space-x-3">
-              {/* 로봇 로고만 */}
+              {/* 시험 로고 */}
               <Button variant="outline" size="sm" className="w-8 h-8 p-0">
-                <span className="text-lg">🤖</span>
+                <AcademicCapIcon className="h-4 w-4" />
               </Button>
             </div>
             <div className="flex items-center space-x-1">
-              {/* 전체 채팅방 버튼 */}
+              {/* 뒤로가기 버튼 */}
               <Button
                 variant="outline"
-                onClick={() => navigate("/chat")}
-                className="relative h-7 w-7 p-0"
+                onClick={() => navigate("/login")}
+                className="h-7 w-7 p-0"
                 size="sm"
+                title="로그인 페이지로"
               >
-                <ChatBubbleLeftRightIcon className="h-3 w-3" />
-                {participantCount >= 0 && (
-                  <span className="absolute -top-1 -right-1 min-w-[0.75rem] h-3 text-[10px] font-medium text-primary-foreground bg-primary rounded-full flex items-center justify-center px-0.5">
-                    {participantCount}
-                  </span>
-                )}
+                <span className="text-xs">←</span>
               </Button>
 
               {/* 연습장 버튼 */}
@@ -373,7 +332,7 @@ export default function MobileChat() {
                 variant="outline"
                 size="sm"
                 onClick={() => {
-                  console.log("Logout button clicked in MobileChat");
+                  console.log("Logout button clicked in MobileExam");
                   logout();
                 }}
                 title="로그아웃"
@@ -385,11 +344,10 @@ export default function MobileChat() {
           </div>
         </div>
       </div>
-
-      {/* 챗봇 정보 및 연결 상태 */}
+      {/* 시험관 정보 및 연결 상태 - 챗봇과 동일한 구조 */}
       <div className="bg-card border-b border-border p-4 flex-shrink-0">
         <div className="text-center">
-          {/* <p className="text-sm text-gray-600 mb-3">AI 음성 대화 전문 어시스턴트</p> */}
+          {/* <p className="text-sm text-gray-600 mb-3">AI 음성 시험 전문 어시스턴트</p> */}
 
           {/* 상단 배지는 제거하고, 마이크/버튼에 상태 점을 오버레이로 표시 */}
           <div className="mb-2" />
@@ -398,16 +356,6 @@ export default function MobileChat() {
           <div className="flex justify-center items-center space-x-3">
             {voiceEnabled && isRecording ? (
               <>
-                {/* 캐릭터 아바타 (역할극용) */}
-                <Button
-                  onClick={openCharacterDialog}
-                  variant="outline"
-                  size="sm"
-                  className="w-12 h-12 p-0"
-                  title={`${personaCharacter.name} (role-play)`}
-                >
-                  <span className="text-lg">{personaCharacter.emoji}</span>
-                </Button>
                 {/* 음성 파동 + 상태 점 오버레이 (compact) */}
                 <div className="relative">
                   <div className="bg-card rounded-lg p-3 shadow-lg border border-border">
@@ -443,7 +391,7 @@ export default function MobileChat() {
                   variant="destructive"
                   size="sm"
                   className="w-12 h-12 p-0"
-                  title="음성 연결 중단"
+                  title="시험 중단"
                 >
                   <XMarkIcon className="h-4 w-4" />
                 </Button>
@@ -464,17 +412,7 @@ export default function MobileChat() {
                 {/* 시험 버튼 (연결된 상태에서만) */}
                 {connected && (
                   <Button
-                    onClick={async () => {
-                      try {
-                        // 기존 대화 내용 지우기
-                        clearChat();
-                        // 시험 시작
-                        await triggerExam();
-                      } catch (error) {
-                        console.error("시험 시작 실패:", error);
-                        alert("시험을 시작할 수 없습니다.");
-                      }
-                    }}
+                    onClick={startExam}
                     variant="outline"
                     size="sm"
                     className="w-12 h-12 p-0 bg-purple-100 hover:bg-purple-200"
@@ -487,38 +425,16 @@ export default function MobileChat() {
               </>
             ) : (
               <>
-                {/* 캐릭터 아바타 */}
-                <Button
-                  onClick={openCharacterDialog}
-                  variant="outline"
-                  size="sm"
-                  className="w-12 h-12 p-0"
-                  title={`${personaCharacter.name} (role-play)`}
-                >
-                  <span className="text-lg">{personaCharacter.emoji}</span>
-                </Button>
-
-                {/* Start Conversation Button */}
+                {/* Connect Button */}
                 <div className="relative inline-block">
                   <Button
-                    onClick={async () => {
-                      // WebSocket 연결 확인 (자동으로 useEffect에서 처리됨)
-                      if (user && !connected) {
-                        connect("general", user.name, user.email, "전체 채팅");
-                      }
-
-                      // 음성 시작
-                      if (!voiceEnabled) {
-                        setVoiceEnabled(true);
-                        await startVoice();
-                      }
-                    }}
+                    onClick={startConnection}
                     variant="outline"
                     size="sm"
                     className="h-12 px-6 text-sm"
                     disabled={connecting}
                   >
-                    {connecting ? "연결중..." : "대화 시작"}
+                    {connecting ? "연결중..." : "connect"}
                   </Button>
                   <span
                     className={`absolute -top-1 -right-1 w-3 h-3 rounded-full ring-2 ring-card ${
@@ -563,7 +479,6 @@ export default function MobileChat() {
           )}
         </div>
       </div>
-
       {/* 채팅 영역 */}
       <div
         className="h-[calc(100vh-200px)] overflow-y-scroll overscroll-contain p-4 space-y-3"
@@ -571,9 +486,9 @@ export default function MobileChat() {
       >
         {messages.length === 0 ? (
           <div className="text-center text-gray-400 mt-8">
-            <p className="mb-2">대화를 시작해 보세요!</p>
+            <p className="mb-2">AI 영어 시험을 시작해 보세요!</p>
             <p className="text-sm">
-              음성으로 말하거나 아래 입력창을 사용하세요.
+              "시험 시작" 버튼을 클릭하면 자동으로 시험이 시작됩니다.
             </p>
           </div>
         ) : (
@@ -619,7 +534,6 @@ export default function MobileChat() {
         )}
         <div ref={messagesEndRef} />
       </div>
-
       {/* 입력 영역 */}
       {connected && (
         <div className="bg-card border-t border-border p-4 flex-shrink-0">
@@ -672,7 +586,7 @@ export default function MobileChat() {
                 }
               }}
               placeholder={
-                suggestLoading ? "AI 응답 생성 중…" : "메시지를 입력하세요..."
+                suggestLoading ? "AI 응답 생성 중…" : "답변을 입력하세요..."
               }
               className="flex-1 px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring resize-none text-[13px] md:text-sm placeholder:text-muted-foreground"
               style={{ minHeight: "4.5rem" }}
@@ -705,26 +619,11 @@ export default function MobileChat() {
           </div>
         </div>
       )}
-
-      {/* 설정 드롭다운 */}
-      <MobileSettingsDropdown
+      {/* 시험 전용 설정 드롭다운 */}
+      <MobileExamSettingsDropdown
         isOpen={settingsOpen}
         onClose={() => setSettingsOpen(false)}
-        // 캐릭터/목소리 선택 관련
-        characterOptions={CHARACTER_PRESETS.map((c) => ({
-          id: c.id,
-          name: c.name,
-          emoji: c.emoji,
-        }))}
-        selectedCharacterId={selectedCharacterId}
-        onSelectCharacter={(id: string) =>
-          setSelectedCharacterId(id as (typeof CHARACTER_PRESETS)[number]["id"])
-        }
-        voiceOptions={[...VOICE_OPTIONS]}
-        selectedVoice={selectedVoice}
-        onSelectVoice={setSelectedVoice}
-        voiceEnabled={voiceEnabled}
-        onVoiceEnabledChange={setVoiceEnabled}
+        // 음성 설정
         speechLang={speechLang}
         onSpeechLangChange={setSpeechLang}
         echoCancellation={echoCancellation}
@@ -733,42 +632,21 @@ export default function MobileChat() {
         onNoiseSuppressionChange={setNoiseSuppression}
         autoGainControl={autoGainControl}
         onAutoGainControlChange={setAutoGainControl}
-        coalesceDelayMs={coalesceDelayMs}
-        onCoalesceDelayChange={setCoalesceDelayMs}
         responseDelayMs={responseDelayMs}
         onResponseDelayChange={setResponseDelayMs}
-        debugEvents={debugEvents}
-        onDebugEventsChange={setDebugEvents}
-        maxSentenceCount={maxSentenceCount}
-        onMaxSentenceCountChange={setMaxSentenceCount}
+        // 시험 관련 설정
         englishLevel={englishLevel}
         onEnglishLevelChange={setEnglishLevel}
+        examDifficulty={examSettings.examDifficulty}
+        onExamDifficultyChange={setExamDifficulty}
+        examDuration={examSettings.examDuration}
+        onExamDurationChange={setExamDuration}
+        autoStartExam={examSettings.autoStartExam}
+        onAutoStartExamChange={setAutoStartExam}
+        showScoreAfterEach={examSettings.showScoreAfterEach}
+        onShowScoreAfterEachChange={setShowScoreAfterEach}
         onClearChat={clearChat}
       />
-
-      {/* Model Answers Dialog (mobile) */}
-
-      {/* Character/Scenario/Gender Dialog */}
-      <MobileCharacterDialog
-        open={characterDialogOpen}
-        onClose={closeCharacterDialog}
-        value={getCurrentDialogValue()}
-        onConfirm={(v) => {
-          // 캐릭터 설정 적용 (훅에서 처리)
-          applyCharacterSettings(v);
-
-          // 세션에 즉시 반영 - 더 확실하게 하기 위해 연결 재시작
-          if (voiceConn && isRecording) {
-            // 현재 연결을 끊고 새로 시작
-            stopVoice();
-            setTimeout(async () => {
-              setVoiceEnabled(true);
-              await startVoice();
-            }, 500);
-          }
-        }}
-      />
-
       {/* Translation Dialog (mobile) */}
       <MobileTranslationDialog
         open={translationOpen}
@@ -776,33 +654,23 @@ export default function MobileChat() {
         text={translationText}
         onInsertText={(text: string) => setNewMessage(text)}
       />
-
       {/* Custom Question Generator Dialog */}
       <CustomQuestionGenerator
         open={customQuestionDialogOpen}
         onClose={() => setCustomQuestionDialogOpen(false)}
         onInputText={(text: string) => setNewMessage(text)}
       />
-
       {/* My Conversation Archive Dialog */}
       <MyConversationArchive
         open={conversationArchiveDialogOpen}
         onClose={() => setConversationArchiveDialogOpen(false)}
         onInsertConversation={(text: string) => setNewMessage(text)}
       />
-
       {/* Korean Input Dialog */}
       <KoreanInputDialog
         isOpen={koreanInputDialogOpen}
         onClose={() => setKoreanInputDialogOpen(false)}
         onInsertText={(text: string) => setNewMessage(text)}
-      />
-
-      {/* Exam Results Slide Down */}
-      <ExamResultsSlideDown
-        examResultText={examResultsText}
-        isVisible={examResultsVisible}
-        onClose={() => setExamResultsVisible(false)}
       />
     </div>
   );

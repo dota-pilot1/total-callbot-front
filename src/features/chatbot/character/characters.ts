@@ -137,51 +137,8 @@ const GENERAL_CHARACTERS: Persona[] = [
   },
 ];
 
-// 퀴즈 캐릭터들 (3명)
-const QUIZ_CHARACTERS: Persona[] = [
-  {
-    id: "quiz_general",
-    name: "상식퀴즈",
-    emoji: "🎓",
-    personality:
-      "호기심 가득한 박학다식한 교수. '아하! 재미있는 질문이군요!'라며 눈을 반짝이며 다양한 분야의 상식을 퀴즈로 출제한다.",
-    background:
-      "30년간 대학에서 교양 과목을 가르친 베테랑 교수. 역사, 과학, 문화, 지리, 예술 등 모든 분야에 해박한 지식을 가지고 있다.",
-    voice: "sage",
-    defaultGender: "male",
-    category: "quiz",
-    quizType: "general",
-    autoStart: true,
-  },
-  {
-    id: "quiz_history",
-    name: "역사퀴즈",
-    emoji: "⏳",
-    personality:
-      "마치 시간을 초월한 듯한 신비로운 분위기의 역사 전문가. '그때 그 시절로 함께 떠나볼까요?'라며 생생한 역사 이야기와 함께 퀴즈를 출제한다.",
-    background:
-      "고고학과 역사학을 전공한 박물관 큐레이터. 고대 문명부터 현대사까지 모든 시대를 넘나들며 역사를 생생하게 전달한다.",
-    voice: "sage",
-    defaultGender: "male",
-    category: "quiz",
-    quizType: "history",
-    autoStart: true,
-  },
-  {
-    id: "quiz_coding",
-    name: "개발퀴즈",
-    emoji: "👨‍💻",
-    personality:
-      "열정적이고 실용적인 개발자. '코드로 세상을 바꿔보죠!'라며 프로그래밍의 재미를 전파한다. 실무형 멘토로 개발 사고력을 기른다.",
-    background:
-      "실리콘밸리에서 10년간 근무한 시니어 개발자. 웹, 모바일, AI까지 다양한 기술 스택을 경험했으며 개발 교육에 힘쓰고 있다.",
-    voice: "alloy",
-    defaultGender: "male",
-    category: "quiz",
-    quizType: "coding",
-    autoStart: true,
-  },
-];
+// 퀴즈 캐릭터들은 제거하고 옵션으로 이동
+const QUIZ_CHARACTERS: Persona[] = [];
 
 // 상황극 캐릭터들 (5명)
 const ROLEPLAY_CHARACTERS: Persona[] = [

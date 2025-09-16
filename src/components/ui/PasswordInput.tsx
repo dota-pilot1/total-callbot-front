@@ -25,6 +25,7 @@ const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
           type="button"
           onClick={() => setShowPassword((v) => !v)}
           className="absolute inset-y-0 right-2 flex items-center text-muted-foreground hover:text-foreground"
+          data-no-border
           aria-label={showPassword ? "비밀번호 숨기기" : "비밀번호 보기"}
           aria-pressed={showPassword}
         >

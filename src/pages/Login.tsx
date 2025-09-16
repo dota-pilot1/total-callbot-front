@@ -13,7 +13,7 @@ import {
 } from "@heroicons/react/24/outline";
 // Simplified login; added collapsible full member info box
 
-type ServiceType = "chatbot" | "chat";
+type ServiceType = "chatbot" | "exam" | "chat" | "chat-list";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -24,17 +24,22 @@ export default function Login() {
   const navigate = useNavigate();
   const [showMembers, setShowMembers] = useState<boolean>(false);
 
-  // 4개 로봇 이미지 중 랜덤 선택 (컴포넌트 마운트 시에만)
+  // 챗봇 이미지 랜덤 선택 (컴포넌트 마운트 시에만)
   const robotImages = useMemo(() => {
-    const images = [
-      "/gpt-star.jpeg",
+    const chatbotImages = [
       "/simple-chatbot.png",
+      "/multi-chat.png",
       "/chatbot-green.png",
+      "/chatbot-black.jpeg",
+      "/chatbot-blue.jpeg",
+      "/chatbot-red.jpeg",
+      "/chatbot-yellow.jpeg",
+      "/gpt-star.jpeg",
       "/gpt-simle.jpeg",
     ];
     return {
-      brand: images[Math.floor(Math.random() * images.length)],
-      chatbot: images[Math.floor(Math.random() * images.length)],
+      brand: chatbotImages[Math.floor(Math.random() * chatbotImages.length)],
+      chatbot: chatbotImages[Math.floor(Math.random() * chatbotImages.length)],
     };
   }, []);
 
@@ -45,13 +50,24 @@ export default function Login() {
       await login({ email, password });
 
       // 선택된 서비스에 따라 이동
-      if (selectedService === "chat") {
-        navigate("/chat"); // 전체 채팅방
-      } else {
-        // 모바일 디바이스 감지
-        const isMobile =
-          window.innerWidth <= 768 || /Mobi|Android/i.test(navigator.userAgent);
-        navigate(isMobile ? "/mobile" : "/chatbots");
+      const isMobile =
+        window.innerWidth <= 768 || /Mobi|Android/i.test(navigator.userAgent);
+
+      switch (selectedService) {
+        case "chatbot":
+          navigate(isMobile ? "/mobile" : "/chatbots");
+          break;
+        case "exam":
+          navigate("/exam"); // 시험 전용 페이지로 이동
+          break;
+        case "chat":
+          navigate("/chat"); // 전체 채팅방
+          break;
+        case "chat-list":
+          navigate("/chat-rooms"); // 채팅방 목록
+          break;
+        default:
+          navigate(isMobile ? "/mobile" : "/chatbots");
       }
     } catch (error) {
       console.error("Login failed:", error);
@@ -74,38 +90,9 @@ export default function Login() {
                 Total Callbot
               </span>
             </div>
-            {/* 탭 */}
-            <div className="mb-4">
-              <div className="flex gap-1 p-1 bg-gray-100 rounded-lg">
-                <button
-                  type="button"
-                  onClick={() => setSelectedService("chatbot")}
-                  aria-pressed={selectedService === "chatbot"}
-                  className={`flex-1 px-3 py-2 text-sm rounded-md font-medium transition-all duration-200 ${
-                    selectedService === "chatbot"
-                      ? "bg-white text-gray-900 shadow-sm border border-gray-200"
-                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-                  }`}
-                >
-                  챗봇
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSelectedService("chat")}
-                  aria-pressed={selectedService === "chat"}
-                  className={`flex-1 px-3 py-2 text-sm rounded-md font-medium transition-all duration-200 ${
-                    selectedService === "chat"
-                      ? "bg-white text-gray-900 shadow-sm border border-gray-200"
-                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-                  }`}
-                >
-                  채팅
-                </button>
-              </div>
-            </div>
-
-            {/* 서비스 선택 */}
+            {/* 서비스 선택 (2x2 그리드) */}
             <div className="grid grid-cols-2 gap-3 mb-6">
+              {/* 챗봇 */}
               <button
                 onClick={() => setSelectedService("chatbot")}
                 aria-pressed={selectedService === "chatbot"}
@@ -121,10 +108,31 @@ export default function Login() {
                 <img
                   src={robotImages.chatbot}
                   alt="챗봇"
-                  className="h-16 w-16 rounded-xl object-cover"
+                  className="h-12 w-12 rounded-lg object-cover mb-2"
                 />
+                <span className="text-xs font-medium text-gray-700">챗봇</span>
               </button>
 
+              {/* 시험 */}
+              <button
+                onClick={() => setSelectedService("exam")}
+                aria-pressed={selectedService === "exam"}
+                className={`relative flex flex-col items-center p-4 rounded-xl border-2 transition-all duration-200 ${
+                  selectedService === "exam"
+                    ? "border-blue-500 bg-blue-50 shadow-lg ring-2 ring-blue-200"
+                    : "border-gray-200 hover:bg-gray-50 hover:border-gray-300"
+                }`}
+              >
+                {selectedService === "exam" && (
+                  <CheckCircleIcon className="absolute top-2 right-2 h-5 w-5 text-blue-500" />
+                )}
+                <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-purple-100 to-purple-200 flex items-center justify-center mb-2">
+                  <span className="text-2xl">🎓</span>
+                </div>
+                <span className="text-xs font-medium text-gray-700">시험</span>
+              </button>
+
+              {/* 전체 채팅방 */}
               <button
                 onClick={() => setSelectedService("chat")}
                 aria-pressed={selectedService === "chat"}
@@ -139,9 +147,33 @@ export default function Login() {
                 )}
                 <img
                   src="/multi-chat.png"
-                  alt="채팅"
-                  className="h-16 w-16 rounded-xl object-cover"
+                  alt="전체 채팅방"
+                  className="h-12 w-12 rounded-lg object-cover mb-2"
                 />
+                <span className="text-xs font-medium text-gray-700">
+                  전체채팅
+                </span>
+              </button>
+
+              {/* 채팅방 목록 */}
+              <button
+                onClick={() => setSelectedService("chat-list")}
+                aria-pressed={selectedService === "chat-list"}
+                className={`relative flex flex-col items-center p-4 rounded-xl border-2 transition-all duration-200 ${
+                  selectedService === "chat-list"
+                    ? "border-blue-500 bg-blue-50 shadow-lg ring-2 ring-blue-200"
+                    : "border-gray-200 hover:bg-gray-50 hover:border-gray-300"
+                }`}
+              >
+                {selectedService === "chat-list" && (
+                  <CheckCircleIcon className="absolute top-2 right-2 h-5 w-5 text-blue-500" />
+                )}
+                <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-green-100 to-green-200 flex items-center justify-center mb-2">
+                  <span className="text-2xl">📋</span>
+                </div>
+                <span className="text-xs font-medium text-gray-700">
+                  채팅목록
+                </span>
               </button>
             </div>
 
