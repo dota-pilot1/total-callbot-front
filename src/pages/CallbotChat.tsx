@@ -318,7 +318,6 @@ export default function CallbotChat() {
     const suggestions = [];
 
     // 마지막 메시지 분석 (가중치 높음)
-    const lastText = lastMessage?.message.toLowerCase() || "";
     const lastSender = lastMessage?.sender;
 
     // 콜봇의 마지막 메시지에 대한 직접적 응답 (최고 가중치)

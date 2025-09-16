@@ -5,7 +5,6 @@ import type {
   CreateConversationRequest,
   UpdateConversationRequest,
   CategoryCounts,
-  ConversationArchiveListResponse,
 } from "../../../shared/api/conversationArchive";
 
 export const useConversationArchive = () => {
@@ -98,17 +97,18 @@ export const useConversationArchive = () => {
           data.conversationCategory &&
           data.conversationCategory !== originalConv.conversationCategory
         ) {
+          const newCat =
+            data.conversationCategory as ConversationArchive["conversationCategory"];
           setCategoryCounts((prev) =>
             prev
               ? {
-                  ...prev,
-                  [originalConv.conversationCategory]: Math.max(
-                    0,
-                    (prev[originalConv.conversationCategory] || 1) - 1,
-                  ),
-                  [data.conversationCategory]:
-                    (prev[data.conversationCategory] || 0) + 1,
-                }
+                ...prev,
+                [originalConv.conversationCategory]: Math.max(
+                  0,
+                  (prev[originalConv.conversationCategory] || 1) - 1,
+                ),
+                [newCat]: (prev[newCat] || 0) + 1,
+              }
               : null,
           );
         }
@@ -133,17 +133,19 @@ export const useConversationArchive = () => {
           data.conversationCategory &&
           data.conversationCategory !== originalConv.conversationCategory
         ) {
+          const newCat =
+            data.conversationCategory as ConversationArchive["conversationCategory"];
           setCategoryCounts((prev) =>
             prev
               ? {
-                  ...prev,
-                  [data.conversationCategory]: Math.max(
-                    0,
-                    (prev[data.conversationCategory] || 1) - 1,
-                  ),
-                  [originalConv.conversationCategory]:
-                    (prev[originalConv.conversationCategory] || 0) + 1,
-                }
+                ...prev,
+                [newCat]: Math.max(
+                  0,
+                  (prev[newCat] || 1) - 1,
+                ),
+                [originalConv.conversationCategory]:
+                  (prev[originalConv.conversationCategory] || 0) + 1,
+              }
               : null,
           );
         }

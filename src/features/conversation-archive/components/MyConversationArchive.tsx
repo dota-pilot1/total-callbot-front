@@ -349,7 +349,7 @@ export default function MyConversationArchive({
                     <p>저장된 대화가 없습니다.</p>
                   </div>
                 ) : (
-                  filteredConversations.map((conv, index) => (
+                  filteredConversations.map((conv) => (
                     <div
                       key={conv.id}
                       className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow"
