@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuthStore } from "../features/auth";
 
@@ -23,6 +23,20 @@ export default function Login() {
   const { login, isLoading } = useAuthStore();
   const navigate = useNavigate();
   const [showMembers, setShowMembers] = useState<boolean>(false);
+
+  // 4개 로봇 이미지 중 랜덤 선택 (컴포넌트 마운트 시에만)
+  const robotImages = useMemo(() => {
+    const images = [
+      "/gpt-star.jpeg",
+      "/simple-chatbot.png",
+      "/chatbot-green.png",
+      "/gpt-simle.jpeg",
+    ];
+    return {
+      brand: images[Math.floor(Math.random() * images.length)],
+      chatbot: images[Math.floor(Math.random() * images.length)],
+    };
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,7 +66,7 @@ export default function Login() {
             {/* 브랜드 라인 (심플, 공간 채움) */}
             <div className="flex items-center gap-3 mb-3">
               <img
-                src="/gpt-star.jpeg"
+                src={robotImages.brand}
                 alt="콜봇"
                 className="h-6 w-6 rounded-md object-cover"
               />
@@ -105,7 +119,7 @@ export default function Login() {
                   <CheckCircleIcon className="absolute top-2 right-2 h-5 w-5 text-blue-500" />
                 )}
                 <img
-                  src="/simple-chatbot.png"
+                  src={robotImages.chatbot}
                   alt="챗봇"
                   className="h-16 w-16 rounded-xl object-cover"
                 />
