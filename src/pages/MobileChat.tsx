@@ -40,11 +40,13 @@ import { MyConversationArchive } from "../features/conversation-archive";
 import { useAudioSettings } from "../features/chatbot/settings";
 import ExamResultsSlideDown from "../components/ExamResultsSlideDown";
 import { useExamMode } from "../features/chatbot/exam";
+import { useToast } from "../components/ui/Toast";
 
 export default function MobileChat() {
   const { logout, getUser } = useAuthStore();
   const user = getUser();
   const navigate = useNavigate();
+  const { ToastContainer } = useToast();
 
   // WebSocket Store 사용 (중복 연결 제거)
   const { participantCount, connected, connecting, connect, disconnect } =
@@ -804,6 +806,9 @@ export default function MobileChat() {
         isVisible={examResultsVisible}
         onClose={() => setExamResultsVisible(false)}
       />
+
+      {/* Toast Container */}
+      <ToastContainer />
     </div>
   );
 }

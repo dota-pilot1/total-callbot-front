@@ -7,6 +7,8 @@ import {
   BookmarkIcon,
 } from "@heroicons/react/24/outline";
 import SentenceSplitterDialogButtonWithTranslate from "./SentenceSplitterDialogButtonWithTranslate";
+import { useConversationArchive } from "../features/conversation-archive/hooks/useConversationArchive";
+import { useToast } from "./ui/Toast";
 
 interface Message {
   id: number;
@@ -30,6 +32,8 @@ export default function CardForChattingMessageWithTranslation({
   const [isTranslating, setIsTranslating] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const { addConversation } = useConversationArchive();
+  const { showToast } = useToast();
 
   const detectLanguage = (text: string): "ko" | "en" => {
     // 한글 문자 포함 여부 확인
@@ -195,10 +199,34 @@ export default function CardForChattingMessageWithTranslation({
     }
   };
 
-  const handleSaveClick = (e: React.MouseEvent) => {
+  const handleSaveClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    // TODO: 저장 기능 구현 예정
-    console.log("Save message:", message.id);
+    console.log("북마크 버튼 클릭됨!");
+
+    try {
+      const conversationText = message.message;
+
+      console.log("저장할 대화:", conversationText);
+
+      const success = await addConversation({
+        conversation: conversationText,
+        conversationCategory: "학술",
+      });
+
+      console.log("저장 결과:", success);
+
+      if (success) {
+        console.log("showToast 호출 시도 - 성공");
+        showToast("저장되었습니다", "success", 3000);
+      } else {
+        console.log("showToast 호출 시도 - 실패");
+        showToast("저장에 실패했습니다", "error", 3000);
+      }
+    } catch (error) {
+      console.error("Save failed:", error);
+      console.log("showToast 호출 시도 - 에러");
+      showToast("저장 중 오류가 발생했습니다", "error", 3000);
+    }
   };
 
   return (

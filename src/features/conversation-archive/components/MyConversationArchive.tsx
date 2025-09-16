@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   XMarkIcon,
   TrashIcon,
-  ArchiveBoxIcon,
+  Bars3Icon,
   PencilIcon,
   LanguageIcon,
   PlayIcon,
@@ -17,6 +17,7 @@ import { examApi } from "../../chatbot/exam/api/exam";
 import { useConversationArchive } from "../hooks/useConversationArchive";
 import type { ConversationArchive } from "../../../shared/api/conversationArchive";
 import ConversationInputForm from "./ConversationInputForm";
+import { useToast } from "../../../components/ui/Toast";
 
 interface MyConversationArchiveProps {
   open: boolean;
@@ -39,6 +40,7 @@ export default function MyConversationArchive({
 }: MyConversationArchiveProps) {
   const {
     conversations,
+    categoryCounts,
     loading,
     error,
     fetchConversations,
@@ -47,6 +49,8 @@ export default function MyConversationArchive({
     updateConversation,
     deleteConversation,
   } = useConversationArchive();
+
+  const { showToast } = useToast();
 
   const [showAddForm, setShowAddForm] = useState(false);
   const [filterCategory, setFilterCategory] = useState<
@@ -76,18 +80,28 @@ export default function MyConversationArchive({
       filterCategory === "전체" || conv.conversationCategory === filterCategory,
   );
 
+  // 백엔드에서 받은 카테고리 개수 사용 (더 이상 프론트엔드에서 계산 안함)
+
   // 대화 추가
   const handleAddConversation = async (
     conversation: string,
     category: "역할" | "일상" | "비즈니스" | "학술",
   ) => {
-    const success = await addConversation({
-      conversation,
-      conversationCategory: category,
-    });
+    try {
+      const success = await addConversation({
+        conversation,
+        conversationCategory: category,
+      });
 
-    if (success) {
-      setShowAddForm(false);
+      if (success) {
+        setShowAddForm(false);
+        showToast("대화가 추가되었습니다", "success", 2000);
+      } else {
+        showToast("추가에 실패했습니다", "error", 2000);
+      }
+    } catch (error) {
+      console.error("Add failed:", error);
+      showToast("추가 중 오류가 발생했습니다", "error", 2000);
     }
   };
 
@@ -101,14 +115,22 @@ export default function MyConversationArchive({
   // 대화 수정 완료
   const handleUpdateConversation = async () => {
     if (editingId && editingConversation.trim()) {
-      const success = await updateConversation(editingId, {
-        conversation: editingConversation.trim(),
-        conversationCategory: editingCategory,
-      });
+      try {
+        const success = await updateConversation(editingId, {
+          conversation: editingConversation.trim(),
+          conversationCategory: editingCategory,
+        });
 
-      if (success) {
-        setEditingId(null);
-        setEditingConversation("");
+        if (success) {
+          setEditingId(null);
+          setEditingConversation("");
+          showToast("대화가 수정되었습니다", "success", 2000);
+        } else {
+          showToast("수정에 실패했습니다", "error", 2000);
+        }
+      } catch (error) {
+        console.error("Update failed:", error);
+        showToast("수정 중 오류가 발생했습니다", "error", 2000);
       }
     }
   };
@@ -116,7 +138,17 @@ export default function MyConversationArchive({
   // 대화 삭제
   const handleDeleteConversation = async (id: string) => {
     if (window.confirm("이 대화를 삭제하시겠습니까?")) {
-      await deleteConversation(id);
+      try {
+        const success = await deleteConversation(id);
+        if (success) {
+          showToast("대화가 삭제되었습니다", "success", 2000);
+        } else {
+          showToast("삭제에 실패했습니다", "error", 2000);
+        }
+      } catch (error) {
+        console.error("Delete failed:", error);
+        showToast("삭제 중 오류가 발생했습니다", "error", 2000);
+      }
     }
   };
 
@@ -227,12 +259,17 @@ export default function MyConversationArchive({
             className="fixed top-0 left-0 right-0 bg-white shadow-lg z-50 h-screen overflow-y-auto"
           >
             {/* 헤더 */}
-            <div className="sticky top-0 bg-white border-b border-gray-200 px-4 py-3 flex justify-between items-center">
+            <div className="sticky top-0 bg-white border-b border-gray-200 px-4 py-3 flex justify-between items-center z-20">
               <div className="flex items-center gap-3">
-                <ArchiveBoxIcon className="h-6 w-6 text-slate-600" />
-                <h3 className="text-lg font-semibold text-gray-900">
-                  나의 대화 아카이브
-                </h3>
+                <Bars3Icon className="h-5 w-5 text-slate-600" />
+                <div className="flex items-center gap-3">
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    나의 대화 아카이브
+                  </h3>
+                  <span className="px-2 py-1 bg-gray-100 text-gray-600 text-sm font-medium rounded-full">
+                    총 {conversations.length}개
+                  </span>
+                </div>
               </div>
               <button
                 onClick={onClose}
@@ -252,20 +289,42 @@ export default function MyConversationArchive({
               />
 
               {/* Category Filter */}
-              <div className="flex flex-wrap gap-2">
-                {["전체", ...CATEGORIES].map((category) => (
-                  <button
-                    key={category}
-                    onClick={() => handleFilterChange(category as any)}
-                    className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${
-                      filterCategory === category
-                        ? "bg-slate-700 text-white"
-                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                    }`}
-                  >
-                    {category === "전체" ? "전체" : category}
-                  </button>
-                ))}
+              <div className="sticky top-16 bg-white pt-4 pb-2 -mx-4 px-4 border-b border-gray-100 z-10">
+                <div className="flex flex-wrap gap-2">
+                  {["전체", ...CATEGORIES].map((category) => {
+                    const count =
+                      category === "전체"
+                        ? null
+                        : categoryCounts?.[
+                            category as "역할" | "일상" | "비즈니스" | "학술"
+                          ] || 0;
+
+                    return (
+                      <button
+                        key={category}
+                        onClick={() => handleFilterChange(category as any)}
+                        className={`px-3 py-2 text-sm font-medium rounded-md transition-all flex items-center gap-2 ${
+                          filterCategory === category
+                            ? "bg-slate-700 text-white"
+                            : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                        }`}
+                      >
+                        <span>{category === "전체" ? "전체" : category}</span>
+                        {count !== null && (
+                          <span
+                            className={`text-xs px-1.5 py-0.5 rounded-full ${
+                              filterCategory === category
+                                ? "bg-slate-600 text-white"
+                                : "bg-gray-200 text-gray-700"
+                            }`}
+                          >
+                            {count}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
               {/* Error Message */}
@@ -286,24 +345,41 @@ export default function MyConversationArchive({
               <div className="space-y-3">
                 {filteredConversations.length === 0 && !loading ? (
                   <div className="text-center py-12 text-gray-500">
-                    <ArchiveBoxIcon className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+                    <Bars3Icon className="h-10 w-10 text-gray-300 mx-auto mb-3" />
                     <p>저장된 대화가 없습니다.</p>
                   </div>
                 ) : (
                   filteredConversations.map((conv, index) => (
                     <div
                       key={conv.id}
-                      className="bg-white border border-gray-200 rounded-lg p-4 space-y-3"
+                      className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow"
                     >
-                      {/* Header */}
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span
-                            className={`px-3 py-1 rounded-full text-xs font-medium ${CATEGORY_COLORS[conv.conversationCategory]}`}
-                          >
-                            {conv.conversationCategory} #{index + 1}
+                      {/* Header - 파스텔톤 배경 */}
+                      <div className="bg-slate-50 px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          {/* 아바타 */}
+                          <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+                            <span className="text-blue-600 text-sm">🤖</span>
+                          </div>
+
+                          {/* 시간 */}
+                          <span className="text-sm text-gray-500">
+                            {new Date(
+                              conv.createdAt || Date.now(),
+                            ).toLocaleString("ko-KR", {
+                              month: "short",
+                              day: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </span>
+
+                          {/* 카테고리 배지 */}
+                          <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">
+                            {conv.conversationCategory}
                           </span>
                         </div>
+
                         <div className="flex gap-1">
                           <Button
                             variant="outline"
@@ -311,7 +387,7 @@ export default function MyConversationArchive({
                             onClick={() =>
                               handleUseConversation(conv.conversation)
                             }
-                            className="h-6 w-6"
+                            className="h-6 w-6 bg-white hover:bg-blue-50"
                             title="사용하기"
                           >
                             <PaperAirplaneIcon className="h-3 w-3" />
@@ -321,7 +397,7 @@ export default function MyConversationArchive({
                             variant="outline"
                             size="icon"
                             onClick={() => handleDeleteConversation(conv.id)}
-                            className="h-6 w-6"
+                            className="h-6 w-6 bg-white hover:bg-red-50"
                           >
                             <TrashIcon className="h-3 w-3" />
                           </Button>
@@ -376,72 +452,77 @@ export default function MyConversationArchive({
                         </div>
                       ) : (
                         <>
-                          <div className="flex items-start justify-between gap-3">
-                            <p className="text-gray-800 whitespace-pre-wrap leading-relaxed flex-1">
-                              {conv.conversation}
-                            </p>
+                          {/* Content - 본문 영역 */}
+                          <div className="p-4">
+                            <div className="flex items-start justify-between gap-3">
+                              <p className="text-gray-800 whitespace-pre-wrap leading-relaxed flex-1">
+                                {conv.conversation}
+                              </p>
 
-                            {/* Action Buttons - 우측 2x2 그리드 */}
-                            <div className="flex-shrink-0 grid grid-cols-2 gap-1">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => startEditing(conv)}
-                                className="w-7 h-7 p-0"
-                                title="수정"
-                              >
-                                <PencilIcon className="h-3 w-3" />
-                              </Button>
+                              {/* Action Buttons - 우측 2x2 그리드 */}
+                              <div className="flex-shrink-0 grid grid-cols-2 gap-1">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => startEditing(conv)}
+                                  className="w-7 h-7 p-0"
+                                  title="수정"
+                                >
+                                  <PencilIcon className="h-3 w-3" />
+                                </Button>
 
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() =>
-                                  handleTranslate(conv.id, conv.conversation)
-                                }
-                                disabled={translatingIds.has(conv.id)}
-                                className="w-7 h-7 p-0"
-                                title={
-                                  translatedTexts[conv.id]
-                                    ? "번역 숨기기"
-                                    : "번역"
-                                }
-                              >
-                                {translatingIds.has(conv.id) ? (
-                                  <div className="animate-spin rounded-full h-2.5 w-2.5 border border-current border-t-transparent" />
-                                ) : (
-                                  <LanguageIcon className="h-3 w-3" />
-                                )}
-                              </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() =>
+                                    handleTranslate(conv.id, conv.conversation)
+                                  }
+                                  disabled={translatingIds.has(conv.id)}
+                                  className="w-7 h-7 p-0"
+                                  title={
+                                    translatedTexts[conv.id]
+                                      ? "번역 숨기기"
+                                      : "번역"
+                                  }
+                                >
+                                  {translatingIds.has(conv.id) ? (
+                                    <div className="animate-spin rounded-full h-2.5 w-2.5 border border-current border-t-transparent" />
+                                  ) : (
+                                    <LanguageIcon className="h-3 w-3" />
+                                  )}
+                                </Button>
 
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() =>
-                                  handlePlayPause(conv.id, conv.conversation)
-                                }
-                                className="w-7 h-7 p-0"
-                                title={playingId === conv.id ? "중지" : "듣기"}
-                              >
-                                {playingId === conv.id ? (
-                                  <PauseIcon className="h-3 w-3" />
-                                ) : (
-                                  <PlayIcon className="h-3 w-3" />
-                                )}
-                              </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() =>
+                                    handlePlayPause(conv.id, conv.conversation)
+                                  }
+                                  className="w-7 h-7 p-0"
+                                  title={
+                                    playingId === conv.id ? "중지" : "듣기"
+                                  }
+                                >
+                                  {playingId === conv.id ? (
+                                    <PauseIcon className="h-3 w-3" />
+                                  ) : (
+                                    <PlayIcon className="h-3 w-3" />
+                                  )}
+                                </Button>
 
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => {
-                                  // 이후 구현 예정: 댓글/질문-답변 기능
-                                  console.log("댓글 기능 - 구현 예정");
-                                }}
-                                className="w-7 h-7 p-0"
-                                title="댓글 (구현 예정)"
-                              >
-                                <ChatBubbleLeftRightIcon className="h-3 w-3" />
-                              </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    // 이후 구현 예정: 댓글/질문-답변 기능
+                                    console.log("댓글 기능 - 구현 예정");
+                                  }}
+                                  className="w-7 h-7 p-0"
+                                  title="댓글 (구현 예정)"
+                                >
+                                  <ChatBubbleLeftRightIcon className="h-3 w-3" />
+                                </Button>
+                              </div>
                             </div>
                           </div>
 

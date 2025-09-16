@@ -33,6 +33,7 @@ import {
   DevicePhoneMobileIcon,
   SwatchIcon,
   ChatBubbleLeftRightIcon,
+  BookmarkIcon,
 } from "@heroicons/react/24/outline";
 import { MicrophoneIcon as MicrophoneIconSolid } from "@heroicons/react/24/solid";
 import { voiceApi } from "../features/chatbot/voice/api/voice";
@@ -47,6 +48,8 @@ import {
 } from "react";
 import SockJS from "sockjs-client";
 import { Stomp } from "@stomp/stompjs";
+import { useConversationArchive } from "../features/conversation-archive/hooks/useConversationArchive";
+import { useToast } from "../components/ui/Toast";
 
 // 통일된 음성 보이스 (3종 중 기본값)
 const DEFAULT_REALTIME_VOICE: "verse" | "alloy" | "sage" = "verse";
@@ -114,6 +117,8 @@ export default function CallbotChat() {
   const params = useParams();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [participantCount, setParticipantCount] = useGlobalState(0);
+  const { addConversation } = useConversationArchive();
+  const { showToast, ToastContainer } = useToast();
 
   // 전체 채팅방 접속자 수 실시간 조회
   useGlobalEffect(() => {
@@ -294,14 +299,15 @@ export default function CallbotChat() {
     }
   };
 
-  // 자연스러운 응답 제안 생성
+  // 자연스러운 응답 제안 생성 (마지막 대화 가중치 높임)
   const getNaturalSuggestions = () => {
+    const lastMessage = messages[messages.length - 1];
     const lastBotMessage = messages
       .slice()
       .reverse()
       .find((msg) => msg.sender === "callbot");
 
-    if (!lastBotMessage) {
+    if (!lastMessage && !lastBotMessage) {
       return [
         "안녕하세요! 궁금한 것이 있어요",
         "도움을 요청하고 싶습니다",
@@ -310,35 +316,128 @@ export default function CallbotChat() {
     }
 
     const suggestions = [];
-    const botText = lastBotMessage.message.toLowerCase();
 
-    // 동의 관련 응답
-    suggestions.push(
-      "맞아요, 저도 그렇게 생각해요",
-      "정말 좋은 의견이네요",
-      "동감합니다",
-    );
+    // 마지막 메시지 분석 (가중치 높음)
+    const lastText = lastMessage?.message.toLowerCase() || "";
+    const lastSender = lastMessage?.sender;
 
-    // 반론/다른 의견
-    suggestions.push(
-      "하지만 다른 관점에서 보면...",
-      "조금 다른 생각을 가지고 있어요",
-      "그런데 이런 경우는 어떨까요?",
-    );
+    // 콜봇의 마지막 메시지에 대한 직접적 응답 (최고 가중치)
+    if (lastSender === "callbot") {
+      const botText = lastMessage.message.toLowerCase();
 
-    // 추가 질문
-    if (botText.includes("방법") || botText.includes("어떻게")) {
-      suggestions.push("더 자세히 설명해 주실 수 있나요?");
-    } else if (botText.includes("추천") || botText.includes("제안")) {
-      suggestions.push("다른 옵션도 있을까요?");
-    } else {
-      suggestions.push("좀 더 구체적으로 알고 싶어요");
+      // 질문 형태에 대한 직접 답변
+      if (botText.includes("어떻게") || botText.includes("방법")) {
+        suggestions.push(
+          "네, 이렇게 하면 될 것 같아요",
+          "좀 더 구체적으로 설명해주세요",
+        );
+      }
+      if (
+        botText.includes("뭐") ||
+        botText.includes("무엇") ||
+        botText.includes("what")
+      ) {
+        suggestions.push("음... 생각해볼게요", "잘 모르겠어요, 도움 주세요");
+      }
+      if (
+        botText.includes("좋아하") ||
+        botText.includes("취미") ||
+        botText.includes("hobby")
+      ) {
+        // GPT는 개인 취향이 없으므로 취향에 대한 답변 대신 일반적인 응답 제안
+        suggestions.push(
+          "그런 것들이 좋을 것 같네요",
+          "다양한 선택지가 있겠어요",
+          "어떤 것을 추천해 주시겠어요?",
+        );
+      }
+      if (
+        botText.includes("시간") ||
+        botText.includes("언제") ||
+        botText.includes("time")
+      ) {
+        suggestions.push(
+          "지금 괜찮아요",
+          "언제든지 편한 시간에",
+          "오후가 좋을 것 같아요",
+        );
+      }
+
+      // 콜봇 전문 분야별 맞춤 응답
+      if (chatbot?.id) {
+        if (chatbot.id.includes("backend") && botText.includes("개발")) {
+          suggestions.push(
+            "Node.js 경험이 있어요",
+            "API 설계에 관심이 많아요",
+            "데이터베이스 최적화에 대해 알고 싶어요",
+          );
+        }
+        if (chatbot.id.includes("frontend") && botText.includes("디자인")) {
+          suggestions.push(
+            "React 컴포넌트 설계가 궁금해요",
+            "사용자 경험을 개선하고 싶어요",
+            "반응형 디자인에 대해 배우고 싶어요",
+          );
+        }
+        if (
+          chatbot.id === "english" &&
+          (botText.includes("english") || botText.includes("영어"))
+        ) {
+          suggestions.push(
+            "I'd like to practice English",
+            "영어 회화를 연습하고 싶어요",
+            "발음을 교정받고 싶어요",
+          );
+        }
+      }
+
+      // 감정이나 의견에 대한 반응
+      if (
+        botText.includes("좋") ||
+        botText.includes("훌륭") ||
+        botText.includes("멋진")
+      ) {
+        suggestions.push(
+          "정말 그렇네요!",
+          "저도 그렇게 생각해요",
+          "동감합니다",
+        );
+      }
+      if (
+        botText.includes("어렵") ||
+        botText.includes("힘들") ||
+        botText.includes("복잡")
+      ) {
+        suggestions.push(
+          "네, 좀 어려운 것 같아요",
+          "단계별로 접근해보면 어떨까요?",
+          "더 쉬운 방법이 있을까요?",
+        );
+      }
     }
 
-    // 감사 표현
-    suggestions.push("고마워요, 도움이 되었어요", "좋은 정보 감사합니다");
+    // 기본 제안들 (낮은 가중치)
+    if (suggestions.length < 4) {
+      // 동의 관련 응답
+      suggestions.push("맞아요, 저도 그렇게 생각해요", "정말 좋은 의견이네요");
 
-    return suggestions.slice(0, 6); // 최대 6개
+      // 추가 질문
+      if (lastBotMessage) {
+        const botText = lastBotMessage.message.toLowerCase();
+        if (botText.includes("방법") || botText.includes("어떻게")) {
+          suggestions.push("더 자세히 설명해 주실 수 있나요?");
+        } else if (botText.includes("추천") || botText.includes("제안")) {
+          suggestions.push("다른 옵션도 있을까요?");
+        }
+      }
+
+      // 감사 표현
+      suggestions.push("고마워요, 도움이 되었어요", "좋은 정보 감사합니다");
+    }
+
+    // 중복 제거 및 최대 6개 반환
+    const uniqueSuggestions = [...new Set(suggestions)];
+    return uniqueSuggestions.slice(0, 6);
   };
 
   const applySuggestion = (suggestion: string) => {
@@ -879,6 +978,36 @@ export default function CallbotChat() {
     }
   };
 
+  // 북마크 저장 함수
+  const handleSaveMessage = async (message: (typeof messages)[0]) => {
+    console.log("북마크 버튼 클릭됨:", message);
+
+    // 즉시 토스트 표시 (테스트용)
+    showToast("저장 중...", "info", 1000);
+
+    try {
+      const conversationText = message.message;
+
+      console.log("저장할 대화 내용:", conversationText);
+
+      const success = await addConversation({
+        conversation: conversationText,
+        conversationCategory: "학술",
+      });
+
+      console.log("저장 결과:", success);
+
+      if (success) {
+        showToast("저장되었습니다", "success", 2000);
+      } else {
+        showToast("저장에 실패했습니다", "error", 2000);
+      }
+    } catch (error) {
+      console.error("Save failed:", error);
+      showToast("저장에 실패했습니다", "error", 2000);
+    }
+  };
+
   // 대화 지우기: 초기 인삿말만 남기고 상태/버퍼 초기화
   const handleClearChat = () => {
     setMessages(getInitialMessages());
@@ -959,10 +1088,14 @@ export default function CallbotChat() {
                   {chatbot?.id ? (
                     (() => {
                       const IconComponent = getIconComponent(chatbot.id);
-                      return <IconComponent className="h-14 w-14 text-foreground" />;
+                      return (
+                        <IconComponent className="h-14 w-14 text-foreground" />
+                      );
                     })()
                   ) : (
-                    <span className="text-foreground text-2xl font-bold">콜봇</span>
+                    <span className="text-foreground text-2xl font-bold">
+                      콜봇
+                    </span>
                   )}
                 </div>
                 <h3 className="text-2xl font-bold text-foreground mb-3">
@@ -1152,21 +1285,41 @@ export default function CallbotChat() {
                       messages.map((message) => (
                         <div
                           key={message.id}
-                          className={`flex ${message.sender === "user" ? "justify-end" : "justify-start"}`}
+                          className={`flex ${message.sender === "user" ? "justify-end" : "justify-start"} group`}
                         >
                           <div
-                            className={`max-w-sm md:max-w-md lg:max-w-lg px-4 py-2 rounded-lg border ${
+                            className={`max-w-sm md:max-w-md lg:max-w-lg px-4 py-2 rounded-lg border relative ${
                               message.sender === "user"
                                 ? "border-border bg-muted/70 text-foreground rounded-2xl"
                                 : "border-border bg-card text-foreground"
                             }`}
                           >
-                            <p className="text-[13px] md:text-sm leading-relaxed">{message.message}</p>
+                            <p className="text-[13px] md:text-sm leading-relaxed pr-8">
+                              {message.message}
+                            </p>
                             <p
                               className={`text-xs mt-1 text-muted-foreground text-right`}
                             >
                               {message.timestamp}
                             </p>
+
+                            {/* 북마크 버튼 - 호버 시 표시 */}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                e.preventDefault();
+                                console.log("북마크 버튼 클릭");
+                                handleSaveMessage(message);
+                              }}
+                              className={`absolute top-2 right-2 p-1.5 rounded border transition-all duration-200 opacity-70 hover:opacity-100 group-hover:opacity-100 ${
+                                message.sender === "user"
+                                  ? "text-gray-700 hover:bg-blue-200 border-gray-400 bg-white shadow-sm"
+                                  : "text-gray-700 hover:bg-gray-200 border-gray-400 bg-white shadow-sm"
+                              }`}
+                              title="저장"
+                            >
+                              <BookmarkIcon className="h-4 w-4" />
+                            </button>
                           </div>
                         </div>
                       ))
@@ -1428,6 +1581,9 @@ export default function CallbotChat() {
           </main>
         </div>
       </div>
+
+      {/* Toast 컨테이너 */}
+      <ToastContainer />
     </div>
   );
 }

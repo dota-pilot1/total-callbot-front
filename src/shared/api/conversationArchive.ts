@@ -18,6 +18,18 @@ export interface UpdateConversationRequest {
   conversationCategory?: "역할" | "일상" | "비즈니스" | "학술";
 }
 
+export interface CategoryCounts {
+  역할: number;
+  일상: number;
+  비즈니스: number;
+  학술: number;
+}
+
+export interface ConversationArchiveListResponse {
+  conversations: ConversationArchive[];
+  categoryCounts: CategoryCounts;
+}
+
 export const conversationArchiveApi = {
   // 대화 저장
   create: async (
@@ -27,8 +39,8 @@ export const conversationArchiveApi = {
     return response.data;
   },
 
-  // 모든 대화 조회
-  getAll: async (): Promise<ConversationArchive[]> => {
+  // 모든 대화 조회 (카테고리 개수 포함)
+  getAll: async (): Promise<ConversationArchiveListResponse> => {
     const response = await apiClient.get("/conversation-archives");
     return response.data;
   },
@@ -62,4 +74,10 @@ export const conversationArchiveApi = {
   delete: async (id: string): Promise<void> => {
     await apiClient.delete(`/conversation-archives/${id}`);
   },
+
+  // 카테고리별 개수 조회 (더 이상 사용 안함 - getAll에 포함됨)
+  // getCategoryCounts: async (): Promise<CategoryCounts> => {
+  //   const response = await apiClient.get("/conversation-archives/count");
+  //   return response.data;
+  // },
 };
