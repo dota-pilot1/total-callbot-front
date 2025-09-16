@@ -4,6 +4,42 @@ import { XMarkIcon } from "@heroicons/react/24/outline";
 import { CHARACTER_LIST } from "../features/chatbot/character/characters";
 import { Button } from "./ui";
 
+// 공통 캐릭터 버튼 컴포넌트
+interface CharacterButtonProps {
+  character: CharacterOption;
+  selected: boolean;
+  disabled?: boolean;
+  onClick: () => void;
+}
+
+const CharacterButton = ({
+  character,
+  selected,
+  disabled = false,
+  onClick,
+}: CharacterButtonProps) => (
+  <button
+    onClick={onClick}
+    disabled={disabled}
+    className={`flex flex-col items-center justify-center rounded-lg border transition-colors ${
+      disabled ? "opacity-50 cursor-not-allowed" : ""
+    } ${
+      selected
+        ? "border-blue-500 bg-blue-50 text-gray-900 ring-1 ring-blue-200"
+        : "border-gray-200 bg-gray-50 text-gray-600 hover:bg-gray-100"
+    }`}
+    style={{ width: "64px", height: "64px" }}
+    title={disabled ? `${character.name} (구현 예정)` : character.name}
+  >
+    <div className="mb-1" style={{ fontSize: "22px", lineHeight: "22px" }}>
+      {character.emoji}
+    </div>
+    <div className="text-[9px] leading-tight text-center px-1 truncate w-full">
+      {character.name}
+    </div>
+  </button>
+);
+
 export type CharacterOption = { id: string; name: string; emoji: string };
 export type ScenarioOption = { id: string; name: string; desc: string };
 export type GenderOption = "male" | "female";
@@ -25,12 +61,29 @@ interface MobileCharacterDialogProps {
   }) => void;
 }
 
-// 캐릭터 9개 (동화 3, 영화 3, 유명 인사 3)
-const CHARACTERS: CharacterOption[] = CHARACTER_LIST.map((c) => ({
-  id: c.id,
-  name: c.name,
-  emoji: c.emoji,
-}));
+// 카테고리별 캐릭터 분류
+const GENERAL_CHARACTERS: CharacterOption[] = CHARACTER_LIST.filter(
+  (c) => c.category === "general",
+).map((c) => ({ id: c.id, name: c.name, emoji: c.emoji }));
+
+const QUIZ_CHARACTERS: CharacterOption[] = CHARACTER_LIST.filter(
+  (c) => c.category === "quiz",
+).map((c) => ({ id: c.id, name: c.name, emoji: c.emoji }));
+
+const ROLEPLAY_CHARACTERS: CharacterOption[] = CHARACTER_LIST.filter(
+  (c) => c.category === "roleplay",
+).map((c) => ({ id: c.id, name: c.name, emoji: c.emoji }));
+
+const NEWS_CHARACTERS: CharacterOption[] = CHARACTER_LIST.filter(
+  (c) => c.category === "news",
+).map((c) => ({ id: c.id, name: c.name, emoji: c.emoji }));
+
+const ALL_CHARACTERS = [
+  ...GENERAL_CHARACTERS,
+  ...QUIZ_CHARACTERS,
+  ...ROLEPLAY_CHARACTERS,
+  ...NEWS_CHARACTERS,
+];
 
 // 극적인 장면 5개
 const SCENARIOS: ScenarioOption[] = [
@@ -52,7 +105,7 @@ export default function MobileCharacterDialog({
   onConfirm,
 }: MobileCharacterDialogProps) {
   const [characterId, setCharacterId] = useState<string>(
-    value?.characterId || CHARACTERS[0].id,
+    value?.characterId || ALL_CHARACTERS[0].id,
   );
   const [scenarioId, setScenarioId] = useState<string>(value?.scenarioId || "");
   const [gender, setGender] = useState<GenderOption>(value?.gender || "male");
@@ -60,13 +113,28 @@ export default function MobileCharacterDialog({
     value?.voice || "verse",
   );
 
+  // 카테고리별 접기/열기 상태
+  const [expandedSections, setExpandedSections] = useState({
+    general: true,
+    quiz: true,
+    roleplay: true,
+    news: false, // 뉴스는 기본적으로 접어둠 (구현 예정)
+  });
+
   useEffect(() => {
     if (!open) return;
-    setCharacterId(value?.characterId || CHARACTERS[0].id);
+    setCharacterId(value?.characterId || ALL_CHARACTERS[0].id);
     setScenarioId(value?.scenarioId || "");
     setGender(value?.gender || "male");
     setVoice(value?.voice || "verse");
   }, [open]);
+
+  const toggleSection = (section: keyof typeof expandedSections) => {
+    setExpandedSections((prev) => ({
+      ...prev,
+      [section]: !prev[section],
+    }));
+  };
 
   const confirm = () => {
     onConfirm({ characterId, scenarioId, gender, voice });
@@ -103,43 +171,200 @@ export default function MobileCharacterDialog({
               </button>
             </div>
 
-            <div className="p-4 space-y-6 overflow-y-auto h-[calc(100%-7rem)]">
-              {/* 캐릭터 선택 */}
+            <div className="p-4 space-y-4 overflow-y-auto h-[calc(100%-7rem)]">
+              {/* 캐릭터 선택 - 카테고리별 */}
+
+              {/* 💬 일반 대화 */}
               <div>
-                <div className="text-sm font-medium text-gray-900 mb-2">
-                  캐릭터
-                </div>
-                <div className="grid grid-cols-5 gap-2">
-                  {CHARACTERS.map((c) => {
-                    const selected = c.id === characterId;
-                    return (
-                      <button
-                        key={c.id}
-                        onClick={() => {
-                          setCharacterId(c.id);
-                          const meta = CHARACTER_LIST.find(
-                            (x) => x.id === c.id,
-                          );
-                          if (meta?.voice) setVoice(meta.voice);
-                          if (meta?.defaultGender)
-                            setGender(meta.defaultGender);
-                        }}
-                        className={`flex flex-col items-center justify-center rounded-md border py-3 transition-colors ${
-                          selected
-                            ? "border-blue-500 bg-blue-50 text-gray-900 ring-1 ring-blue-200"
-                            : "border-gray-200 bg-gray-50 text-gray-600 hover:bg-gray-100"
-                        }`}
-                        style={{ aspectRatio: "1 / 1" }}
-                        title={c.name}
-                      >
-                        <div className="text-xl mb-1">{c.emoji}</div>
-                        <div className="text-[10px] leading-tight text-center px-1 truncate">
-                          {c.name}
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
+                <button
+                  onClick={() => toggleSection("general")}
+                  className="flex items-center justify-between w-full text-left text-sm font-medium text-gray-900 mb-2"
+                >
+                  <span>💬 일반 대화 ({GENERAL_CHARACTERS.length})</span>
+                  <span className="text-gray-500">
+                    {expandedSections.general ? "▼" : "▶"}
+                  </span>
+                </button>
+                {expandedSections.general && (
+                  <div className="grid grid-cols-5 gap-3 mb-4">
+                    {GENERAL_CHARACTERS.map((c) => {
+                      const selected = c.id === characterId;
+                      return (
+                        <button
+                          key={c.id}
+                          onClick={() => {
+                            setCharacterId(c.id);
+                            const meta = CHARACTER_LIST.find(
+                              (x) => x.id === c.id,
+                            );
+                            if (meta?.voice) setVoice(meta.voice);
+                            if (meta?.defaultGender)
+                              setGender(meta.defaultGender);
+                          }}
+                          className={`flex flex-col items-center justify-center rounded-lg border py-4 min-h-[80px] transition-colors ${
+                            selected
+                              ? "border-blue-500 bg-blue-50 text-gray-900 ring-1 ring-blue-200"
+                              : "border-gray-200 bg-gray-50 text-gray-600 hover:bg-gray-100"
+                          }`}
+                          style={{ aspectRatio: "1 / 1" }}
+                          title={c.name}
+                        >
+                          <div className="text-3xl mb-2 leading-none">
+                            {c.emoji}
+                          </div>
+                          <div className="text-[10px] leading-tight text-center px-1 truncate w-full">
+                            {c.name}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* 📚 퀴즈 */}
+              <div>
+                <button
+                  onClick={() => toggleSection("quiz")}
+                  className="flex items-center justify-between w-full text-left text-sm font-medium text-gray-900 mb-2"
+                >
+                  <span>📚 퀴즈 ({QUIZ_CHARACTERS.length})</span>
+                  <span className="text-gray-500">
+                    {expandedSections.quiz ? "▼" : "▶"}
+                  </span>
+                </button>
+                {expandedSections.quiz && (
+                  <div className="grid grid-cols-5 gap-3 mb-4">
+                    {QUIZ_CHARACTERS.map((c) => {
+                      const selected = c.id === characterId;
+                      return (
+                        <button
+                          key={c.id}
+                          onClick={() => {
+                            setCharacterId(c.id);
+                            const meta = CHARACTER_LIST.find(
+                              (x) => x.id === c.id,
+                            );
+                            if (meta?.voice) setVoice(meta.voice);
+                            if (meta?.defaultGender)
+                              setGender(meta.defaultGender);
+                          }}
+                          className={`flex flex-col items-center justify-center rounded-lg border py-4 min-h-[80px] transition-colors ${
+                            selected
+                              ? "border-blue-500 bg-blue-50 text-gray-900 ring-1 ring-blue-200"
+                              : "border-gray-200 bg-gray-50 text-gray-600 hover:bg-gray-100"
+                          }`}
+                          style={{ aspectRatio: "1 / 1" }}
+                          title={c.name}
+                        >
+                          <div className="text-3xl mb-2 leading-none">
+                            {c.emoji}
+                          </div>
+                          <div className="text-[10px] leading-tight text-center px-1 truncate w-full">
+                            {c.name}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* 🎭 상황극 */}
+              <div>
+                <button
+                  onClick={() => toggleSection("roleplay")}
+                  className="flex items-center justify-between w-full text-left text-sm font-medium text-gray-900 mb-2"
+                >
+                  <span>🎭 상황극 ({ROLEPLAY_CHARACTERS.length})</span>
+                  <span className="text-gray-500">
+                    {expandedSections.roleplay ? "▼" : "▶"}
+                  </span>
+                </button>
+                {expandedSections.roleplay && (
+                  <div className="grid grid-cols-5 gap-3 mb-4">
+                    {ROLEPLAY_CHARACTERS.map((c) => {
+                      const selected = c.id === characterId;
+                      return (
+                        <button
+                          key={c.id}
+                          onClick={() => {
+                            setCharacterId(c.id);
+                            const meta = CHARACTER_LIST.find(
+                              (x) => x.id === c.id,
+                            );
+                            if (meta?.voice) setVoice(meta.voice);
+                            if (meta?.defaultGender)
+                              setGender(meta.defaultGender);
+                          }}
+                          className={`flex flex-col items-center justify-center rounded-lg border py-4 min-h-[80px] transition-colors ${
+                            selected
+                              ? "border-blue-500 bg-blue-50 text-gray-900 ring-1 ring-blue-200"
+                              : "border-gray-200 bg-gray-50 text-gray-600 hover:bg-gray-100"
+                          }`}
+                          style={{ aspectRatio: "1 / 1" }}
+                          title={c.name}
+                        >
+                          <div className="text-3xl mb-2 leading-none">
+                            {c.emoji}
+                          </div>
+                          <div className="text-[10px] leading-tight text-center px-1 truncate w-full">
+                            {c.name}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* 📰 뉴스 (구현 예정) */}
+              <div>
+                <button
+                  onClick={() => toggleSection("news")}
+                  className="flex items-center justify-between w-full text-left text-sm font-medium text-gray-900 mb-2"
+                >
+                  <span>📰 뉴스 (구현 예정) ({NEWS_CHARACTERS.length})</span>
+                  <span className="text-gray-500">
+                    {expandedSections.news ? "▼" : "▶"}
+                  </span>
+                </button>
+                {expandedSections.news && (
+                  <div className="grid grid-cols-5 gap-3 mb-4">
+                    {NEWS_CHARACTERS.map((c) => {
+                      const selected = c.id === characterId;
+                      return (
+                        <button
+                          key={c.id}
+                          onClick={() => {
+                            setCharacterId(c.id);
+                            const meta = CHARACTER_LIST.find(
+                              (x) => x.id === c.id,
+                            );
+                            if (meta?.voice) setVoice(meta.voice);
+                            if (meta?.defaultGender)
+                              setGender(meta.defaultGender);
+                          }}
+                          className={`flex flex-col items-center justify-center rounded-lg border py-4 min-h-[80px] transition-colors opacity-50 cursor-not-allowed ${
+                            selected
+                              ? "border-blue-500 bg-blue-50 text-gray-900 ring-1 ring-blue-200"
+                              : "border-gray-200 bg-gray-50 text-gray-600"
+                          }`}
+                          style={{ aspectRatio: "1 / 1" }}
+                          title={`${c.name} (구현 예정)`}
+                          disabled
+                        >
+                          <div className="text-3xl mb-2 leading-none">
+                            {c.emoji}
+                          </div>
+                          <div className="text-[10px] leading-tight text-center px-1 truncate w-full">
+                            {c.name}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
 
               {/* 선택 캐릭터 성격/배경 미리보기 */}
@@ -228,5 +453,5 @@ export default function MobileCharacterDialog({
   );
 }
 
-export const CHARACTER_OPTIONS = CHARACTERS;
+export const CHARACTER_OPTIONS = ALL_CHARACTERS;
 export const SCENARIO_OPTIONS = SCENARIOS;
