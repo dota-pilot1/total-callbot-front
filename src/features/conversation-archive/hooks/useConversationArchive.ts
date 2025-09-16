@@ -57,7 +57,7 @@ export const useConversationArchive = () => {
         setError(null);
         const newConversation = await conversationArchiveApi.create(data);
         // 낙관적 업데이트: 즉시 UI에 반영
-        setConversations((prev) => [newConversation, ...prev]);
+        setConversations((prev) => [newConversation, ...(prev || [])]);
         setCategoryCounts((prev) =>
           prev
             ? {
@@ -81,7 +81,7 @@ export const useConversationArchive = () => {
   const updateConversation = useCallback(
     async (id: string, data: UpdateConversationRequest): Promise<boolean> => {
       // 원본 데이터 백업 (롤백용)
-      const originalConv = conversations.find((conv) => conv.id === id);
+      const originalConv = (conversations || []).find((conv) => conv.id === id);
       if (!originalConv) return false;
 
       try {
@@ -89,7 +89,9 @@ export const useConversationArchive = () => {
         // 낙관적 업데이트: 즉시 UI에 반영
         const optimisticUpdate = { ...originalConv, ...data };
         setConversations((prev) =>
-          prev.map((conv) => (conv.id === id ? optimisticUpdate : conv)),
+          (prev || []).map((conv) =>
+            conv.id === id ? optimisticUpdate : conv,
+          ),
         );
 
         // 카테고리가 변경된 경우 개수도 업데이트
@@ -102,13 +104,13 @@ export const useConversationArchive = () => {
           setCategoryCounts((prev) =>
             prev
               ? {
-                ...prev,
-                [originalConv.conversationCategory]: Math.max(
-                  0,
-                  (prev[originalConv.conversationCategory] || 1) - 1,
-                ),
-                [newCat]: (prev[newCat] || 0) + 1,
-              }
+                  ...prev,
+                  [originalConv.conversationCategory]: Math.max(
+                    0,
+                    (prev[originalConv.conversationCategory] || 1) - 1,
+                  ),
+                  [newCat]: (prev[newCat] || 0) + 1,
+                }
               : null,
           );
         }
@@ -119,7 +121,9 @@ export const useConversationArchive = () => {
         );
         // 서버 응답으로 최종 업데이트
         setConversations((prev) =>
-          prev.map((conv) => (conv.id === id ? updatedConversation : conv)),
+          (prev || []).map((conv) =>
+            conv.id === id ? updatedConversation : conv,
+          ),
         );
         return true;
       } catch (err) {
@@ -127,7 +131,7 @@ export const useConversationArchive = () => {
         setError("대화를 수정하는데 실패했습니다.");
         // 롤백: 원본 데이터로 복구
         setConversations((prev) =>
-          prev.map((conv) => (conv.id === id ? originalConv : conv)),
+          (prev || []).map((conv) => (conv.id === id ? originalConv : conv)),
         );
         if (
           data.conversationCategory &&
@@ -138,14 +142,11 @@ export const useConversationArchive = () => {
           setCategoryCounts((prev) =>
             prev
               ? {
-                ...prev,
-                [newCat]: Math.max(
-                  0,
-                  (prev[newCat] || 1) - 1,
-                ),
-                [originalConv.conversationCategory]:
-                  (prev[originalConv.conversationCategory] || 0) + 1,
-              }
+                  ...prev,
+                  [newCat]: Math.max(0, (prev[newCat] || 1) - 1),
+                  [originalConv.conversationCategory]:
+                    (prev[originalConv.conversationCategory] || 0) + 1,
+                }
               : null,
           );
         }
@@ -159,13 +160,15 @@ export const useConversationArchive = () => {
   const deleteConversation = useCallback(
     async (id: string): Promise<boolean> => {
       // 삭제할 항목을 미리 찾아서 카테고리 정보 저장
-      const targetConv = conversations.find((conv) => conv.id === id);
+      const targetConv = (conversations || []).find((conv) => conv.id === id);
       if (!targetConv) return false;
 
       try {
         setError(null);
         // 낙관적 업데이트: 즉시 UI에서 제거
-        setConversations((prev) => prev.filter((conv) => conv.id !== id));
+        setConversations((prev) =>
+          (prev || []).filter((conv) => conv.id !== id),
+        );
         setCategoryCounts((prev) =>
           prev
             ? {
@@ -185,7 +188,7 @@ export const useConversationArchive = () => {
         setError("대화를 삭제하는데 실패했습니다.");
         // 롤백: 삭제된 항목 복구
         setConversations((prev) =>
-          [...prev, targetConv].sort(
+          [...(prev || []), targetConv].sort(
             (a, b) =>
               new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
           ),
