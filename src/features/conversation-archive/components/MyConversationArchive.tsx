@@ -267,7 +267,7 @@ export default function MyConversationArchive({
                     나의 대화 아카이브
                   </h3>
                   <span className="px-2 py-1 bg-gray-100 text-gray-600 text-sm font-medium rounded-full">
-                    총 {conversations.length}개
+                    총 {(conversations || []).length}개
                   </span>
                 </div>
               </div>
