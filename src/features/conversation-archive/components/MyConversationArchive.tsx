@@ -75,7 +75,7 @@ export default function MyConversationArchive({
   }
 
   // 필터링된 대화 목록
-  const filteredConversations = conversations.filter(
+  const filteredConversations = (conversations || []).filter(
     (conv) =>
       filterCategory === "전체" || conv.conversationCategory === filterCategory,
   );
