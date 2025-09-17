@@ -229,6 +229,26 @@ export default function CardForChattingMessageWithTranslation({
     }
   };
 
+  // 메시지에서 [KO] 해석 부분을 분리하는 함수
+  const parseMessageContent = (text: string) => {
+    // [KO] 또는 [ko]로 시작하는 부분을 찾기
+    const koPattern = /(\[KO\]|\[ko\])/i;
+    const match = text.search(koPattern);
+
+    if (match === -1) {
+      // [KO] 해석이 없는 경우 원본 그대로 반환
+      return { englishPart: text, koreanPart: null };
+    }
+
+    // [KO] 이전 부분과 이후 부분으로 분리
+    const englishPart = text.substring(0, match).trim();
+    const koreanPart = text.substring(match).replace(koPattern, "").trim();
+
+    return { englishPart, koreanPart };
+  };
+
+  const { englishPart, koreanPart } = parseMessageContent(message.message);
+
   return (
     <div className={`flex ${isUser ? "justify-end" : "justify-start"} mb-4`}>
       <div
@@ -242,16 +262,42 @@ export default function CardForChattingMessageWithTranslation({
           {/* 앞면 (원본 메시지) */}
           {!isFlipped && (
             <div
-              className={`px-3 py-2 pb-6 rounded-lg shadow-sm relative border ${
+              className={`rounded-lg shadow-sm relative border overflow-hidden ${
                 isUser
-                  ? "bg-blue-50 text-blue-900 border-blue-200 rounded-2xl"
-                  : "bg-gray-50 text-gray-900 border-gray-200"
+                  ? "bg-blue-50 border-blue-200 rounded-2xl"
+                  : "bg-gray-50 border-gray-200"
               }`}
             >
-              <p className="text-sm leading-relaxed whitespace-pre-wrap pr-24">
-                {message.message}
-              </p>
-              <div className="mt-1">
+              {/* 영어 부분 */}
+              <div
+                className={`px-3 py-2 pb-6 ${koreanPart ? "pb-2" : "pb-6"} ${
+                  isUser ? "text-blue-900" : "text-gray-900"
+                }`}
+              >
+                <p className="text-sm leading-relaxed whitespace-pre-wrap pr-24">
+                  {englishPart}
+                </p>
+              </div>
+
+              {/* 한국어 해석 부분 (있는 경우에만) */}
+              {koreanPart && (
+                <div
+                  className={`px-3 py-2 pb-6 border-t ${
+                    isUser
+                      ? "bg-blue-100 border-blue-300 text-blue-800"
+                      : "bg-gray-100 border-gray-300 text-gray-700"
+                  }`}
+                >
+                  <p className="text-xs leading-relaxed whitespace-pre-wrap pr-24 font-medium">
+                    해석: {koreanPart}
+                  </p>
+                </div>
+              )}
+
+              {/* 타임스탬프 */}
+              <div
+                className={`px-3 pb-2 ${koreanPart ? "absolute bottom-0 right-0" : "mt-1"}`}
+              >
                 <p
                   className={`text-xs ${
                     isUser ? "text-blue-600" : "text-gray-500"
@@ -262,7 +308,11 @@ export default function CardForChattingMessageWithTranslation({
               </div>
 
               {/* 버튼 영역 - 우측 중앙 2x2 그리드 */}
-              <div className="absolute top-1/2 right-2 -translate-y-1/2 grid grid-cols-2 gap-1">
+              <div
+                className={`absolute right-2 grid grid-cols-2 gap-1 ${
+                  koreanPart ? "top-6" : "top-1/2 -translate-y-1/2"
+                }`}
+              >
                 <SentenceSplitterDialogButtonWithTranslate
                   message={message.message}
                   isUser={isUser}
