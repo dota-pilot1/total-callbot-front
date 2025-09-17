@@ -156,7 +156,7 @@ export default function Login() {
                 <span className="text-xs font-medium text-gray-700">회화</span>
               </button>
 
-              {/* 퀴즈 */}
+              {/* 영어 듣기 */}
               <button
                 onClick={() => setSelectedService("quiz")}
                 aria-pressed={selectedService === "quiz"}
@@ -169,10 +169,12 @@ export default function Login() {
                 {selectedService === "quiz" && (
                   <CheckCircleIcon className="absolute top-1 right-1 h-4 w-4 text-blue-500" />
                 )}
-                <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-green-100 to-green-200 flex items-center justify-center mb-1">
-                  <span className="text-lg">📝</span>
+                <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center mb-1">
+                  <span className="text-lg">🎧</span>
                 </div>
-                <span className="text-xs font-medium text-gray-700">퀴즈</span>
+                <span className="text-xs font-medium text-gray-700">
+                  영어듣기
+                </span>
               </button>
 
               {/* 전체 채팅방 */}
