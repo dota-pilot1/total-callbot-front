@@ -20,6 +20,12 @@ import {
   ListeningTest,
   ListeningTestList,
 } from "./features/english-listening-test";
+import {
+  AdminDashboard,
+  ListeningTestAdmin,
+  ListeningTestForm,
+  QuestionManagement,
+} from "./features/admin";
 import ErrorBoundary from "./components/ErrorBoundary";
 
 function ProtectedApp() {
@@ -54,6 +60,20 @@ function ProtectedApp() {
       <Route path="/chat/room/:roomId" element={<Chat />} />
       <Route path="/chat/bot/:botId" element={<CallbotChat />} />
       <Route path="/chat/:chatRoomId" element={<CallbotChat />} />
+      <Route path="/admin" element={<AdminDashboard />} />
+      <Route path="/admin/listening-tests" element={<ListeningTestAdmin />} />
+      <Route
+        path="/admin/listening-tests/new"
+        element={<ListeningTestForm />}
+      />
+      <Route
+        path="/admin/listening-tests/:id/edit"
+        element={<ListeningTestForm />}
+      />
+      <Route
+        path="/admin/listening-tests/:id/questions"
+        element={<QuestionManagement />}
+      />
     </Routes>
   );
 }

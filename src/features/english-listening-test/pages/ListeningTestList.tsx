@@ -21,13 +21,13 @@ export default function ListeningTestList() {
   const getDifficultyIcon = (difficulty: string) => {
     switch (difficulty) {
       case "BEGINNER":
-        return <BookOpenIcon className="h-8 w-8" />;
+        return <BookOpenIcon className="h-5 w-5 sm:h-6 sm:w-6" />;
       case "INTERMEDIATE":
-        return <AcademicCapIcon className="h-8 w-8" />;
+        return <AcademicCapIcon className="h-5 w-5 sm:h-6 sm:w-6" />;
       case "ADVANCED":
-        return <TrophyIcon className="h-8 w-8" />;
+        return <TrophyIcon className="h-5 w-5 sm:h-6 sm:w-6" />;
       default:
-        return <BookOpenIcon className="h-8 w-8" />;
+        return <BookOpenIcon className="h-5 w-5 sm:h-6 sm:w-6" />;
     }
   };
 
@@ -35,31 +35,35 @@ export default function ListeningTestList() {
     switch (difficulty) {
       case "BEGINNER":
         return {
-          gradient: "from-green-100 to-green-200",
-          border: "border-green-300",
+          card: "bg-green-50/80 border-green-200/60",
+          badge: "bg-green-100 text-green-700 border-green-200",
           button: "bg-green-600 hover:bg-green-700",
-          text: "text-green-800",
+          text: "text-green-700",
+          icon: "text-green-600",
         };
       case "INTERMEDIATE":
         return {
-          gradient: "from-blue-100 to-blue-200",
-          border: "border-blue-300",
+          card: "bg-blue-50/80 border-blue-200/60",
+          badge: "bg-blue-100 text-blue-700 border-blue-200",
           button: "bg-blue-600 hover:bg-blue-700",
-          text: "text-blue-800",
+          text: "text-blue-700",
+          icon: "text-blue-600",
         };
       case "ADVANCED":
         return {
-          gradient: "from-purple-100 to-purple-200",
-          border: "border-purple-300",
+          card: "bg-purple-50/80 border-purple-200/60",
+          badge: "bg-purple-100 text-purple-700 border-purple-200",
           button: "bg-purple-600 hover:bg-purple-700",
-          text: "text-purple-800",
+          text: "text-purple-700",
+          icon: "text-purple-600",
         };
       default:
         return {
-          gradient: "from-gray-100 to-gray-200",
-          border: "border-gray-300",
-          button: "bg-gray-600 hover:bg-gray-700",
-          text: "text-gray-800",
+          card: "bg-muted/50 border-border",
+          badge: "bg-muted text-muted-foreground border-border",
+          button: "bg-primary hover:bg-primary/90",
+          text: "text-muted-foreground",
+          icon: "text-muted-foreground",
         };
     }
   };
@@ -102,89 +106,99 @@ export default function ListeningTestList() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
       <ListeningHeader />
 
-      <div className="max-w-4xl mx-auto p-4">
-        {/* 안내 메시지 */}
-        <div className="rounded-lg border bg-card p-6 shadow-lg mb-8">
-          <h2 className="text-2xl font-bold text-foreground mb-4">
-            📚 영어 듣기 시험 선택
+      <div className="max-w-4xl mx-auto px-3 py-6 sm:px-6">
+        {/* 안내 메시지 - shadcn/ui 스타일 */}
+        <div className="rounded-xl bg-card/95 backdrop-blur-sm p-6 sm:p-8 mb-8 border border-border shadow-sm">
+          <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-3 sm:mb-4">
+            🎧 영어 듣기 시험
           </h2>
-          <p className="text-muted-foreground leading-relaxed">
-            본인의 영어 수준에 맞는 듣기 시험을 선택해주세요. 각 시험은 TTS
-            음성으로 진행되며, 재생 속도와 자막 표시 등을 설정할 수 있습니다.
+          <p className="text-muted-foreground text-base sm:text-lg leading-relaxed">
+            수준에 맞는 듣기 시험을 선택해주세요.
           </p>
         </div>
 
         {/* 시험 목록 */}
-        <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-1">
+        <div className="space-y-6">
           {tests.map((test: ListeningTest) => {
             const colors = getDifficultyColor(test.difficulty);
             return (
               <div
                 key={test.id}
-                className={`bg-gradient-to-r ${colors.gradient} border-2 ${colors.border} rounded-lg shadow-lg p-6 hover:shadow-xl transition-all duration-300`}
+                className={`${colors.card} rounded-lg border shadow-sm hover:shadow-md transition-all duration-200`}
               >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <div
-                      className={`${colors.text} p-3 rounded-lg bg-white/50`}
-                    >
-                      {getDifficultyIcon(test.difficulty)}
-                    </div>
-                    <div>
-                      <h3 className={`text-2xl font-bold ${colors.text} mb-2`}>
-                        {test.title}
-                      </h3>
-                      <p className="text-muted-foreground text-lg mb-3">
-                        {test.description}
-                      </p>
-                      <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-                        <span className="bg-white/70 px-3 py-1 rounded-full">
-                          📝 {test.totalQuestions}문제
+                <div className="p-6 sm:p-8">
+                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-6">
+                    {/* 왼쪽: 정보 */}
+                    <div className="flex-1 space-y-4">
+                      {/* 헤더 */}
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={`${colors.icon} p-2.5 rounded-md bg-background border`}
+                        >
+                          {getDifficultyIcon(test.difficulty)}
+                        </div>
+                        <span
+                          className={`${colors.badge} px-3 py-1.5 rounded-md text-sm font-medium border`}
+                        >
+                          {test.difficultyDisplayName}
                         </span>
-                        <span className="bg-white/70 px-3 py-1 rounded-full">
-                          ⏱️ {test.timeLimitMinutes}분
+                      </div>
+
+                      {/* 제목과 설명 */}
+                      <div>
+                        <h3 className="text-xl sm:text-2xl font-semibold text-foreground mb-2">
+                          {test.title}
+                        </h3>
+                        <p className="text-muted-foreground text-sm sm:text-base leading-relaxed">
+                          {test.description}
+                        </p>
+                      </div>
+
+                      {/* 정보 태그 */}
+                      <div className="flex gap-3">
+                        <span className="bg-muted/60 text-muted-foreground px-3 py-1.5 rounded-md text-sm font-medium flex items-center gap-2">
+                          <span>📝</span>
+                          <span>{test.totalQuestions}문제</span>
                         </span>
-                        <span className="bg-white/70 px-3 py-1 rounded-full font-semibold">
-                          🎯 {test.difficultyDisplayName}
+                        <span className="bg-muted/60 text-muted-foreground px-3 py-1.5 rounded-md text-sm font-medium flex items-center gap-2">
+                          <span>⏱️</span>
+                          <span>{test.timeLimitMinutes}분</span>
                         </span>
                       </div>
                     </div>
-                  </div>
 
-                  <Button
-                    onClick={() => handleStartTest(test.id)}
-                    variant="outline"
-                    className="inline-flex items-center space-x-2"
-                  >
-                    <PlayIcon className="w-5 h-5" />
-                    <span>시험 시작</span>
-                  </Button>
+                    {/* 오른쪽: 버튼 */}
+                    <div className="flex-shrink-0">
+                      <Button
+                        onClick={() => handleStartTest(test.id)}
+                        className={`${colors.button} text-white rounded-md px-6 py-2.5 sm:px-8 sm:py-3 font-medium text-sm sm:text-base flex items-center gap-2 justify-center w-full sm:w-auto transition-colors`}
+                      >
+                        <PlayIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+                        <span>시험 시작</span>
+                      </Button>
+                    </div>
+                  </div>
                 </div>
               </div>
             );
           })}
         </div>
 
-        {/* 하단 안내 */}
-        <div className="mt-8 rounded-lg border bg-muted/20 p-4">
-          <div className="flex items-start space-x-3">
-            <div className="text-muted-foreground text-lg">💡</div>
-            <div className="text-sm">
-              <p className="font-semibold mb-1 text-foreground">
+        {/* 하단 안내 - shadcn/ui 스타일 */}
+        <div className="mt-8 bg-muted/30 rounded-lg p-6 border border-border">
+          <div className="flex items-start gap-4">
+            <div className="text-primary text-xl shrink-0">💡</div>
+            <div className="text-sm sm:text-base">
+              <p className="font-semibold mb-3 text-foreground">
                 시험 진행 안내
               </p>
-              <ul className="space-y-1 text-muted-foreground">
-                <li>
-                  • 시험 중 브라우저를 닫아도 다시 접속하여 이어서 진행할 수
-                  있습니다
-                </li>
-                <li>• 각 문제마다 영어 음성을 여러 번 들을 수 있습니다</li>
-                <li>
-                  • 시험 시작 전 설정 버튼으로 음성 속도와 자막을 조절하세요
-                </li>
+              <ul className="space-y-2 text-muted-foreground">
+                <li>• 브라우저 종료 후에도 이어서 진행 가능</li>
+                <li>• 음성은 여러 번 재생할 수 있습니다</li>
+                <li>• 시작 전 설정에서 음성 속도 조절 가능</li>
               </ul>
             </div>
           </div>

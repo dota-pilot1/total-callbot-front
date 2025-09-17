@@ -39,10 +39,10 @@ export default function ListeningTest() {
   // 로딩 상태 처리
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-slate-100">
         <ListeningHeader />
         <div className="max-w-2xl mx-auto p-4">
-          <div className="rounded-lg border bg-card p-6 shadow-lg text-center">
+          <div className="rounded-lg border border-blue-200/60 bg-blue-50/80 backdrop-blur-sm p-6 shadow-lg text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
             <p className="mt-4 text-muted-foreground">
               시험 문제를 불러오는 중...
@@ -59,7 +59,7 @@ export default function ListeningTest() {
       <div className="min-h-screen bg-background">
         <ListeningHeader />
         <div className="max-w-2xl mx-auto p-4">
-          <div className="rounded-lg border bg-card p-6 shadow-lg text-center">
+          <div className="rounded-lg border border-blue-200/60 bg-blue-50/80 backdrop-blur-sm p-6 shadow-lg text-center">
             <div className="text-destructive text-lg mb-4">
               ❌ 시험 문제를 불러오는데 실패했습니다
             </div>
@@ -163,9 +163,9 @@ export default function ListeningTest() {
 
   if (showResult) {
     return (
-      <div className="min-h-screen bg-background p-4">
+      <div className="min-h-screen bg-gradient-to-br from-background via-muted/10 to-muted/20 p-4">
         <div className="max-w-2xl mx-auto pt-8">
-          <div className="rounded-lg border bg-card p-8 shadow-lg text-center">
+          <div className="rounded-lg border border-blue-200/60 bg-blue-50/90 backdrop-blur-sm p-8 shadow-lg text-center">
             <h2 className="text-3xl font-bold text-foreground mb-6">
               🎉 시험 완료!
             </h2>
@@ -185,25 +185,25 @@ export default function ListeningTest() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-slate-100">
       <ListeningHeader
         showSettingsButton={true}
         onSettingsClick={() => setShowSettings(true)}
       />
 
       <div className="max-w-2xl mx-auto p-4">
-        <div className="mb-8">
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-sm font-medium text-muted-foreground">
+        <div className="mb-8 p-4 rounded-lg border border-blue-200/40 bg-blue-50/60 backdrop-blur-sm shadow-sm">
+          <div className="flex justify-between items-center mb-3">
+            <span className="text-sm font-medium text-blue-700">
               문제 {currentQuestion + 1} / {englishQuestions.length}
             </span>
-            <span className="text-sm font-medium text-muted-foreground">
+            <span className="text-sm font-medium text-blue-700">
               점수: {score}
             </span>
           </div>
-          <div className="w-full bg-muted rounded-full h-2">
+          <div className="w-full bg-muted/70 rounded-full h-2">
             <div
-              className="bg-primary h-2 rounded-full transition-all duration-300"
+              className="bg-gradient-to-r from-primary to-primary/80 h-2 rounded-full transition-all duration-300"
               style={{
                 width: `${((currentQuestion + 1) / englishQuestions.length) * 100}%`,
               }}
@@ -211,9 +211,9 @@ export default function ListeningTest() {
           </div>
         </div>
 
-        <div className="rounded-lg border bg-card p-6 shadow-lg mb-6">
+        <div className="rounded-lg border border-blue-200/50 bg-blue-50/70 backdrop-blur-sm p-6 shadow-lg mb-6">
           <div className="text-center">
-            <h2 className="text-xl font-semibold text-foreground mb-4">
+            <h2 className="text-xl font-semibold text-blue-900 mb-4">
               🎧 영어 듣기
             </h2>
             <Button
@@ -226,7 +226,7 @@ export default function ListeningTest() {
               <PlayIcon className="w-5 h-5" />
               <span>{isPlaying ? "재생 중..." : "▶ 듣기"}</span>
             </Button>
-            <p className="text-sm text-muted-foreground mt-2">
+            <p className="text-sm text-blue-600 mt-2">
               버튼을 클릭해서 영어 문장을 들어보세요
             </p>
             {showSubtitles && (
@@ -239,22 +239,22 @@ export default function ListeningTest() {
           </div>
         </div>
 
-        <div className="rounded-lg border bg-card p-6 shadow-lg mb-6">
-          <h3 className="text-lg font-semibold text-foreground mb-4">
+        <div className="rounded-lg border border-blue-200/60 bg-blue-50/80 backdrop-blur-sm p-6 shadow-lg mb-6">
+          <h3 className="text-lg font-semibold text-blue-900 mb-4">
             {question.question}
           </h3>
         </div>
 
-        <div className="rounded-lg border bg-card p-6 shadow-lg mb-6">
+        <div className="rounded-lg border border-gray-200/60 bg-gray-50/80 backdrop-blur-sm p-6 shadow-lg mb-6">
           <div className="space-y-3">
             {question.options.map((option: string, index: number) => (
               <button
                 key={index}
                 onClick={() => handleAnswerSelect(index)}
-                className={`w-full text-left p-4 rounded-lg border-2 transition-colors ${
+                className={`w-full text-left p-4 rounded-lg border-2 transition-all duration-200 ${
                   selectedAnswer === index
-                    ? "border-blue-500 bg-blue-50 text-blue-900 ring-2 ring-blue-200"
-                    : "border-border hover:border-gray-400 text-foreground hover:bg-muted"
+                    ? "border-slate-500 bg-slate-100/90 text-slate-900 ring-2 ring-slate-200/50 shadow-md"
+                    : "border-gray-300 hover:border-slate-400 text-gray-700 hover:bg-gray-100/70 hover:shadow-sm backdrop-blur-sm"
                 }`}
               >
                 <span className="font-medium">
@@ -269,8 +269,9 @@ export default function ListeningTest() {
           <Button
             onClick={handleNext}
             disabled={selectedAnswer === null}
-            variant="outline"
+            variant="default"
             size="lg"
+            className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {currentQuestion < englishQuestions.length - 1
               ? "다음 문제"
