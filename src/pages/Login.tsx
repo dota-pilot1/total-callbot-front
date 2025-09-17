@@ -14,7 +14,7 @@ import {
 } from "@heroicons/react/24/outline";
 // Simplified login; added collapsible full member info box
 
-type ServiceType = "chatbot" | "exam" | "chat" | "study";
+type ServiceType = "chatbot" | "conversation" | "quiz" | "chat" | "study";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -64,9 +64,9 @@ export default function Login() {
         case "chatbot":
           navigate(isMobile ? "/mobile" : "/chatbots");
           break;
-        case "exam":
-          // 시험 선택 시 랜덤 캐릭터만 선택하고 바로 이동
-          console.log("로그인: 시험 페이지로 이동");
+        case "conversation":
+          // 회화 선택 시 랜덤 캐릭터만 선택하고 바로 이동
+          console.log("로그인: 회화 페이지로 이동");
 
           // 랜덤 캐릭터 선택
           const randomIndex = Math.floor(
@@ -78,6 +78,11 @@ export default function Login() {
 
           // 바로 시험 페이지로 이동 (연결은 ExamChat에서 처리)
           navigate("/exam");
+          break;
+        case "quiz":
+          // 퀴즈 페이지로 이동
+          console.log("로그인: 퀴즈 페이지로 이동");
+          navigate("/quiz");
           break;
         case "chat":
           navigate("/chat"); // 전체 채팅방
@@ -132,23 +137,42 @@ export default function Login() {
                 <span className="text-xs font-medium text-gray-700">챗봇</span>
               </button>
 
-              {/* 시험 */}
+              {/* 회화 */}
               <button
-                onClick={() => setSelectedService("exam")}
-                aria-pressed={selectedService === "exam"}
-                className={`relative flex flex-col items-center p-4 rounded-xl border-2 transition-all duration-200 ${
-                  selectedService === "exam"
+                onClick={() => setSelectedService("conversation")}
+                aria-pressed={selectedService === "conversation"}
+                className={`relative flex flex-col items-center p-3 rounded-xl border-2 transition-all duration-200 ${
+                  selectedService === "conversation"
                     ? "border-blue-500 bg-blue-50 shadow-lg ring-2 ring-blue-200"
                     : "border-gray-200 hover:bg-gray-50 hover:border-gray-300"
                 }`}
               >
-                {selectedService === "exam" && (
-                  <CheckCircleIcon className="absolute top-2 right-2 h-5 w-5 text-blue-500" />
+                {selectedService === "conversation" && (
+                  <CheckCircleIcon className="absolute top-1 right-1 h-4 w-4 text-blue-500" />
                 )}
-                <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-purple-100 to-purple-200 flex items-center justify-center mb-2">
-                  <span className="text-2xl">🎓</span>
+                <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-purple-100 to-purple-200 flex items-center justify-center mb-1">
+                  <span className="text-lg">💬</span>
                 </div>
-                <span className="text-xs font-medium text-gray-700">시험</span>
+                <span className="text-xs font-medium text-gray-700">회화</span>
+              </button>
+
+              {/* 퀴즈 */}
+              <button
+                onClick={() => setSelectedService("quiz")}
+                aria-pressed={selectedService === "quiz"}
+                className={`relative flex flex-col items-center p-3 rounded-xl border-2 transition-all duration-200 ${
+                  selectedService === "quiz"
+                    ? "border-blue-500 bg-blue-50 shadow-lg ring-2 ring-blue-200"
+                    : "border-gray-200 hover:bg-gray-50 hover:border-gray-300"
+                }`}
+              >
+                {selectedService === "quiz" && (
+                  <CheckCircleIcon className="absolute top-1 right-1 h-4 w-4 text-blue-500" />
+                )}
+                <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-green-100 to-green-200 flex items-center justify-center mb-1">
+                  <span className="text-lg">📝</span>
+                </div>
+                <span className="text-xs font-medium text-gray-700">퀴즈</span>
               </button>
 
               {/* 전체 채팅방 */}

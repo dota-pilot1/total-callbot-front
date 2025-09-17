@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuthStore } from "../features/auth";
-import { Button } from "../components/ui";
+import { useAuthStore } from "../../auth";
+import { Button } from "../../../components/ui";
 
 import {
   ArrowRightOnRectangleIcon,
@@ -11,9 +11,9 @@ import {
   ArrowRightIcon,
 } from "@heroicons/react/24/outline";
 
-import MobileExamOptionsDialog from "../features/exam/components/MobileExamOptionsDialog";
-import { useAudioSettings } from "../features/chatbot/settings";
-import { useExamSettingsHook } from "../features/exam/hooks/useExamSettings";
+import MobileExamOptionsDialog from "../components/MobileExamOptionsDialog";
+import { useAudioSettings } from "../../chatbot/settings";
+import { useExamSettingsHook } from "../hooks/useExamSettings";
 
 export default function MobileExam() {
   const { logout } = useAuthStore();

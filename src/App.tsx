@@ -8,14 +8,15 @@ import {
 import Welcome from "./pages/Welcome";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
-import ChatbotSelector from "./pages/ChatbotSelector";
+import { ChatbotSelector } from "./features/chatbot";
 import CallbotChat from "./pages/CallbotChat";
 import MobileChat from "./pages/MobileChat";
-import ExamChat from "./pages/ExamChat";
+import { ExamChat } from "./features/exam";
 import Practice from "./pages/Practice";
 import Chat from "./pages/Chat";
 import ChatRoomList from "./pages/ChatRoomList";
-import Study from "./pages/Study";
+import { Study } from "./features/study";
+import { Quiz } from "./features/quiz";
 import ErrorBoundary from "./components/ErrorBoundary";
 
 function ProtectedApp() {
@@ -43,6 +44,7 @@ function ProtectedApp() {
       <Route path="/exam" element={<ExamChat />} />
       <Route path="/practice" element={<Practice />} />
       <Route path="/study" element={<Study />} />
+      <Route path="/quiz" element={<Quiz />} />
       <Route path="/chat" element={<Chat />} />
       <Route path="/chat/rooms" element={<ChatRoomList />} />
       <Route path="/chat/room/:roomId" element={<Chat />} />

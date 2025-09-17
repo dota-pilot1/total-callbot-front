@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuthStore } from "../features/auth";
-import { Button } from "../components/ui";
+import { useAuthStore } from "../../auth";
+import { Button } from "../../../components/ui";
 
 import {
   PaperAirplaneIcon,
@@ -16,28 +16,28 @@ import {
   SpeakerWaveIcon,
   PauseIcon,
 } from "@heroicons/react/24/outline";
-import { useVoiceConnection } from "../features/chatbot/voice";
-import { useChatMessages } from "../features/chatbot/messaging";
-import VoicePulse from "../components/VoicePulse";
-import MobileSettingsDropdown from "../components/MobileSettingsDropdown";
+import { useVoiceConnection } from "../../chatbot/voice";
+import { useChatMessages } from "../../chatbot/messaging";
+import VoicePulse from "../../../components/VoicePulse";
+import MobileSettingsDropdown from "../../../components/MobileSettingsDropdown";
 
-import ExamCharacterDialog from "../components/ExamCharacterDialog";
+import ExamCharacterDialog from "../../../components/ExamCharacterDialog";
 import {
   EXAM_CHARACTERS,
   getExamCharacterById,
   getDefaultExamCharacter,
-} from "../features/chatbot/exam/examCharacters";
-import { VOICE_OPTIONS } from "../features/chatbot/character";
-import { useWebSocketStore } from "../features/websocket/stores/useWebSocketStore";
-import MobileTranslationDialog from "../components/MobileTranslationDialog";
-import KoreanInputDialog from "../components/KoreanInputDialog";
-import CardForChattingMessageWithTranslation from "../components/CardForChattingMessageWithTranslation";
-import { MyConversationArchive } from "../features/conversation-archive";
+} from "../../chatbot/exam/examCharacters";
+import { VOICE_OPTIONS } from "../../chatbot/character";
+import { useWebSocketStore } from "../../websocket/stores/useWebSocketStore";
+import MobileTranslationDialog from "../../../components/MobileTranslationDialog";
+import KoreanInputDialog from "../../../components/KoreanInputDialog";
+import CardForChattingMessageWithTranslation from "../../../components/CardForChattingMessageWithTranslation";
+import { MyConversationArchive } from "../../conversation-archive";
 
-import { useAudioSettings } from "../features/chatbot/settings";
-import ExamResultsSlideDown from "../components/ExamResultsSlideDown";
-import { useExamMode } from "../features/chatbot/exam";
-import { useToast } from "../components/ui/Toast";
+import { useAudioSettings } from "../../chatbot/settings";
+import ExamResultsSlideDown from "../../../components/ExamResultsSlideDown";
+import { useExamMode } from "../../chatbot/exam";
+import { useToast } from "../../../components/ui/Toast";
 
 export default function ExamChat() {
   const { logout, getUser } = useAuthStore();

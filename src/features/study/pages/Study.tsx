@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuthStore } from "../features/auth";
-import { Button } from "../components/ui";
+import { useAuthStore } from "../../auth";
+import { Button } from "../../../components/ui";
 import {
   ArrowLeftIcon,
   BookOpenIcon,
@@ -189,8 +189,8 @@ export default function Study() {
                 개발 진행 중
               </h3>
               <p className="text-sm text-yellow-700 mt-1">
-                학습 기능이 현재 개발 중입니다. 곧 다양한 학습 콘텐츠를
-                제공할 예정입니다.
+                학습 기능이 현재 개발 중입니다. 곧 다양한 학습 콘텐츠를 제공할
+                예정입니다.
               </p>
             </div>
           </div>
