@@ -16,6 +16,7 @@ import Practice from "./pages/Practice";
 import Chat from "./pages/Chat";
 import ChatRoomList from "./pages/ChatRoomList";
 import Study from "./pages/Study";
+import ErrorBoundary from "./components/ErrorBoundary";
 
 function ProtectedApp() {
   const location = useLocation();
