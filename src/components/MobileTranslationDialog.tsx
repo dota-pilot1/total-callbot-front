@@ -338,9 +338,9 @@ Please respond in this exact JSON format:
                 </div>
               )}
 
-              {/* 우측 상단 버튼들 */}
+              {/* 우측 상단 미니 버튼들 */}
               <div
-                className="absolute top-2 right-2 flex space-x-1"
+                className="absolute top-3 right-3 flex space-x-1"
                 style={{
                   zIndex: 9999,
                   pointerEvents: "auto",
@@ -369,7 +369,7 @@ Please respond in this exact JSON format:
                     }
                   }}
                   onTouchStart={() => {}} // 터치 이벤트 활성화
-                  className="p-3 rounded-full bg-white shadow-lg hover:shadow-xl active:shadow-md transition-all duration-200 border border-gray-300 min-w-[44px] min-h-[44px] flex items-center justify-center"
+                  className="w-7 h-7 rounded-full bg-sky-400/60 hover:bg-sky-500 active:bg-sky-600 text-white shadow-sm hover:shadow-md transition-all duration-150 flex items-center justify-center"
                   style={{
                     zIndex: 51,
                     touchAction: "manipulation",
@@ -378,18 +378,18 @@ Please respond in this exact JSON format:
                   title={playingOriginal ? "재생 중지" : "원문 읽기"}
                 >
                   {playingOriginal ? (
-                    <PauseIcon className="h-4 w-4 text-red-500" />
+                    <PauseIcon className="h-3 w-3 text-white" />
                   ) : (
-                    <PlayIcon className="h-4 w-4 text-blue-500" />
+                    <PlayIcon className="h-3 w-3 text-white" />
                   )}
                 </button>
                 <button
                   onClick={() => insertText(translation.original)}
-                  className="p-2 rounded-full bg-white shadow-lg hover:shadow-xl transition-all duration-200 border border-gray-300"
+                  className="w-7 h-7 rounded-full bg-emerald-400/60 hover:bg-emerald-500 active:bg-emerald-600 text-white shadow-sm hover:shadow-md transition-all duration-150 flex items-center justify-center"
                   style={{ zIndex: 51 }}
                   title="원문 입력"
                 >
-                  <DocumentTextIcon className="h-4 w-4 text-green-500" />
+                  <DocumentTextIcon className="h-3 w-3 text-white" />
                 </button>
               </div>
             </div>
@@ -401,9 +401,9 @@ Please respond in this exact JSON format:
                 {translation.translation}
               </p>
 
-              {/* 우측 상단 버튼들 */}
+              {/* 우측 상단 미니 버튼들 */}
               <div
-                className="absolute top-2 right-2 flex space-x-1"
+                className="absolute top-2 right-3 flex space-x-1"
                 style={{
                   zIndex: 9999,
                   pointerEvents: "auto",
@@ -436,7 +436,7 @@ Please respond in this exact JSON format:
                     }
                   }}
                   onTouchStart={() => {}} // 터치 이벤트 활성화
-                  className="p-3 rounded-full bg-white shadow-lg hover:shadow-xl active:shadow-md transition-all duration-200 border border-gray-300 min-w-[44px] min-h-[44px] flex items-center justify-center"
+                  className="w-7 h-7 rounded-full bg-violet-400/60 hover:bg-violet-500 active:bg-violet-600 text-white shadow-sm hover:shadow-md transition-all duration-150 flex items-center justify-center"
                   style={{
                     zIndex: 51,
                     touchAction: "manipulation",
@@ -445,14 +445,14 @@ Please respond in this exact JSON format:
                   title={playingTranslation ? "재생 중지" : "번역문 읽기"}
                 >
                   {playingTranslation ? (
-                    <PauseIcon className="h-4 w-4 text-red-500" />
+                    <PauseIcon className="h-3 w-3 text-white" />
                   ) : (
-                    <PlayIcon className="h-4 w-4 text-blue-500" />
+                    <PlayIcon className="h-3 w-3 text-white" />
                   )}
                 </button>
                 <button
                   onClick={() => insertText(translation.translation)}
-                  className="p-3 rounded-full bg-white shadow-lg hover:shadow-xl active:shadow-md transition-all duration-200 border border-gray-300 min-w-[44px] min-h-[44px] flex items-center justify-center"
+                  className="w-7 h-7 rounded-full bg-teal-400/60 hover:bg-teal-500 active:bg-teal-600 text-white shadow-sm hover:shadow-md transition-all duration-150 flex items-center justify-center"
                   style={{
                     zIndex: 51,
                     touchAction: "manipulation",
@@ -460,7 +460,7 @@ Please respond in this exact JSON format:
                   }}
                   title="번역문 입력"
                 >
-                  <DocumentTextIcon className="h-4 w-4 text-green-500" />
+                  <DocumentTextIcon className="h-3 w-3 text-white" />
                 </button>
               </div>
             </div>

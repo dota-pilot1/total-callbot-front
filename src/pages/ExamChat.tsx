@@ -611,7 +611,10 @@ export default function ExamChat() {
                         );
                       } catch (error) {
                         console.error("빠른 테스트 시작 실패:", error);
-                        alert("빠른 테스트를 시작할 수 없습니다.");
+                        console.error(
+                          "빠른 테스트를 시작할 수 없습니다:",
+                          error,
+                        );
                       }
                     }}
                     variant="outline"
@@ -679,7 +682,7 @@ export default function ExamChat() {
                         }
                       } catch (error) {
                         console.error("시험 시작 실패:", error);
-                        alert("시험을 시작할 수 없습니다. 다시 시도해 주세요.");
+                        console.error("시험을 시작할 수 없습니다:", error);
                       }
                     }}
                     variant="outline"

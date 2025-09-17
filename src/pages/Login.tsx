@@ -15,7 +15,7 @@ import {
 } from "@heroicons/react/24/outline";
 // Simplified login; added collapsible full member info box
 
-type ServiceType = "chatbot" | "exam" | "chat" | "chat-list";
+type ServiceType = "chatbot" | "exam" | "chat" | "study";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -89,8 +89,8 @@ export default function Login() {
         case "chat":
           navigate("/chat"); // 전체 채팅방
           break;
-        case "chat-list":
-          navigate("/chat-rooms"); // 채팅방 목록
+        case "study":
+          navigate("/study"); // 학습 페이지
           break;
         default:
           navigate(isMobile ? "/mobile" : "/chatbots");
@@ -181,25 +181,23 @@ export default function Login() {
                 </span>
               </button>
 
-              {/* 채팅방 목록 */}
+              {/* 학습 */}
               <button
-                onClick={() => setSelectedService("chat-list")}
-                aria-pressed={selectedService === "chat-list"}
+                onClick={() => setSelectedService("study")}
+                aria-pressed={selectedService === "study"}
                 className={`relative flex flex-col items-center p-4 rounded-xl border-2 transition-all duration-200 ${
-                  selectedService === "chat-list"
+                  selectedService === "study"
                     ? "border-blue-500 bg-blue-50 shadow-lg ring-2 ring-blue-200"
                     : "border-gray-200 hover:bg-gray-50 hover:border-gray-300"
                 }`}
               >
-                {selectedService === "chat-list" && (
+                {selectedService === "study" && (
                   <CheckCircleIcon className="absolute top-2 right-2 h-5 w-5 text-blue-500" />
                 )}
                 <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-green-100 to-green-200 flex items-center justify-center mb-2">
-                  <span className="text-2xl">📋</span>
+                  <span className="text-2xl">📚</span>
                 </div>
-                <span className="text-xs font-medium text-gray-700">
-                  채팅목록
-                </span>
+                <span className="text-xs font-medium text-gray-700">학습</span>
               </button>
             </div>
 

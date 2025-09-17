@@ -15,6 +15,7 @@ import ExamChat from "./pages/ExamChat";
 import Practice from "./pages/Practice";
 import Chat from "./pages/Chat";
 import ChatRoomList from "./pages/ChatRoomList";
+import Study from "./pages/Study";
 
 function ProtectedApp() {
   const location = useLocation();
@@ -40,6 +41,7 @@ function ProtectedApp() {
       <Route path="/mobile" element={<MobileChat />} />
       <Route path="/exam" element={<ExamChat />} />
       <Route path="/practice" element={<Practice />} />
+      <Route path="/study" element={<Study />} />
       <Route path="/chat" element={<Chat />} />
       <Route path="/chat/rooms" element={<ChatRoomList />} />
       <Route path="/chat/room/:roomId" element={<Chat />} />

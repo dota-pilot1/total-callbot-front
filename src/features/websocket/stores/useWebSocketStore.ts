@@ -87,12 +87,40 @@ export const useWebSocketStore = create<WebSocketState>((set, get) => ({
   ) => {
     const { connected, connecting, stompClient } = get();
 
-    // 이미 연결되어 있거나 연결 중이거나 기존 클라이언트가 있으면 리턴
-    if (connected || connecting || stompClient) {
-      console.log("Already connected or connecting, skipping...");
+    // 기존 연결이 있으면 먼저 완전히 정리
+    if (stompClient || connected || connecting) {
+      console.log("WebSocket: 기존 연결 강제 정리 중...");
+
+      // 즉시 상태 초기화
+      set({
+        connected: false,
+        connecting: false,
+        stompClient: null,
+        examMode: false,
+        examModeCallback: null,
+      });
+
+      // 기존 연결 강제 종료
+      if (stompClient) {
+        try {
+          if (stompClient.ws) {
+            stompClient.ws.close();
+          }
+          stompClient.disconnect();
+        } catch (error) {
+          console.log("WebSocket: 기존 연결 정리 중 오류 (무시됨):", error);
+        }
+      }
+
+      // 충분한 대기 후 재연결
+      setTimeout(() => {
+        console.log("WebSocket: 재연결 시도");
+        get().connect(roomId, userName, userEmail, roomName);
+      }, 300);
       return;
     }
 
+    console.log("WebSocket: 새 연결 시작");
     set({ connecting: true });
 
     // API 클라이언트와 동일한 베이스 URL 로직 사용
@@ -209,8 +237,14 @@ export const useWebSocketStore = create<WebSocketState>((set, get) => ({
         });
       },
       (error: any) => {
-        console.log("Connection error: " + error);
-        set({ connected: false, connecting: false });
+        console.log("WebSocket 연결 오류 (로그만 출력):", error);
+        set({
+          connected: false,
+          connecting: false,
+          stompClient: null,
+          examMode: false,
+          examModeCallback: null,
+        });
 
         // 자동 재연결 제거 - 사용자가 수동으로 연결하도록 함
       },
@@ -221,15 +255,35 @@ export const useWebSocketStore = create<WebSocketState>((set, get) => ({
   disconnect: () => {
     const { stompClient, connected } = get();
 
-    if (stompClient && connected) {
-      stompClient.disconnect();
+    console.log("WebSocket: 연결 해제 시작");
+
+    try {
+      if (stompClient) {
+        if (connected) {
+          stompClient.disconnect(() => {
+            console.log("WebSocket: 정상적으로 연결 해제됨");
+          });
+        } else {
+          // 강제 연결 해제
+          if (stompClient.ws) {
+            stompClient.ws.close();
+          }
+        }
+      }
+    } catch (error) {
+      console.log("WebSocket: 연결 해제 중 오류 (무시됨):", error);
     }
 
+    // 상태 초기화
     set({
       connected: false,
       connecting: false,
       stompClient: null,
+      examMode: false,
+      examModeCallback: null,
     });
+
+    console.log("WebSocket: 연결 해제 완료");
   },
 
   // 메시지 전송
