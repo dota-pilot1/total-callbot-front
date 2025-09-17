@@ -54,9 +54,11 @@ function ProtectedApp() {
 
 function App() {
   return (
-    <Router>
-      <ProtectedApp />
-    </Router>
+    <ErrorBoundary>
+      <Router>
+        <ProtectedApp />
+      </Router>
+    </ErrorBoundary>
   );
 }
 
