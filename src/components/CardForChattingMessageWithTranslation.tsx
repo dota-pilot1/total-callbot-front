@@ -1,10 +1,11 @@
 import { useState, useRef } from "react";
 import { examApi } from "../features/chatbot/exam/api/exam";
+import { examArchiveApi } from "../features/exam/api/examArchive";
 import {
   LanguageIcon,
   PlayIcon,
   PauseIcon,
-  BookmarkIcon,
+  ArrowDownTrayIcon,
 } from "@heroicons/react/24/outline";
 import SentenceSplitterDialogButtonWithTranslate from "./SentenceSplitterDialogButtonWithTranslate";
 import { useConversationArchive } from "../features/conversation-archive/hooks/useConversationArchive";
@@ -21,11 +22,17 @@ interface Message {
 interface CardForChattingMessageWithTranslationProps {
   message: Message;
   isUser: boolean;
+  isExamMode?: boolean; // 시험 모드 여부
+  examCharacterId?: string; // 시험 캐릭터 ID
+  relatedMessages?: Message[]; // 관련 메시지들 (문제-답변 매칭용)
 }
 
 export default function CardForChattingMessageWithTranslation({
   message,
   isUser,
+  isExamMode = false,
+  examCharacterId,
+  relatedMessages = [],
 }: CardForChattingMessageWithTranslationProps) {
   const [isFlipped, setIsFlipped] = useState(false);
   const [translation, setTranslation] = useState<string | null>(null);
@@ -204,28 +211,108 @@ export default function CardForChattingMessageWithTranslation({
     console.log("북마크 버튼 클릭됨!");
 
     try {
-      const conversationText = message.message;
-
-      console.log("저장할 대화:", conversationText);
-
-      const success = await addConversation({
-        conversation: conversationText,
-        conversationCategory: "학술",
-      });
-
-      console.log("저장 결과:", success);
-
-      if (success) {
-        console.log("showToast 호출 시도 - 성공");
-        showToast("저장되었습니다", "success", 3000);
+      if (isExamMode) {
+        // 시험 모드에서는 구조화된 Q&A 저장
+        await saveAsExamQA();
       } else {
-        console.log("showToast 호출 시도 - 실패");
-        showToast("저장에 실패했습니다", "error", 3000);
+        // 일반 모드에서는 기존 아카이브 저장
+        const conversationText = message.message;
+        const success = await addConversation({
+          conversation: conversationText,
+          conversationCategory: "학술",
+        });
+
+        if (success) {
+          showToast("대화가 아카이브에 저장되었습니다", "success", 3000);
+        } else {
+          showToast("저장에 실패했습니다", "error", 3000);
+        }
       }
     } catch (error) {
       console.error("Save failed:", error);
-      console.log("showToast 호출 시도 - 에러");
       showToast("저장 중 오류가 발생했습니다", "error", 3000);
+    }
+  };
+
+  const saveAsExamQA = async () => {
+    try {
+      // AI 메시지인 경우 (문제)
+      if (!isUser) {
+        const { question, questionKorean } =
+          examArchiveApi.parseQuestionFromMessage(message.message);
+
+        // 사용자의 답변을 찾기 (다음 메시지)
+        const currentIndex = relatedMessages.findIndex(
+          (msg) => msg.id === message.id,
+        );
+        const userAnswerMsg = relatedMessages[currentIndex + 1];
+        const userAnswer =
+          userAnswerMsg?.sender === "user" ? userAnswerMsg.message : undefined;
+
+        // 채점 결과를 찾기 (그 다음 메시지)
+        const feedbackMsg = relatedMessages[currentIndex + 2];
+        let score: number | undefined;
+        let modelFeedback: string | undefined;
+
+        if (feedbackMsg && feedbackMsg.sender === "assistant") {
+          const result = examArchiveApi.parseExamResult(feedbackMsg.message);
+          score = result.score;
+          modelFeedback = result.feedback;
+        }
+
+        await examArchiveApi.saveArchivedQuestion({
+          question,
+          questionKorean,
+          userAnswer,
+          modelFeedback,
+          score,
+          examCharacterId,
+          difficultyLevel: "INTERMEDIATE", // 기본값
+          topicCategory: "DAILY_CONVERSATION", // 기본값
+        });
+
+        showToast("시험 문제가 저장되었습니다", "success", 3000);
+      } else {
+        // 사용자 메시지인 경우 (답변) - 이전 AI 메시지를 문제로 찾기
+        const currentIndex = relatedMessages.findIndex(
+          (msg) => msg.id === message.id,
+        );
+        const questionMsg = relatedMessages[currentIndex - 1];
+
+        if (questionMsg && questionMsg.sender === "assistant") {
+          const { question, questionKorean } =
+            examArchiveApi.parseQuestionFromMessage(questionMsg.message);
+
+          // 채점 결과를 찾기 (다음 메시지)
+          const feedbackMsg = relatedMessages[currentIndex + 1];
+          let score: number | undefined;
+          let modelFeedback: string | undefined;
+
+          if (feedbackMsg && feedbackMsg.sender === "assistant") {
+            const result = examArchiveApi.parseExamResult(feedbackMsg.message);
+            score = result.score;
+            modelFeedback = result.feedback;
+          }
+
+          await examArchiveApi.saveArchivedQuestion({
+            question,
+            questionKorean,
+            userAnswer: message.message,
+            modelFeedback,
+            score,
+            examCharacterId,
+            difficultyLevel: "INTERMEDIATE",
+            topicCategory: "DAILY_CONVERSATION",
+          });
+
+          showToast("답변이 저장되었습니다", "success", 3000);
+        } else {
+          showToast("관련 문제를 찾을 수 없습니다", "error", 3000);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to save exam Q&A:", error);
+      throw error;
     }
   };
 
@@ -354,7 +441,7 @@ export default function CardForChattingMessageWithTranslation({
                   }`}
                   title="저장"
                 >
-                  <BookmarkIcon className="h-4 w-4" />
+                  <ArrowDownTrayIcon className="h-4 w-4" />
                 </button>
               </div>
             </div>
@@ -426,7 +513,7 @@ export default function CardForChattingMessageWithTranslation({
                   }`}
                   title="저장"
                 >
-                  <BookmarkIcon className="h-4 w-4" />
+                  <ArrowDownTrayIcon className="h-4 w-4" />
                 </button>
               </div>
             </div>

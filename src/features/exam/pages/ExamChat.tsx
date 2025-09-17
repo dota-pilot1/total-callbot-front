@@ -757,6 +757,9 @@ export default function ExamChat() {
                 key={message.id}
                 message={message}
                 isUser={message.sender === "user"}
+                isExamMode={true}
+                examCharacterId={selectedExamCharacterId}
+                relatedMessages={messages}
               />
             ))}
 
