@@ -1,5 +1,9 @@
 import { useState } from "react";
-import { getRandomExamTopic, buildExamPrompt } from "../lib/examUtils";
+import {
+  getRandomExamTopic,
+  buildExamPrompt,
+  buildSingleExamPrompt,
+} from "../lib/examUtils";
 
 // 음성 연결 타입 (useVoiceConnection에서 반환되는 타입)
 interface VoiceConnection {
@@ -17,6 +21,7 @@ export interface UseExamModeOptions {
 export interface UseExamModeReturn {
   examSending: boolean;
   triggerExam: () => Promise<void>;
+  triggerSingleExam: () => Promise<void>;
 }
 
 /**
@@ -108,8 +113,73 @@ export const useExamMode = (options: UseExamModeOptions): UseExamModeReturn => {
     }
   };
 
+  /**
+   * 1문제 빠른 시험 모드 시작
+   * 질문 수준을 묻지 않고 바로 1문제만 출제
+   */
+  const triggerSingleExam = async () => {
+    // 이미 전송 중이면 중복 실행 방지
+    if (examSending) return;
+
+    setExamSending(true);
+
+    try {
+      // 1. 연결 상태 확인 및 준비
+      await ensureConnectedAndReady();
+    } catch (e) {
+      alert(
+        "연결에 실패했습니다. 마이크 권한 또는 네트워크 상태를 확인해주세요.",
+      );
+      setExamSending(false);
+      return;
+    }
+
+    // 2. 랜덤 시험 주제 선택 및 1문제 프롬프트 생성
+    const topic = getRandomExamTopic();
+    const prompt = buildSingleExamPrompt(topic);
+
+    // 안내 메시지 제거 - 바로 질문 시작
+
+    try {
+      // 4. OpenAI Realtime API를 통한 1문제 시험 지시 전송
+      if (!voiceConnection?.dc || voiceConnection.dc.readyState !== "open") {
+        throw new Error("음성 연결이 준비되지 않았습니다");
+      }
+
+      // 대화 컨텍스트에 1문제 시험 지시사항 추가
+      voiceConnection.dc.send(
+        JSON.stringify({
+          type: "conversation.item.create",
+          item: {
+            type: "message",
+            role: "user",
+            content: [{ type: "input_text", text: prompt }],
+          },
+        }),
+      );
+
+      // AI 응답 요청 (오디오 + 텍스트)
+      voiceConnection.dc.send(
+        JSON.stringify({
+          type: "response.create",
+          response: {
+            modalities: ["audio", "text"],
+            conversation: "auto",
+            voice: selectedVoice,
+          },
+        }),
+      );
+    } catch (error) {
+      console.error("빠른 시험 트리거 실패:", error);
+      alert("빠른 시험 지시를 전송하지 못했습니다. 다시 시도해주세요.");
+    } finally {
+      setExamSending(false);
+    }
+  };
+
   return {
     examSending,
     triggerExam,
+    triggerSingleExam,
   };
 };

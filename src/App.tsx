@@ -11,7 +11,7 @@ import Signup from "./pages/Signup";
 import ChatbotSelector from "./pages/ChatbotSelector";
 import CallbotChat from "./pages/CallbotChat";
 import MobileChat from "./pages/MobileChat";
-import MobileExam from "./pages/MobileExam";
+import ExamChat from "./pages/ExamChat";
 import Practice from "./pages/Practice";
 import Chat from "./pages/Chat";
 import ChatRoomList from "./pages/ChatRoomList";
@@ -38,7 +38,7 @@ function ProtectedApp() {
       <Route path="/welcome" element={<Welcome />} />
       <Route path="/chatbots" element={<ChatbotSelector />} />
       <Route path="/mobile" element={<MobileChat />} />
-      <Route path="/exam" element={<MobileExam />} />
+      <Route path="/exam" element={<ExamChat />} />
       <Route path="/practice" element={<Practice />} />
       <Route path="/chat" element={<Chat />} />
       <Route path="/chat/rooms" element={<ChatRoomList />} />

@@ -47,7 +47,6 @@ export const useChatMessages = (
   const {
     onSendMessage,
     responseDelayMs = 3000,
-    selectedCharacterId,
     maxSentenceCount = 3,
     englishLevel = "beginner",
   } = options;
@@ -125,19 +124,20 @@ export const useChatMessages = (
     setMessages([]);
   };
 
-  // AI 제안: 모범답안 엔진을 이용해 제안 받기
+  // AI 제안: 질문에 대한 자연스러운 답변 제안
   const suggestReply = async () => {
     if (suggestLoading) return;
 
     const rev = [...messages].reverse();
     const lastBot = rev.find((m) => m.sender === "callbot")?.message || "";
-    const lastUsr = rev.find((m) => m.sender === "user")?.message || "";
 
-    if (!lastBot && !lastUsr) return;
+    // 마지막 질문이 없으면 실행하지 않음
+    if (!lastBot) return;
 
     try {
       setSuggestLoading(true);
-      const question = (lastBot || lastUsr || "").trim();
+
+      // 마지막 5개 대화를 컨텍스트로 사용
       const tail = messages
         .slice(-5)
         .map((m) => {
@@ -149,11 +149,6 @@ export const useChatMessages = (
         })
         .join("\n");
 
-      // 선택된 캐릭터 정보 추가
-      const characterInfo = selectedCharacterId
-        ? `Selected Character: ${selectedCharacterId}`
-        : "";
-
       const levelDescriptions = {
         beginner:
           "Use simple words, basic grammar, and common everyday expressions. Avoid complex vocabulary or advanced grammar structures.",
@@ -163,44 +158,23 @@ export const useChatMessages = (
           "Use sophisticated vocabulary and complex grammar structures. Feel free to use idiomatic expressions and advanced concepts.",
       };
 
-      // 캐릭터별 질문 제안 가이드
-      const getCharacterQuestionGuide = (characterId: string) => {
-        const guides = {
-          "steve-jobs":
-            "Ask about innovation, technology, Apple products, design philosophy, entrepreneurship, or personal motivation",
-          "kim-jong-un":
-            "Ask about leadership, North Korea, policies, international relations, or personal interests",
-          spark:
-            "Ask about AI technology, machine learning, digital transformation, or future predictions",
-          buddy:
-            "Ask casual, friendly questions about daily life, hobbies, entertainment, or general conversation topics",
-        };
-        return (
-          guides[characterId as keyof typeof guides] ||
-          "Ask engaging questions that match the character's background and expertise"
-        );
-      };
-
-      const characterQuestionGuide = selectedCharacterId
-        ? getCharacterQuestionGuide(selectedCharacterId)
-        : "";
-
-      const enhancedContext = `${characterInfo ? characterInfo + "\n\n" : ""}Recent conversation:
+      const enhancedContext = `Recent conversation:
 ${tail}
 
-Please suggest an appropriate QUESTION (not response) for the user to ask that:
-1. ${characterQuestionGuide}
-2. Continues the conversation naturally based on recent messages
-3. Is engaging and encourages meaningful dialogue
-4. Considers the selected character's expertise, background, or personality traits
-5. IMPORTANT: Keep your suggestion to MAXIMUM ${maxSentenceCount} sentence${maxSentenceCount > 1 ? "s" : ""} for English conversation practice
+The last message from the ASSISTANT is a question. Please provide a natural, helpful ANSWER to that question that:
+1. Directly addresses the question being asked
+2. Is appropriate for English conversation practice
+3. Sounds natural and conversational
+4. Provides a good example response that the user can learn from
+5. IMPORTANT: Keep your answer to MAXIMUM ${maxSentenceCount} sentence${maxSentenceCount > 1 ? "s" : ""} for speaking practice
 6. LANGUAGE LEVEL: ${englishLevel.toUpperCase()} - ${levelDescriptions[englishLevel]}
-7. FORMAT: Provide only the question/statement the user should ask, without explanations or additional text`;
+7. FORMAT: Provide only the answer the user should give, without explanations or additional text
+8. Make it personal and relatable (use "I", "my", etc. as appropriate)`;
 
       const resp = await examApi.getSampleAnswers({
-        question,
+        question: lastBot,
         topic: "conversation",
-        level: "intermediate",
+        level: englishLevel,
         count: 1,
         englishOnly: true,
         context: enhancedContext,

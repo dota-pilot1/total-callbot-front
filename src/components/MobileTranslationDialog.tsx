@@ -322,7 +322,7 @@ Please respond in this exact JSON format:
                 stiffness: 150,
                 duration: 0.5,
               }}
-              className="max-w-lg w-full bg-white rounded-lg shadow-xl"
+              className="max-w-2xl w-full bg-white rounded-lg shadow-xl"
             >
               {/* 헤더 제거하고 닫기 버튼만 우상단에 */}
               <div className="absolute top-2 right-2 z-10">
@@ -364,7 +364,7 @@ Please respond in this exact JSON format:
                       <textarea
                         value={editableText}
                         onChange={(e) => handleTextChange(e.target.value)}
-                        className="w-full text-gray-900 leading-relaxed bg-transparent border-none resize-none focus:outline-none pr-20 min-h-[60px]"
+                        className="w-full text-gray-900 leading-relaxed bg-transparent border-none resize-none focus:outline-none pr-20 min-h-[100px] text-base"
                         placeholder="원문을 입력하세요..."
                         style={{ fontFamily: "inherit" }}
                       />
