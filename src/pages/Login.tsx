@@ -14,7 +14,14 @@ import {
 } from "@heroicons/react/24/outline";
 // Simplified login; added collapsible full member info box
 
-type ServiceType = "chatbot" | "conversation" | "quiz" | "chat" | "study";
+type ServiceType =
+  | "chatbot"
+  | "conversation"
+  | "quiz"
+  | "chat"
+  | "study"
+  | "board"
+  | "admin";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -23,9 +30,15 @@ export default function Login() {
     // localStorage에서 저장된 서비스 가져오기
     const savedService = localStorage.getItem("selectedService") as ServiceType;
     return savedService &&
-      ["chatbot", "conversation", "quiz", "chat", "study"].includes(
-        savedService,
-      )
+      [
+        "chatbot",
+        "conversation",
+        "quiz",
+        "chat",
+        "study",
+        "board",
+        "admin",
+      ].includes(savedService)
       ? savedService
       : "chatbot";
   });
@@ -91,6 +104,14 @@ export default function Login() {
         case "study":
           navigate("/study"); // 학습 페이지
           break;
+        case "board":
+          console.log("로그인: 게시판 페이지로 이동");
+          navigate("/board"); // 게시판 페이지
+          break;
+        case "admin":
+          console.log("로그인: 관리자 대시보드로 이동");
+          navigate("/admin"); // 관리자 대시보드
+          break;
         default:
           navigate(isMobile ? "/mobile" : "/chatbots");
       }
@@ -103,7 +124,7 @@ export default function Login() {
     <div className="min-h-screen bg-background">
       <div className="flex items-center justify-center min-h-screen px-4 py-8">
         <div className="w-full max-w-sm">
-          <div className="rounded-lg border bg-card p-6 shadow-lg">
+          <div className="rounded-lg bg-card p-6 shadow-lg">
             {/* 브랜드 라인 (심플, 공간 채움) */}
             <div className="flex items-center gap-3 mb-3">
               <img
@@ -115,8 +136,8 @@ export default function Login() {
                 Total Callbot
               </span>
             </div>
-            {/* 서비스 선택 (2x2 그리드) */}
-            <div className="grid grid-cols-2 gap-3 mb-6">
+            {/* 서비스 선택 (3x3 그리드) */}
+            <div className="grid grid-cols-3 gap-3 mb-6">
               {/* 챗봇 */}
               <button
                 onClick={() => handleServiceSelect("chatbot")}
@@ -219,6 +240,51 @@ export default function Login() {
                 </div>
                 <span className="text-xs font-medium text-gray-700">학습</span>
               </button>
+
+              {/* 게시판 */}
+              <button
+                onClick={() => handleServiceSelect("board")}
+                aria-pressed={selectedService === "board"}
+                className={`relative flex flex-col items-center p-4 rounded-xl border-2 transition-all duration-200 ${
+                  selectedService === "board"
+                    ? "border-blue-500 bg-blue-50 shadow-lg ring-2 ring-blue-200"
+                    : "border-gray-200 hover:bg-gray-50 hover:border-gray-300"
+                }`}
+              >
+                {selectedService === "board" && (
+                  <CheckCircleIcon className="absolute top-2 right-2 h-5 w-5 text-blue-500" />
+                )}
+                <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center mb-2">
+                  <span className="text-2xl">📋</span>
+                </div>
+                <span className="text-xs font-medium text-gray-700">
+                  게시판
+                </span>
+              </button>
+
+              {/* 관리자 */}
+              <button
+                onClick={() => handleServiceSelect("admin")}
+                aria-pressed={selectedService === "admin"}
+                className={`relative flex flex-col items-center p-4 rounded-xl border-2 transition-all duration-200 ${
+                  selectedService === "admin"
+                    ? "border-blue-500 bg-blue-50 shadow-lg ring-2 ring-blue-200"
+                    : "border-gray-200 hover:bg-gray-50 hover:border-gray-300"
+                }`}
+              >
+                {selectedService === "admin" && (
+                  <CheckCircleIcon className="absolute top-2 right-2 h-5 w-5 text-blue-500" />
+                )}
+                <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-red-100 to-red-200 flex items-center justify-center mb-2">
+                  <span className="text-2xl">⚙️</span>
+                </div>
+                <span className="text-xs font-medium text-gray-700">
+                  관리자
+                </span>
+              </button>
+
+              {/* 빈 공간 (3x3 그리드에서 8개 요소만 사용) */}
+              <div></div>
             </div>
 
             {/* 로그인 폼 */}
