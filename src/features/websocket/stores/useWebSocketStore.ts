@@ -124,11 +124,22 @@ export const useWebSocketStore = create<WebSocketState>((set, get) => ({
     set({ connecting: true });
 
     // API 클라이언트와 동일한 베이스 URL 로직 사용
-    const host = window.location.hostname;
-    const isLocal = host === "localhost" || host === "127.0.0.1";
-    const wsUrl = isLocal
-      ? "http://localhost:8080/ws-stomp"
-      : "https://api.total-callbot.cloud/ws-stomp";
+    const resolveWebSocketUrl = () => {
+      const envUrl = (import.meta as any)?.env?.VITE_WS_BASE_URL as
+        | string
+        | undefined;
+      if (envUrl && envUrl.length > 0) return envUrl;
+
+      const host = window.location.hostname;
+      const isLocal = host === "localhost" || host === "127.0.0.1";
+      if (isLocal) return "http://localhost:8080/ws-stomp";
+
+      // EC2 환경에서는 API와 같은 도메인 사용
+      return "https://api.total-callbot.cloud/ws-stomp";
+    };
+
+    const wsUrl = resolveWebSocketUrl();
+    console.log("WebSocket: 연결 URL:", wsUrl);
 
     const socket = new SockJS(wsUrl);
     const client = Stomp.over(socket);
