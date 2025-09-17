@@ -80,9 +80,9 @@ export default function Login() {
           navigate("/exam");
           break;
         case "quiz":
-          // 퀴즈 페이지로 이동
-          console.log("로그인: 퀴즈 페이지로 이동");
-          navigate("/quiz");
+          // 영어 듣기 시험 목록 페이지로 이동
+          console.log("로그인: 영어 듣기 시험 목록 페이지로 이동");
+          navigate("/quiz-list");
           break;
         case "chat":
           navigate("/chat"); // 전체 채팅방

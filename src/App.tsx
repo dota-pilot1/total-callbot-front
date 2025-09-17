@@ -16,7 +16,10 @@ import Practice from "./pages/Practice";
 import Chat from "./pages/Chat";
 import ChatRoomList from "./pages/ChatRoomList";
 import { Study } from "./features/study";
-import { ListeningTest } from "./features/english-listening-test";
+import {
+  ListeningTest,
+  ListeningTestList,
+} from "./features/english-listening-test";
 import ErrorBoundary from "./components/ErrorBoundary";
 
 function ProtectedApp() {
@@ -44,6 +47,7 @@ function ProtectedApp() {
       <Route path="/exam" element={<ExamChat />} />
       <Route path="/practice" element={<Practice />} />
       <Route path="/study" element={<Study />} />
+      <Route path="/quiz-list" element={<ListeningTestList />} />
       <Route path="/quiz" element={<ListeningTest />} />
       <Route path="/chat" element={<Chat />} />
       <Route path="/chat/rooms" element={<ChatRoomList />} />
