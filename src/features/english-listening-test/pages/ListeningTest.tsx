@@ -4,7 +4,7 @@ import { useSearchParams } from "react-router-dom";
 import { ListeningSettingsDialog, ListeningHeader } from "../components";
 import { useTestQuestions } from "../hooks/useListeningTests";
 import { Button } from "../../../components/ui";
-import { convertToQuestion, type Question } from "../types";
+import { convertToQuestion } from "../types";
 
 export default function ListeningTest() {
   const [searchParams] = useSearchParams();
@@ -247,7 +247,7 @@ export default function ListeningTest() {
 
         <div className="rounded-lg border bg-card p-6 shadow-lg mb-6">
           <div className="space-y-3">
-            {question.options.map((option, index) => (
+            {question.options.map((option: string, index: number) => (
               <button
                 key={index}
                 onClick={() => handleAnswerSelect(index)}

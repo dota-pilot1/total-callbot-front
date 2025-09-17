@@ -8,6 +8,7 @@ import { PlayIcon } from "@heroicons/react/24/solid";
 import { ListeningHeader } from "../components";
 import { useListeningTests } from "../hooks/useListeningTests";
 import { Button } from "../../../components/ui";
+import type { ListeningTest } from "../types";
 
 export default function ListeningTestList() {
   const navigate = useNavigate();
@@ -118,7 +119,7 @@ export default function ListeningTestList() {
 
         {/* 시험 목록 */}
         <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-1">
-          {tests.map((test) => {
+          {tests.map((test: ListeningTest) => {
             const colors = getDifficultyColor(test.difficulty);
             return (
               <div
