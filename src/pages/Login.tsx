@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuthStore } from "../features/auth";
 import { EXAM_CHARACTERS } from "../features/chatbot/exam/examCharacters";
@@ -19,30 +19,31 @@ type ServiceType = "chatbot" | "conversation" | "quiz" | "chat" | "study";
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [selectedService, setSelectedService] =
-    useState<ServiceType>("chatbot");
+  const [selectedService, setSelectedService] = useState<ServiceType>(() => {
+    // localStorage에서 저장된 서비스 가져오기
+    const savedService = localStorage.getItem("selectedService") as ServiceType;
+    return savedService &&
+      ["chatbot", "conversation", "quiz", "chat", "study"].includes(
+        savedService,
+      )
+      ? savedService
+      : "chatbot";
+  });
+
+  // 서비스 선택 시 localStorage에 저장
+  const handleServiceSelect = (service: ServiceType) => {
+    setSelectedService(service);
+    localStorage.setItem("selectedService", service);
+  };
   const { login, isLoading, getUser } = useAuthStore();
   const navigate = useNavigate();
   const [showMembers, setShowMembers] = useState<boolean>(false);
 
-  // 챗봇 이미지 랜덤 선택 (컴포넌트 마운트 시에만)
-  const robotImages = useMemo(() => {
-    const chatbotImages = [
-      "/simple-chatbot.png",
-      "/multi-chat.png",
-      "/chatbot-green.png",
-      "/chatbot-black.jpeg",
-      "/chatbot-blue.jpeg",
-      "/chatbot-red.jpeg",
-      "/chatbot-yellow.jpeg",
-      "/gpt-star.jpeg",
-      "/gpt-simle.jpeg",
-    ];
-    return {
-      brand: chatbotImages[Math.floor(Math.random() * chatbotImages.length)],
-      chatbot: chatbotImages[Math.floor(Math.random() * chatbotImages.length)],
-    };
-  }, []);
+  // 로봇 이미지 고정
+  const robotImages = {
+    brand: "/simple-chatbot.png",
+    chatbot: "/simple-chatbot.png",
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -118,7 +119,7 @@ export default function Login() {
             <div className="grid grid-cols-2 gap-3 mb-6">
               {/* 챗봇 */}
               <button
-                onClick={() => setSelectedService("chatbot")}
+                onClick={() => handleServiceSelect("chatbot")}
                 aria-pressed={selectedService === "chatbot"}
                 className={`relative flex flex-col items-center p-4 rounded-xl border-2 transition-all duration-200 ${
                   selectedService === "chatbot"
@@ -139,7 +140,7 @@ export default function Login() {
 
               {/* 회화 */}
               <button
-                onClick={() => setSelectedService("conversation")}
+                onClick={() => handleServiceSelect("conversation")}
                 aria-pressed={selectedService === "conversation"}
                 className={`relative flex flex-col items-center p-3 rounded-xl border-2 transition-all duration-200 ${
                   selectedService === "conversation"
@@ -158,7 +159,7 @@ export default function Login() {
 
               {/* 영어 듣기 */}
               <button
-                onClick={() => setSelectedService("quiz")}
+                onClick={() => handleServiceSelect("quiz")}
                 aria-pressed={selectedService === "quiz"}
                 className={`relative flex flex-col items-center p-3 rounded-xl border-2 transition-all duration-200 ${
                   selectedService === "quiz"
@@ -179,7 +180,7 @@ export default function Login() {
 
               {/* 전체 채팅방 */}
               <button
-                onClick={() => setSelectedService("chat")}
+                onClick={() => handleServiceSelect("chat")}
                 aria-pressed={selectedService === "chat"}
                 className={`relative flex flex-col items-center p-4 rounded-xl border-2 transition-all duration-200 ${
                   selectedService === "chat"
@@ -202,7 +203,7 @@ export default function Login() {
 
               {/* 학습 */}
               <button
-                onClick={() => setSelectedService("study")}
+                onClick={() => handleServiceSelect("study")}
                 aria-pressed={selectedService === "study"}
                 className={`relative flex flex-col items-center p-4 rounded-xl border-2 transition-all duration-200 ${
                   selectedService === "study"
