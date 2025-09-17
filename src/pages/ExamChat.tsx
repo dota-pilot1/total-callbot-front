@@ -21,14 +21,13 @@ import { useChatMessages } from "../features/chatbot/messaging";
 import VoicePulse from "../components/VoicePulse";
 import MobileSettingsDropdown from "../components/MobileSettingsDropdown";
 
-import MobileCharacterDialog from "../components/MobileCharacterDialog";
-import { CHARACTER_LIST } from "../features/chatbot/character/characters";
+import ExamCharacterDialog from "../components/ExamCharacterDialog";
 import {
-  useCharacterStore,
-  CHARACTER_PRESETS,
-  VOICE_OPTIONS,
-  useCharacterSelection,
-} from "../features/chatbot/character";
+  EXAM_CHARACTERS,
+  getExamCharacterById,
+  getDefaultExamCharacter,
+} from "../features/chatbot/exam/examCharacters";
+import { VOICE_OPTIONS } from "../features/chatbot/character";
 import { useWebSocketStore } from "../features/websocket/stores/useWebSocketStore";
 import MobileTranslationDialog from "../components/MobileTranslationDialog";
 import KoreanInputDialog from "../components/KoreanInputDialog";
@@ -68,8 +67,27 @@ export default function ExamChat() {
     };
   }, [connected, disconnect, clearExamMode]);
 
-  // zustand store에서 캐릭터 상태 가져오기
-  const { personaCharacter, personaGender } = useCharacterStore();
+  // 시험 캐릭터 상태 관리 (로그인에서 미리 선택된 캐릭터 확인)
+  const [selectedExamCharacterId, setSelectedExamCharacterId] = useState(() => {
+    const preSelectedCharacterId = localStorage.getItem(
+      "selectedExamCharacter",
+    );
+    if (preSelectedCharacterId) {
+      // 로그인에서 선택된 캐릭터가 있으면 사용 후 localStorage 정리
+      localStorage.removeItem("selectedExamCharacter");
+      console.log(
+        "ExamChat: 로그인에서 미리 선택된 캐릭터 사용:",
+        preSelectedCharacterId,
+      );
+      return preSelectedCharacterId;
+    }
+    return getDefaultExamCharacter().id;
+  });
+  const [examCharacterDialogOpen, setExamCharacterDialogOpen] = useState(false);
+  const [selectedVoice, setSelectedVoice] = useState<string>("alloy");
+
+  const selectedExamCharacter =
+    getExamCharacterById(selectedExamCharacterId) || getDefaultExamCharacter();
 
   // 오디오 설정 훅 (responseDelayMs: 2초로 설정하여 사용자 메시지 등록 후 적절한 대기시간 제공)
   const {
@@ -111,19 +129,6 @@ export default function ExamChat() {
   const [examResultsVisible, setExamResultsVisible] = useState(false);
   const [examResultsText, setExamResultsText] = useState("");
 
-  // 캐릭터 선택 훅
-  const {
-    selectedCharacterId,
-    selectedVoice,
-    characterDialogOpen,
-    setSelectedCharacterId,
-    setSelectedVoice,
-    openCharacterDialog,
-    closeCharacterDialog,
-    applyCharacterSettings,
-    getCurrentDialogValue,
-  } = useCharacterSelection();
-
   // 채팅 메시지 훅
   const {
     messages,
@@ -140,7 +145,7 @@ export default function ExamChat() {
     suggestReply,
   } = useChatMessages({
     responseDelayMs,
-    selectedCharacterId,
+    selectedCharacterId: selectedExamCharacterId,
     maxSentenceCount,
     englishLevel,
     onSendMessage: (text: string) => {
@@ -169,10 +174,18 @@ export default function ExamChat() {
     }
   };
 
-  // CHARACTER_LIST에서 실제 캐릭터 찾기
-  const actualPersonaCharacter =
-    CHARACTER_LIST.find((c) => c.id === personaCharacter.id) ||
-    CHARACTER_LIST[0];
+  // 시험 캐릭터를 일반 캐릭터 형식으로 변환
+  const actualPersonaCharacter = {
+    id: selectedExamCharacter.id,
+    name: selectedExamCharacter.name,
+    emoji: selectedExamCharacter.emoji,
+    persona: selectedExamCharacter.prompt,
+    scenario: `${selectedExamCharacter.description} 상황에서 영어 대화를 진행합니다.`,
+    firstMessage: `안녕하세요! 저는 ${selectedExamCharacter.name}입니다. ${selectedExamCharacter.description} 상황으로 영어 회화를 연습해보겠습니다.`,
+    personality: selectedExamCharacter.description,
+    background: `${selectedExamCharacter.name} 역할을 맡아 ${selectedExamCharacter.description} 상황에서 시험을 진행합니다.`,
+    defaultGender: "female" as const,
+  };
 
   /**
    * 시험 완료 여부를 감지하는 함수
@@ -224,7 +237,7 @@ export default function ExamChat() {
     autoGainControl,
     selectedVoice,
     personaCharacter: actualPersonaCharacter,
-    personaGender,
+    personaGender: "female", // 시험에서는 기본값 사용
     onUserMessage: (text: string) => {
       // 최종 메시지가 오면 임시 메시지 제거하고 정식 메시지 추가
       setTempVoiceMessage(null);
@@ -312,7 +325,7 @@ export default function ExamChat() {
   };
 
   // 시험 모드 훅
-  const { examSending, triggerSingleExam } = useExamMode({
+  const { examSending, triggerSingleExamWithCharacter } = useExamMode({
     voiceConnection: voiceConn,
     selectedVoice,
     ensureConnectedAndReady,
@@ -523,15 +536,15 @@ export default function ExamChat() {
           <div className="flex justify-center items-center space-x-3">
             {voiceEnabled && isRecording ? (
               <>
-                {/* 시험관 아바타 (시험 전용) */}
+                {/* 시험 출제자 선택 버튼 */}
                 <Button
-                  onClick={openCharacterDialog}
+                  onClick={() => setExamCharacterDialogOpen(true)}
                   variant="outline"
                   size="sm"
                   className="w-12 h-12 p-0"
-                  title="시험관"
+                  title={selectedExamCharacter.name}
                 >
-                  <span className="text-lg">👩‍🏫</span>
+                  <span className="text-lg">{selectedExamCharacter.emoji}</span>
                 </Button>
                 {/* 음성 파동 + 상태 점 오버레이 (compact) */}
                 <div className="relative">
@@ -593,7 +606,9 @@ export default function ExamChat() {
                         // 기존 대화 내용 지우기
                         clearChat();
                         // 1문제 빠른 시험 시작
-                        await triggerSingleExam();
+                        await triggerSingleExamWithCharacter(
+                          selectedExamCharacter,
+                        );
                       } catch (error) {
                         console.error("빠른 테스트 시작 실패:", error);
                         alert("빠른 테스트를 시작할 수 없습니다.");
@@ -611,15 +626,15 @@ export default function ExamChat() {
               </>
             ) : (
               <>
-                {/* 시험관 아바타 */}
+                {/* 시험 출제자 선택 버튼 */}
                 <Button
-                  onClick={openCharacterDialog}
+                  onClick={() => setExamCharacterDialogOpen(true)}
                   variant="outline"
                   size="sm"
                   className="w-12 h-12 p-0"
-                  title="시험관"
+                  title={selectedExamCharacter.name}
                 >
-                  <span className="text-lg">👩‍🏫</span>
+                  <span className="text-lg">{selectedExamCharacter.emoji}</span>
                 </Button>
 
                 {/* Connection and Exam Buttons */}
@@ -656,7 +671,9 @@ export default function ExamChat() {
                         if (connected) {
                           console.log("시험 버튼: 빠른 테스트 시작");
                           clearChat();
-                          await triggerSingleExam();
+                          await triggerSingleExamWithCharacter(
+                            selectedExamCharacter,
+                          );
                         } else {
                           throw new Error("연결에 실패했습니다");
                         }
@@ -889,15 +906,13 @@ export default function ExamChat() {
       <MobileSettingsDropdown
         isOpen={settingsOpen}
         onClose={() => setSettingsOpen(false)}
-        characterOptions={CHARACTER_PRESETS.map((c) => ({
+        characterOptions={EXAM_CHARACTERS.map((c) => ({
           id: c.id,
           name: c.name,
           emoji: c.emoji,
         }))}
-        selectedCharacterId={selectedCharacterId}
-        onSelectCharacter={(id: string) =>
-          setSelectedCharacterId(id as (typeof CHARACTER_PRESETS)[number]["id"])
-        }
+        selectedCharacterId={selectedExamCharacterId}
+        onSelectCharacter={(id: string) => setSelectedExamCharacterId(id)}
         voiceOptions={[...VOICE_OPTIONS]}
         selectedVoice={selectedVoice}
         onSelectVoice={setSelectedVoice}
@@ -924,14 +939,15 @@ export default function ExamChat() {
         onClearChat={clearChat}
       />
 
-      {/* Character/Scenario/Gender Dialog */}
-      <MobileCharacterDialog
-        open={characterDialogOpen}
-        onClose={closeCharacterDialog}
-        value={getCurrentDialogValue()}
-        onConfirm={(v) => {
-          applyCharacterSettings(v);
+      {/* Exam Character Dialog */}
+      <ExamCharacterDialog
+        open={examCharacterDialogOpen}
+        onClose={() => setExamCharacterDialogOpen(false)}
+        selectedCharacterId={selectedExamCharacterId}
+        onConfirm={(characterId) => {
+          setSelectedExamCharacterId(characterId);
 
+          // 음성 연결이 활성화되어 있으면 재시작 (새 캐릭터 설정 적용)
           if (voiceConn && isRecording) {
             stopVoice();
             setTimeout(async () => {

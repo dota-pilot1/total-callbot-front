@@ -1,12 +1,11 @@
 import { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import {
-  XMarkIcon,
   PlayIcon,
   PauseIcon,
   DocumentTextIcon,
 } from "@heroicons/react/24/outline";
 import { examApi } from "../features/chatbot/exam/api/exam";
+import FullScreenSlideDialog from "./ui/FullScreenSlideDialog";
 
 interface MobileTranslationDialogProps {
   open: boolean;
@@ -297,232 +296,181 @@ Please respond in this exact JSON format:
   };
 
   return (
-    <AnimatePresence>
-      {open && (
-        <div className="fixed inset-0 z-50">
-          {/* 배경 오버레이 */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            className="fixed inset-0 bg-black/30"
-            onClick={onClose}
-          />
-
-          {/* 다이얼로그 컨테이너 - 위에서 아래로 슬라이드 */}
-          <div className="fixed top-0 left-0 right-0 flex justify-center pt-4 px-4">
-            <motion.div
-              initial={{ y: "-100%", opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: "-100%", opacity: 0 }}
-              transition={{
-                type: "spring",
-                damping: 30,
-                stiffness: 150,
-                duration: 0.5,
-              }}
-              className="max-w-2xl w-full bg-white rounded-lg shadow-xl"
+    <FullScreenSlideDialog
+      isOpen={open}
+      onClose={onClose}
+      title="번역"
+      className="h-[100vh]"
+    >
+      <div className="space-y-6 h-full flex flex-col">
+        {loading ? (
+          <div className="text-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
+            <p className="text-gray-600">번역 중...</p>
+          </div>
+        ) : error ? (
+          <div className="text-center py-8">
+            <p className="text-red-600 mb-4">{error}</p>
+            <button
+              onClick={() => requestTranslation(text)}
+              className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
             >
-              {/* 헤더 제거하고 닫기 버튼만 우상단에 */}
-              <div className="absolute top-2 right-2 z-10">
+              다시 시도
+            </button>
+          </div>
+        ) : translation ? (
+          <div className="space-y-6 h-full flex flex-col">
+            {/* 원문 - 라벨 제거하고 공간 확대 */}
+            <div className="bg-gray-50 rounded-xl p-4 relative overflow-hidden flex-1">
+              <textarea
+                value={editableText}
+                onChange={(e) => handleTextChange(e.target.value)}
+                className="w-full text-gray-900 leading-relaxed bg-transparent border-none resize-none focus:outline-none pr-20 h-full text-xl"
+                placeholder="원문을 입력하세요..."
+                style={{
+                  fontFamily: "inherit",
+                  minHeight: "200px",
+                }}
+              />
+              {hasTextChanged && (
+                <div className="text-xs text-orange-600 mt-1">
+                  텍스트가 변경되었습니다. 재생 버튼을 누르면 재번역됩니다.
+                </div>
+              )}
+
+              {/* 우측 상단 버튼들 */}
+              <div
+                className="absolute top-2 right-2 flex space-x-1"
+                style={{
+                  zIndex: 9999,
+                  pointerEvents: "auto",
+                }}
+              >
                 <button
-                  onClick={onClose}
-                  className="p-1 rounded-full hover:bg-gray-100 transition-colors bg-white shadow-sm"
-                  title="닫기"
+                  onClick={async (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log("재생 버튼 클릭됨");
+
+                    try {
+                      if (playingOriginal) {
+                        stopSpeech();
+                      } else {
+                        // 오디오 권한 먼저 확인
+                        const hasPermission = await checkAudioPermission();
+                        if (!hasPermission) {
+                          return;
+                        }
+
+                        await playTextAndRetranslate(editableText, true);
+                      }
+                    } catch (error) {
+                      console.error("재생 중 에러:", error);
+                    }
+                  }}
+                  onTouchStart={() => {}} // 터치 이벤트 활성화
+                  className="p-3 rounded-full bg-white shadow-lg hover:shadow-xl active:shadow-md transition-all duration-200 border border-gray-300 min-w-[44px] min-h-[44px] flex items-center justify-center"
+                  style={{
+                    zIndex: 51,
+                    touchAction: "manipulation",
+                    WebkitTapHighlightColor: "transparent",
+                  }}
+                  title={playingOriginal ? "재생 중지" : "원문 읽기"}
                 >
-                  <XMarkIcon className="h-4 w-4 text-gray-500" />
+                  {playingOriginal ? (
+                    <PauseIcon className="h-4 w-4 text-red-500" />
+                  ) : (
+                    <PlayIcon className="h-4 w-4 text-blue-500" />
+                  )}
+                </button>
+                <button
+                  onClick={() => insertText(translation.original)}
+                  className="p-2 rounded-full bg-white shadow-lg hover:shadow-xl transition-all duration-200 border border-gray-300"
+                  style={{ zIndex: 51 }}
+                  title="원문 입력"
+                >
+                  <DocumentTextIcon className="h-4 w-4 text-green-500" />
                 </button>
               </div>
+            </div>
 
-              {/* 내용 - 패딩 축소 */}
-              <div className="p-3 space-y-3">
-                {loading ? (
-                  <div className="text-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
-                    <p className="text-gray-600">번역 중...</p>
-                  </div>
-                ) : error ? (
-                  <div className="text-center py-8">
-                    <p className="text-red-600 mb-4">{error}</p>
-                    <button
-                      onClick={() => requestTranslation(text)}
-                      className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-                    >
-                      다시 시도
-                    </button>
-                  </div>
-                ) : translation ? (
-                  <div className="space-y-3">
-                    {/* 원문 */}
-                    <div className="bg-gray-50 rounded-lg p-3 relative overflow-hidden">
-                      <div className="mb-2">
-                        <h3 className="text-sm font-medium text-gray-700">
-                          원문
-                        </h3>
-                      </div>
-                      <textarea
-                        value={editableText}
-                        onChange={(e) => handleTextChange(e.target.value)}
-                        className="w-full text-gray-900 leading-relaxed bg-transparent border-none resize-none focus:outline-none pr-20 min-h-[100px] text-base"
-                        placeholder="원문을 입력하세요..."
-                        style={{ fontFamily: "inherit" }}
-                      />
-                      {hasTextChanged && (
-                        <div className="text-xs text-orange-600 mt-1">
-                          텍스트가 변경되었습니다. 재생 버튼을 누르면
-                          재번역됩니다.
-                        </div>
-                      )}
+            {/* 번역 */}
+            <div className="bg-blue-50 rounded-lg p-3 relative overflow-hidden">
+              <h3 className="text-sm font-medium text-blue-700 mb-2">번역</h3>
+              <p className="text-blue-900 leading-relaxed pr-20">
+                {translation.translation}
+              </p>
 
-                      {/* 우측 상단 버튼들 */}
-                      <div
-                        className="absolute top-2 right-2 flex space-x-1"
-                        style={{
-                          zIndex: 9999,
-                          pointerEvents: "auto",
-                        }}
-                      >
-                        <button
-                          onClick={async (e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            console.log("재생 버튼 클릭됨");
+              {/* 우측 상단 버튼들 */}
+              <div
+                className="absolute top-2 right-2 flex space-x-1"
+                style={{
+                  zIndex: 9999,
+                  pointerEvents: "auto",
+                }}
+              >
+                <button
+                  onClick={async (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log("번역문 재생 버튼 클릭됨");
 
-                            try {
-                              if (playingOriginal) {
-                                stopSpeech();
-                              } else {
-                                // 오디오 권한 먼저 확인
-                                const hasPermission =
-                                  await checkAudioPermission();
-                                if (!hasPermission) {
-                                  return;
-                                }
+                    try {
+                      if (playingTranslation) {
+                        stopSpeech();
+                      } else {
+                        // 오디오 권한 먼저 확인
+                        const hasPermission = await checkAudioPermission();
+                        if (!hasPermission) {
+                          // alert(
+                          //   "오디오 재생 권한이 필요합니다. 브라우저 설정에서 오디오를 허용해주세요.",
+                          // );
+                          return;
+                        }
 
-                                await playTextAndRetranslate(
-                                  editableText,
-                                  true,
-                                );
-                              }
-                            } catch (error) {
-                              console.error("재생 중 에러:", error);
-                            }
-                          }}
-                          onTouchStart={() => {}} // 터치 이벤트 활성화
-                          className="p-3 rounded-full bg-white shadow-lg hover:shadow-xl active:shadow-md transition-all duration-200 border border-gray-300 min-w-[44px] min-h-[44px] flex items-center justify-center"
-                          style={{
-                            zIndex: 51,
-                            touchAction: "manipulation",
-                            WebkitTapHighlightColor: "transparent",
-                          }}
-                          title={playingOriginal ? "재생 중지" : "원문 읽기"}
-                        >
-                          {playingOriginal ? (
-                            <PauseIcon className="h-4 w-4 text-red-500" />
-                          ) : (
-                            <PlayIcon className="h-4 w-4 text-blue-500" />
-                          )}
-                        </button>
-                        <button
-                          onClick={() => insertText(translation.original)}
-                          className="p-2 rounded-full bg-white shadow-lg hover:shadow-xl transition-all duration-200 border border-gray-300"
-                          style={{ zIndex: 51 }}
-                          title="원문 입력"
-                        >
-                          <DocumentTextIcon className="h-4 w-4 text-green-500" />
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* 번역 */}
-                    <div className="bg-blue-50 rounded-lg p-3 relative overflow-hidden">
-                      <h3 className="text-sm font-medium text-blue-700 mb-2">
-                        번역
-                      </h3>
-                      <p className="text-blue-900 leading-relaxed pr-20">
-                        {translation.translation}
-                      </p>
-
-                      {/* 우측 상단 버튼들 */}
-                      <div
-                        className="absolute top-2 right-2 flex space-x-1"
-                        style={{
-                          zIndex: 9999,
-                          pointerEvents: "auto",
-                        }}
-                      >
-                        <button
-                          onClick={async (e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            console.log("번역문 재생 버튼 클릭됨");
-
-                            try {
-                              if (playingTranslation) {
-                                stopSpeech();
-                              } else {
-                                // 오디오 권한 먼저 확인
-                                const hasPermission =
-                                  await checkAudioPermission();
-                                if (!hasPermission) {
-                                  // alert(
-                                  //   "오디오 재생 권한이 필요합니다. 브라우저 설정에서 오디오를 허용해주세요.",
-                                  // );
-                                  return;
-                                }
-
-                                await playText(translation.translation, false);
-                              }
-                            } catch (error) {
-                              console.error("번역문 재생 중 에러:", error);
-                              // alert("재생 에러: " + error);
-                            }
-                          }}
-                          onTouchStart={() => {}} // 터치 이벤트 활성화
-                          className="p-3 rounded-full bg-white shadow-lg hover:shadow-xl active:shadow-md transition-all duration-200 border border-gray-300 min-w-[44px] min-h-[44px] flex items-center justify-center"
-                          style={{
-                            zIndex: 51,
-                            touchAction: "manipulation",
-                            WebkitTapHighlightColor: "transparent",
-                          }}
-                          title={
-                            playingTranslation ? "재생 중지" : "번역문 읽기"
-                          }
-                        >
-                          {playingTranslation ? (
-                            <PauseIcon className="h-4 w-4 text-red-500" />
-                          ) : (
-                            <PlayIcon className="h-4 w-4 text-blue-500" />
-                          )}
-                        </button>
-                        <button
-                          onClick={() => insertText(translation.translation)}
-                          className="p-3 rounded-full bg-white shadow-lg hover:shadow-xl active:shadow-md transition-all duration-200 border border-gray-300 min-w-[44px] min-h-[44px] flex items-center justify-center"
-                          style={{
-                            zIndex: 51,
-                            touchAction: "manipulation",
-                            WebkitTapHighlightColor: "transparent",
-                          }}
-                          title="번역문 입력"
-                        >
-                          <DocumentTextIcon className="h-4 w-4 text-green-500" />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <p className="text-gray-500">번역할 텍스트가 없습니다.</p>
-                  </div>
-                )}
+                        await playText(translation.translation, false);
+                      }
+                    } catch (error) {
+                      console.error("번역문 재생 중 에러:", error);
+                      // alert("재생 에러: " + error);
+                    }
+                  }}
+                  onTouchStart={() => {}} // 터치 이벤트 활성화
+                  className="p-3 rounded-full bg-white shadow-lg hover:shadow-xl active:shadow-md transition-all duration-200 border border-gray-300 min-w-[44px] min-h-[44px] flex items-center justify-center"
+                  style={{
+                    zIndex: 51,
+                    touchAction: "manipulation",
+                    WebkitTapHighlightColor: "transparent",
+                  }}
+                  title={playingTranslation ? "재생 중지" : "번역문 읽기"}
+                >
+                  {playingTranslation ? (
+                    <PauseIcon className="h-4 w-4 text-red-500" />
+                  ) : (
+                    <PlayIcon className="h-4 w-4 text-blue-500" />
+                  )}
+                </button>
+                <button
+                  onClick={() => insertText(translation.translation)}
+                  className="p-3 rounded-full bg-white shadow-lg hover:shadow-xl active:shadow-md transition-all duration-200 border border-gray-300 min-w-[44px] min-h-[44px] flex items-center justify-center"
+                  style={{
+                    zIndex: 51,
+                    touchAction: "manipulation",
+                    WebkitTapHighlightColor: "transparent",
+                  }}
+                  title="번역문 입력"
+                >
+                  <DocumentTextIcon className="h-4 w-4 text-green-500" />
+                </button>
               </div>
-
-              {/* 푸터 제거 */}
-            </motion.div>
+            </div>
           </div>
-        </div>
-      )}
-    </AnimatePresence>
+        ) : (
+          <div className="text-center py-8">
+            <p className="text-gray-500">번역할 텍스트가 없습니다.</p>
+          </div>
+        )}
+      </div>
+    </FullScreenSlideDialog>
   );
 }

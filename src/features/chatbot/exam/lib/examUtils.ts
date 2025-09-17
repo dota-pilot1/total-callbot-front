@@ -1,4 +1,5 @@
 import { EXAM_TOPICS, type ExamTopic } from "../constants/topics";
+import type { ExamCharacter } from "../examCharacters";
 
 /**
  * 랜덤하게 시험 주제를 선택합니다
@@ -8,7 +9,96 @@ export const getRandomExamTopic = (): ExamTopic => {
 };
 
 /**
- * 1문제 시험용 프롬프트를 생성합니다 (질문 수준 생략, 바로 진행)
+ * 캐릭터별 1문제 시험용 프롬프트를 생성합니다
+ */
+export const buildSingleExamPromptForCharacter = (
+  character: ExamCharacter,
+): string => {
+  const header = [
+    `[KO] 시험 출제자: ${character.name}`,
+    `[EN] Exam Character: ${character.name}`,
+    "",
+    `[EN] Character Role: ${character.prompt}`,
+    "",
+    "[EN] This is a quick English speaking test. Single question only.",
+    "[KO] 빠른 영어 말하기 테스트입니다. 1문제만 출제됩니다.",
+    "[EN] You will receive 1 question only.",
+    "[KO] 1문항으로 진행됩니다.",
+    "",
+    "**IMPORTANT FLOW:**",
+    "1. Start question immediately (NO level selection)",
+    "2. Ask ONE question relevant to your character role",
+    "3. Provide evaluation after answer",
+    "4. END session immediately",
+    "",
+  ];
+
+  const format = [
+    "Format / 형식:",
+    "- **ABSOLUTE RULE: EXACTLY 1 QUESTION TOTAL**",
+    "- **SEQUENCE: Question → Answer → FINAL EVALUATION (NO MORE QUESTIONS)**",
+    "- **STOP CONDITION: After answer is received, provide final evaluation and STOP**",
+    "",
+    "- Question MUST be bilingual on two lines: first [EN] then [KO] (clear Korean translation).",
+    "  예:",
+    "  [EN] Tell me about your programming experience.",
+    "  [KO] 프로그래밍 경험에 대해 말해주세요.",
+    "",
+    "- DO NOT use question numbers or prefixes (no Q1/1, no numbering).",
+    "- DO NOT ask about difficulty level - proceed with intermediate level directly.",
+    "- Question should match your character role and specialty.",
+    "- After answer: FINAL EVALUATION ONLY.",
+    "- **CRITICAL: This is the ONLY question. Do NOT ask follow-up questions.**",
+    "",
+  ];
+
+  const characterSpecific = [
+    `Character-specific instructions for ${character.name}:`,
+    `- Your question style: ${character.questionStyle}`,
+    `- Your role description: ${character.description}`,
+    "- Ask a question that matches your character's expertise and context",
+    "- Stay in character throughout the interaction",
+    "",
+  ];
+
+  const grading = [
+    "Grading / 채점 기준:",
+    "- **IMPORTANT: Scoring is performed AFTER the single answer is received.**",
+    "- **NO EVALUATION during question - only ask the single question**",
+    "- Provide final evaluation with score out of 10.",
+    "- Criteria: Fluency, Pronunciation, Grammar, Vocabulary range, Comprehension/Task response.",
+    "- Consider how well the answer fits your character's context.",
+    "",
+    "Silence handling / 무응답 처리:",
+    "- If the user provides no answer for 20 seconds, provide evaluation and end.",
+    "",
+  ];
+
+  const closing = [
+    "Final summary (ONLY after answer is received):",
+    "- **TRIGGER: Provide this summary ONLY when you have received 1 answer**",
+    "- **FORMAT: After answer → Final evaluation → IMMEDIATELY END SESSION**",
+    "",
+    "**REQUIRED FORMAT (간략하게):**",
+    "- 점수: N/10",
+    "- 한줄평: [간단한 한줄평가, 캐릭터 관점에서]",
+    "",
+    "**SESSION TERMINATION:**",
+    "- After providing final evaluation, END the conversation IMMEDIATELY",
+    "- **END WITH: '테스트 완료' and STOP all responses**",
+  ];
+
+  return [
+    ...header,
+    ...format,
+    ...characterSpecific,
+    ...grading,
+    ...closing,
+  ].join("\\n");
+};
+
+/**
+ * 1문제 시험용 프롬프트를 생성합니다 (질문 수준 생략, 바로 진행) - 레거시 버전
  */
 export const buildSingleExamPrompt = (topic: ExamTopic): string => {
   const header = [

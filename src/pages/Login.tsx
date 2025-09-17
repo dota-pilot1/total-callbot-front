@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuthStore } from "../features/auth";
 import { useWebSocketStore } from "../features/websocket/stores/useWebSocketStore";
+import { EXAM_CHARACTERS } from "../features/chatbot/exam/examCharacters";
 
 import { PasswordInput } from "../components/ui/PasswordInput";
 
@@ -68,6 +69,15 @@ export default function Login() {
         case "exam":
           // 시험 선택 시 시험 모드 설정하고 연결 시작
           console.log("로그인: 시험 모드 설정 및 연결 시작");
+
+          // 랜덤 캐릭터 선택
+          const randomIndex = Math.floor(
+            Math.random() * EXAM_CHARACTERS.length,
+          );
+          const randomCharacter = EXAM_CHARACTERS[randomIndex];
+          localStorage.setItem("selectedExamCharacter", randomCharacter.id);
+          console.log("로그인: 랜덤 캐릭터 선택:", randomCharacter.name);
+
           setExamMode(true); // 시험 모드 플래그 설정
           connect("general", user.name, user.email, "전체 채팅");
 
