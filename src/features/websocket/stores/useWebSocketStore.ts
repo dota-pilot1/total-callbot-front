@@ -16,6 +16,10 @@ interface WebSocketState {
   connecting: boolean;
   stompClient: any;
 
+  // 시험 모드
+  examMode: boolean;
+  examModeCallback: (() => void) | null;
+
   // 메시지
   messages: ChatMessage[];
 
@@ -43,6 +47,10 @@ interface WebSocketState {
   clearMessages: () => void;
   toggleParticipantList: () => void;
   requestParticipantCount: () => void;
+
+  // 시험 모드 관련
+  setExamMode: (enabled: boolean, callback?: () => void) => void;
+  clearExamMode: () => void;
 }
 
 export const useWebSocketStore = create<WebSocketState>((set, get) => ({
@@ -50,6 +58,8 @@ export const useWebSocketStore = create<WebSocketState>((set, get) => ({
   connected: false,
   connecting: false,
   stompClient: null,
+  examMode: false,
+  examModeCallback: null,
   messages: [],
   currentRoomId: "general",
   currentRoomName: "전체 채팅",
@@ -108,6 +118,15 @@ export const useWebSocketStore = create<WebSocketState>((set, get) => ({
             roomName ||
             (roomId === "general" ? "전체 채팅" : `채팅방 ${roomId}`),
         });
+
+        // 시험 모드이면 연결 완료 후 콜백 실행
+        const { examMode, examModeCallback } = get();
+        if (examMode && examModeCallback) {
+          console.log("WebSocket: 시험 모드 콜백 실행");
+          setTimeout(() => {
+            examModeCallback();
+          }, 500);
+        }
 
         // 채팅방별 메시지 구독
         const messageSubscription =
@@ -329,5 +348,23 @@ export const useWebSocketStore = create<WebSocketState>((set, get) => ({
         body: JSON.stringify({}),
       });
     }
+  },
+
+  // 시험 모드 설정
+  setExamMode: (enabled: boolean, callback?: () => void) => {
+    console.log("Store: 시험 모드 설정", { enabled, hasCallback: !!callback });
+    set({
+      examMode: enabled,
+      examModeCallback: callback || null,
+    });
+  },
+
+  // 시험 모드 클리어
+  clearExamMode: () => {
+    console.log("Store: 시험 모드 클리어");
+    set({
+      examMode: false,
+      examModeCallback: null,
+    });
   },
 }));

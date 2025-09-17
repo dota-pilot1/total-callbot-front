@@ -47,18 +47,26 @@ export default function ExamChat() {
   const { ToastContainer } = useToast();
 
   // WebSocket Store 사용 (중복 연결 제거)
-  const { participantCount, connected, connecting, connect, disconnect } =
-    useWebSocketStore();
+  const {
+    participantCount,
+    connected,
+    connecting,
+    connect,
+    disconnect,
+    examMode,
+    setExamMode,
+    clearExamMode,
+  } = useWebSocketStore();
 
-  // 컴포넌트 언마운트 시에만 연결 해제 (자동 연결 제거)
+  // 컴포넌트 언마운트 시 정리
   useEffect(() => {
-    // 컴포넌트 언마운트 시 연결 해제
     return () => {
       if (connected) {
         disconnect();
       }
+      clearExamMode();
     };
-  }, [connected, disconnect]);
+  }, [connected, disconnect, clearExamMode]);
 
   // zustand store에서 캐릭터 상태 가져오기
   const { personaCharacter, personaGender } = useCharacterStore();
@@ -246,6 +254,31 @@ export default function ExamChat() {
       }
     },
   });
+
+  // 시험 모드 자동 음성 시작 설정
+  useEffect(() => {
+    if (examMode && !voiceEnabled) {
+      const voiceStartCallback = async () => {
+        console.log("ExamChat: 시험 모드 콜백 - 음성 연결 시작");
+        setVoiceEnabled(true);
+        await startVoice();
+      };
+
+      // 이미 연결되어 있으면 바로 실행, 아니면 연결 완료 시 실행되도록 콜백 설정
+      if (connected) {
+        setTimeout(voiceStartCallback, 500);
+      } else {
+        setExamMode(true, voiceStartCallback);
+      }
+    }
+  }, [
+    examMode,
+    connected,
+    voiceEnabled,
+    setVoiceEnabled,
+    startVoice,
+    setExamMode,
+  ]);
 
   // 시험 연결 및 준비 함수
   const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -590,64 +623,71 @@ export default function ExamChat() {
                 </Button>
 
                 {/* Connection and Exam Buttons */}
-                {!connected ? (
-                  <div className="relative inline-block">
-                    <Button
-                      onClick={async () => {
-                        // WebSocket 연결 확인
-                        if (user && !connected) {
+                {/* 시험 버튼 - 연결과 시험 기능 통합 */}
+                <div className="relative inline-block">
+                  <Button
+                    onClick={async () => {
+                      try {
+                        // 연결되지 않은 상태라면 먼저 연결
+                        if (!connected && !connecting && user) {
+                          console.log("시험 버튼: WebSocket 연결 시작");
                           connect(
                             "general",
                             user.name,
                             user.email,
                             "전체 채팅",
                           );
+
+                          // 연결 완료까지 대기 (최대 4초)
+                          for (let i = 0; i < 20; i++) {
+                            await sleep(200);
+                            if (connected) break;
+                          }
                         }
 
-                        // 음성 시작 (시험 시작은 별도)
+                        // 음성 연결이 없다면 시작
                         if (!voiceEnabled) {
+                          console.log("시험 버튼: 음성 연결 시작");
                           setVoiceEnabled(true);
                           await startVoice();
                         }
-                      }}
-                      variant="outline"
-                      size="sm"
-                      className="h-12 px-6 text-sm"
-                      disabled={connecting}
-                    >
-                      {connecting ? "연결중..." : "연결"}
-                    </Button>
-                    <span
-                      className={`absolute -top-1 -right-1 w-3 h-3 rounded-full ring-2 ring-card ${
-                        connecting
-                          ? "bg-amber-500 animate-pulse"
-                          : connected
-                            ? "bg-emerald-500"
-                            : "bg-gray-400"
-                      }`}
-                    />
-                  </div>
-                ) : (
-                  <Button
-                    onClick={async () => {
-                      try {
-                        // 기존 대화 내용 지우기
-                        clearChat();
-                        // 1문제 빠른 테스트 시작
-                        await triggerSingleExam();
+
+                        // 연결 완료 후 시험 시작
+                        if (connected) {
+                          console.log("시험 버튼: 빠른 테스트 시작");
+                          clearChat();
+                          await triggerSingleExam();
+                        } else {
+                          throw new Error("연결에 실패했습니다");
+                        }
                       } catch (error) {
-                        console.error("빠른 테스트 시작 실패:", error);
-                        alert("빠른 테스트를 시작할 수 없습니다.");
+                        console.error("시험 시작 실패:", error);
+                        alert("시험을 시작할 수 없습니다. 다시 시도해 주세요.");
                       }
                     }}
                     variant="outline"
                     size="sm"
                     className="h-12 px-4 text-sm bg-green-100 hover:bg-green-200"
-                    disabled={examSending}
+                    disabled={connecting || examSending}
                   >
-                    {examSending ? "준비중..." : "빠른 테스트"}
+                    {connecting
+                      ? "연결중..."
+                      : examSending
+                        ? "준비중..."
+                        : connected
+                          ? "빠른 테스트"
+                          : "시험 시작"}
                   </Button>
-                )}
+                  <span
+                    className={`absolute -top-1 -right-1 w-3 h-3 rounded-full ring-2 ring-card ${
+                      connecting
+                        ? "bg-amber-500 animate-pulse"
+                        : connected
+                          ? "bg-emerald-500"
+                          : "bg-gray-400"
+                    }`}
+                  />
+                </div>
               </>
             )}
           </div>

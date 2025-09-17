@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuthStore } from "../features/auth";
+import { useWebSocketStore } from "../features/websocket/stores/useWebSocketStore";
 
 import { PasswordInput } from "../components/ui/PasswordInput";
 
@@ -20,7 +21,8 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [selectedService, setSelectedService] =
     useState<ServiceType>("chatbot");
-  const { login, isLoading } = useAuthStore();
+  const { login, isLoading, getUser } = useAuthStore();
+  const { connect, setExamMode } = useWebSocketStore();
   const navigate = useNavigate();
   const [showMembers, setShowMembers] = useState<boolean>(false);
 
@@ -49,6 +51,12 @@ export default function Login() {
     try {
       await login({ email, password });
 
+      // 로그인 성공 후 사용자 정보 가져오기
+      const user = getUser();
+      if (!user) {
+        throw new Error("사용자 정보를 가져올 수 없습니다");
+      }
+
       // 선택된 서비스에 따라 이동
       const isMobile =
         window.innerWidth <= 768 || /Mobi|Android/i.test(navigator.userAgent);
@@ -58,7 +66,15 @@ export default function Login() {
           navigate(isMobile ? "/mobile" : "/chatbots");
           break;
         case "exam":
-          navigate("/exam"); // 시험 전용 페이지로 이동
+          // 시험 선택 시 시험 모드 설정하고 연결 시작
+          console.log("로그인: 시험 모드 설정 및 연결 시작");
+          setExamMode(true); // 시험 모드 플래그 설정
+          connect("general", user.name, user.email, "전체 채팅");
+
+          // 약간의 지연 후 ExamChat으로 이동
+          setTimeout(() => {
+            navigate("/exam");
+          }, 300);
           break;
         case "chat":
           navigate("/chat"); // 전체 채팅방
