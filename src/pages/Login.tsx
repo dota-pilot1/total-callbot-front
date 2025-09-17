@@ -1,7 +1,6 @@
 import { useState, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuthStore } from "../features/auth";
-import { useWebSocketStore } from "../features/websocket/stores/useWebSocketStore";
 import { EXAM_CHARACTERS } from "../features/chatbot/exam/examCharacters";
 
 import { PasswordInput } from "../components/ui/PasswordInput";
@@ -23,7 +22,6 @@ export default function Login() {
   const [selectedService, setSelectedService] =
     useState<ServiceType>("chatbot");
   const { login, isLoading, getUser } = useAuthStore();
-  const { connect, setExamMode } = useWebSocketStore();
   const navigate = useNavigate();
   const [showMembers, setShowMembers] = useState<boolean>(false);
 
