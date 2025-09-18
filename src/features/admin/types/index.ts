@@ -3,7 +3,7 @@ export interface AdminUser {
   id: string;
   email: string;
   name: string;
-  role: 'ADMIN' | 'SUPER_ADMIN';
+  role: "ADMIN" | "SUPER_ADMIN";
   lastLoginAt: string;
   createdAt: string;
 }
@@ -38,7 +38,7 @@ export interface ListeningTest {
   id: number;
   title: string;
   description: string;
-  difficulty: 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED';
+  difficulty: "BEGINNER" | "INTERMEDIATE" | "ADVANCED";
   questionCount: number;
   timeLimit: number;
   isActive: boolean;
@@ -49,7 +49,7 @@ export interface ListeningTest {
 export interface ListeningTestFormData {
   title: string;
   description: string;
-  difficulty: 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED';
+  difficulty: "BEGINNER" | "INTERMEDIATE" | "ADVANCED";
   questionCount: number;
   timeLimit: number;
   isActive: boolean;
@@ -66,7 +66,7 @@ export interface DashboardStats {
 
 export interface ActivityLog {
   id: string;
-  type: 'USER_SIGNUP' | 'TEST_CREATED' | 'TEST_COMPLETED' | 'QUESTION_ADDED';
+  type: "USER_SIGNUP" | "TEST_CREATED" | "TEST_COMPLETED" | "QUESTION_ADDED";
   description: string;
   timestamp: string;
   userId?: string;
@@ -79,6 +79,6 @@ export interface ValidationError {
   message: string;
 }
 
-export interface FormErrors<T> {
+export type FormErrors<T> = {
   [K in keyof T]?: string;
-}
+};

@@ -9,8 +9,8 @@ export interface Question {
   option4: string;
   correctAnswer: number;
   orderIndex: number;
-  category: 'vocabulary' | 'grammar' | 'listening' | 'reading';
-  difficulty: 'beginner' | 'intermediate' | 'advanced';
+  category: "vocabulary" | "grammar" | "listening" | "reading";
+  difficulty: "beginner" | "intermediate" | "advanced";
   createdAt: string;
   updatedAt?: string;
 }
@@ -23,8 +23,8 @@ export interface QuestionFormData {
   option3: string;
   option4: string;
   correctAnswer: number;
-  category: 'vocabulary' | 'grammar' | 'listening' | 'reading';
-  difficulty: 'beginner' | 'intermediate' | 'advanced';
+  category: "vocabulary" | "grammar" | "listening" | "reading";
+  difficulty: "beginner" | "intermediate" | "advanced";
 }
 
 export interface QuestionCategory {
@@ -63,6 +63,6 @@ export interface ValidationError {
   message: string;
 }
 
-export interface FormErrors<T> {
+export type FormErrors<T> = {
   [K in keyof T]?: string;
-}
+};
