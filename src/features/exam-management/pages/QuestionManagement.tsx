@@ -741,7 +741,7 @@ function QuestionListTab({
 
 // AI 생성 탭 컴포넌트
 function AIGeneratorTab() {
-  const { applyAIGenerated, setFormData, formData } = useQuestionFormStore();
+  const { applyAIGenerated, setFormData } = useQuestionFormStore();
   const [options, setOptions] = useState({
     topic: "",
     difficulty: "BEGINNER" as "BEGINNER" | "INTERMEDIATE" | "ADVANCED",
@@ -810,9 +810,6 @@ function AIGeneratorTab() {
   ];
 
   const generateCategorySpecificMockData = () => {
-    const selectedCategory = questionCategories.find(
-      (c) => c.id === options.category,
-    );
 
     switch (options.category) {
       case "listening":
