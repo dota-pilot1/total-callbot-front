@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuthStore } from "../features/auth";
 import { EXAM_CHARACTERS } from "../features/chatbot/exam/examCharacters";
@@ -24,8 +24,31 @@ type ServiceType =
   | "question_bank";
 
 export default function Login() {
+  // 테스트 계정 목록
+  const testAccounts = [
+    "terecal@daum.net",
+    "user1@daum.net",
+    "user2@daum.net",
+    "user3@daum.net",
+    "user4@daum.net",
+    "user5@daum.net",
+    "user6@daum.net",
+    "user7@daum.net",
+    "user8@daum.net",
+    "user9@daum.net",
+  ];
+
+  // 랜덤 계정 선택 및 자동 입력
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+
+  useEffect(() => {
+    // 페이지 로드시 랜덤 계정 선택하여 자동 입력
+    const randomIndex = Math.floor(Math.random() * testAccounts.length);
+    const randomEmail = testAccounts[randomIndex];
+    setEmail(randomEmail);
+    setPassword("123456");
+  }, []);
   const [selectedService, setSelectedService] = useState<ServiceType>(() => {
     // localStorage에서 저장된 서비스 가져오기
     const savedService = localStorage.getItem("selectedService") as ServiceType;
@@ -287,6 +310,14 @@ export default function Login() {
 
               {/* 빈 공간 (3x3 그리드에서 8개 요소만 사용) */}
               <div></div>
+            </div>
+
+            {/* 자동 입력 안내 */}
+            <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-md">
+              <p className="text-sm text-green-700">
+                💡 로그인 정보가 자동 입력되었습니다. 로그인 버튼을 클릭하시면
+                로그인됩니다. 또는 회원가입을 해주세요.
+              </p>
             </div>
 
             {/* 로그인 폼 */}
