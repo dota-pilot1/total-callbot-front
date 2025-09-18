@@ -17,17 +17,12 @@ import Chat from "./pages/Chat";
 import ChatRoomList from "./pages/ChatRoomList";
 import { Study } from "./features/study";
 import { News } from "./features/news";
-import { QuestionBank } from "./features/question-bank";
+import { ExamManagement, QuestionManagement } from "./features/exam-management";
 import {
   ListeningTest,
   ListeningTestList,
 } from "./features/english-listening-test";
-import {
-  AdminDashboard,
-  ListeningTestAdmin,
-  ListeningTestForm,
-  QuestionManagement,
-} from "./features/admin";
+
 import ErrorBoundary from "./components/ErrorBoundary";
 
 function ProtectedApp() {
@@ -56,7 +51,11 @@ function ProtectedApp() {
       <Route path="/practice" element={<Practice />} />
       <Route path="/study" element={<Study />} />
       <Route path="/news" element={<News />} />
-      <Route path="/question-bank" element={<QuestionBank />} />
+      <Route path="/exam-management" element={<ExamManagement />} />
+      <Route
+        path="/exam-management/:id/questions"
+        element={<QuestionManagement />}
+      />
       <Route path="/quiz-list" element={<ListeningTestList />} />
       <Route path="/quiz" element={<ListeningTest />} />
       <Route path="/chat" element={<Chat />} />
@@ -64,20 +63,6 @@ function ProtectedApp() {
       <Route path="/chat/room/:roomId" element={<Chat />} />
       <Route path="/chat/bot/:botId" element={<CallbotChat />} />
       <Route path="/chat/:chatRoomId" element={<CallbotChat />} />
-      <Route path="/admin" element={<AdminDashboard />} />
-      <Route path="/admin/listening-tests" element={<ListeningTestAdmin />} />
-      <Route
-        path="/admin/listening-tests/new"
-        element={<ListeningTestForm />}
-      />
-      <Route
-        path="/admin/listening-tests/:id/edit"
-        element={<ListeningTestForm />}
-      />
-      <Route
-        path="/admin/listening-tests/:id/questions"
-        element={<QuestionManagement />}
-      />
     </Routes>
   );
 }

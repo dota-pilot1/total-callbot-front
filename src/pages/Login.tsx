@@ -109,8 +109,8 @@ export default function Login() {
           navigate("/board"); // 게시판 페이지
           break;
         case "question_bank":
-          console.log("로그인: 문제 은행 페이지로 이동");
-          navigate("/question-bank"); // 문제 은행 페이지
+          console.log("로그인: 시험 관리 페이지로 이동");
+          navigate("/exam-management"); // 시험 관리 페이지
           break;
         default:
           navigate(isMobile ? "/mobile" : "/chatbots");
@@ -281,7 +281,7 @@ export default function Login() {
                   <span className="text-2xl">🏦</span>
                 </div>
                 <span className="text-xs font-medium text-gray-700">
-                  문제 은행
+                  시험 관리
                 </span>
               </button>
 
