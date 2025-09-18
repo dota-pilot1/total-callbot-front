@@ -16,6 +16,8 @@ import Practice from "./pages/Practice";
 import Chat from "./pages/Chat";
 import ChatRoomList from "./pages/ChatRoomList";
 import { Study } from "./features/study";
+import { News } from "./features/news";
+import { QuestionBank } from "./features/question-bank";
 import {
   ListeningTest,
   ListeningTestList,
@@ -53,6 +55,8 @@ function ProtectedApp() {
       <Route path="/exam" element={<ExamChat />} />
       <Route path="/practice" element={<Practice />} />
       <Route path="/study" element={<Study />} />
+      <Route path="/news" element={<News />} />
+      <Route path="/question-bank" element={<QuestionBank />} />
       <Route path="/quiz-list" element={<ListeningTestList />} />
       <Route path="/quiz" element={<ListeningTest />} />
       <Route path="/chat" element={<Chat />} />

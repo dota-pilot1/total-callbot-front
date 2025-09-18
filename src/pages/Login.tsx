@@ -19,9 +19,9 @@ type ServiceType =
   | "conversation"
   | "quiz"
   | "chat"
-  | "study"
+  | "news"
   | "board"
-  | "admin";
+  | "question_bank";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -35,9 +35,9 @@ export default function Login() {
         "conversation",
         "quiz",
         "chat",
-        "study",
+        "news",
         "board",
-        "admin",
+        "question_bank",
       ].includes(savedService)
       ? savedService
       : "chatbot";
@@ -101,16 +101,16 @@ export default function Login() {
         case "chat":
           navigate("/chat"); // 전체 채팅방
           break;
-        case "study":
-          navigate("/study"); // 학습 페이지
+        case "news":
+          navigate("/news"); // 뉴스 페이지
           break;
         case "board":
           console.log("로그인: 게시판 페이지로 이동");
           navigate("/board"); // 게시판 페이지
           break;
-        case "admin":
-          console.log("로그인: 관리자 대시보드로 이동");
-          navigate("/admin"); // 관리자 대시보드
+        case "question_bank":
+          console.log("로그인: 문제 은행 페이지로 이동");
+          navigate("/question-bank"); // 문제 은행 페이지
           break;
         default:
           navigate(isMobile ? "/mobile" : "/chatbots");
@@ -175,7 +175,9 @@ export default function Login() {
                 <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-purple-100 to-purple-200 flex items-center justify-center mb-1">
                   <span className="text-lg">💬</span>
                 </div>
-                <span className="text-xs font-medium text-gray-700">회화</span>
+                <span className="text-xs font-medium text-gray-700">
+                  회화 시험
+                </span>
               </button>
 
               {/* 영어 듣기 */}
@@ -195,7 +197,7 @@ export default function Login() {
                   <span className="text-lg">🎧</span>
                 </div>
                 <span className="text-xs font-medium text-gray-700">
-                  영어듣기
+                  영어 듣기
                 </span>
               </button>
 
@@ -218,27 +220,8 @@ export default function Login() {
                   className="h-12 w-12 rounded-lg object-cover mb-2"
                 />
                 <span className="text-xs font-medium text-gray-700">
-                  전체채팅
+                  전체 채팅
                 </span>
-              </button>
-
-              {/* 학습 */}
-              <button
-                onClick={() => handleServiceSelect("study")}
-                aria-pressed={selectedService === "study"}
-                className={`relative flex flex-col items-center p-4 rounded-xl border-2 transition-all duration-200 ${
-                  selectedService === "study"
-                    ? "border-blue-500 bg-blue-50 shadow-lg ring-2 ring-blue-200"
-                    : "border-gray-200 hover:bg-gray-50 hover:border-gray-300"
-                }`}
-              >
-                {selectedService === "study" && (
-                  <CheckCircleIcon className="absolute top-2 right-2 h-5 w-5 text-blue-500" />
-                )}
-                <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-green-100 to-green-200 flex items-center justify-center mb-2">
-                  <span className="text-2xl">📚</span>
-                </div>
-                <span className="text-xs font-medium text-gray-700">학습</span>
               </button>
 
               {/* 게시판 */}
@@ -262,24 +245,43 @@ export default function Login() {
                 </span>
               </button>
 
-              {/* 관리자 */}
+              {/* 뉴스 */}
               <button
-                onClick={() => handleServiceSelect("admin")}
-                aria-pressed={selectedService === "admin"}
+                onClick={() => handleServiceSelect("news")}
+                aria-pressed={selectedService === "news"}
                 className={`relative flex flex-col items-center p-4 rounded-xl border-2 transition-all duration-200 ${
-                  selectedService === "admin"
+                  selectedService === "news"
                     ? "border-blue-500 bg-blue-50 shadow-lg ring-2 ring-blue-200"
                     : "border-gray-200 hover:bg-gray-50 hover:border-gray-300"
                 }`}
               >
-                {selectedService === "admin" && (
+                {selectedService === "news" && (
+                  <CheckCircleIcon className="absolute top-2 right-2 h-5 w-5 text-blue-500" />
+                )}
+                <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-green-100 to-green-200 flex items-center justify-center mb-2">
+                  <span className="text-2xl">📰</span>
+                </div>
+                <span className="text-xs font-medium text-gray-700">뉴스</span>
+              </button>
+
+              {/* 문제 은행 */}
+              <button
+                onClick={() => handleServiceSelect("question_bank")}
+                aria-pressed={selectedService === "question_bank"}
+                className={`relative flex flex-col items-center p-4 rounded-xl border-2 transition-all duration-200 ${
+                  selectedService === "question_bank"
+                    ? "border-blue-500 bg-blue-50 shadow-lg ring-2 ring-blue-200"
+                    : "border-gray-200 hover:bg-gray-50 hover:border-gray-300"
+                }`}
+              >
+                {selectedService === "question_bank" && (
                   <CheckCircleIcon className="absolute top-2 right-2 h-5 w-5 text-blue-500" />
                 )}
                 <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-red-100 to-red-200 flex items-center justify-center mb-2">
-                  <span className="text-2xl">⚙️</span>
+                  <span className="text-2xl">🏦</span>
                 </div>
                 <span className="text-xs font-medium text-gray-700">
-                  관리자
+                  문제 은행
                 </span>
               </button>
 
