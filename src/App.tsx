@@ -24,6 +24,7 @@ import {
 } from "./features/english-listening-test";
 import { MathPage } from "./features/math";
 import { HistoryPage } from "./features/history";
+import { BoardList, BoardDetail, BoardWrite } from "./features/board";
 
 import ErrorBoundary from "./components/ErrorBoundary";
 
@@ -62,6 +63,9 @@ function ProtectedApp() {
       <Route path="/quiz" element={<ListeningTest />} />
       <Route path="/math" element={<MathPage />} />
       <Route path="/history" element={<HistoryPage />} />
+      <Route path="/board" element={<BoardList />} />
+      <Route path="/board/:postId" element={<BoardDetail />} />
+      <Route path="/board/write" element={<BoardWrite />} />
       <Route path="/chat" element={<Chat />} />
       <Route path="/chat/rooms" element={<ChatRoomList />} />
       <Route path="/chat/room/:roomId" element={<Chat />} />
