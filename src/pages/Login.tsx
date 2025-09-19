@@ -16,12 +16,14 @@ import {
 
 type ServiceType =
   | "chatbot"
-  | "conversation"
-  | "quiz"
   | "chat"
   | "news"
-  | "board"
-  | "question_bank";
+  | "conversation"
+  | "quiz"
+  | "question_bank"
+  | "math"
+  | "history"
+  | "board";
 
 export default function Login() {
   // 테스트 계정 목록
@@ -55,12 +57,14 @@ export default function Login() {
     return savedService &&
       [
         "chatbot",
-        "conversation",
-        "quiz",
         "chat",
         "news",
-        "board",
+        "conversation",
+        "quiz",
         "question_bank",
+        "math",
+        "history",
+        "board",
       ].includes(savedService)
       ? savedService
       : "chatbot";
@@ -135,6 +139,14 @@ export default function Login() {
           console.log("로그인: 시험 관리 페이지로 이동");
           navigate("/exam-management"); // 시험 관리 페이지
           break;
+        case "math":
+          console.log("로그인: 수학 페이지로 이동");
+          navigate("/math"); // 수학 페이지
+          break;
+        case "history":
+          console.log("로그인: 역사 페이지로 이동");
+          navigate("/history"); // 역사 페이지
+          break;
         default:
           navigate(isMobile ? "/mobile" : "/chatbots");
       }
@@ -182,7 +194,49 @@ export default function Login() {
                 <span className="text-xs font-medium text-gray-700">챗봇</span>
               </button>
 
-              {/* 회화 */}
+              {/* 전체 채팅방 */}
+              <button
+                onClick={() => handleServiceSelect("chat")}
+                aria-pressed={selectedService === "chat"}
+                className={`relative flex flex-col items-center p-4 rounded-xl border-2 transition-all duration-200 ${
+                  selectedService === "chat"
+                    ? "border-blue-500 bg-blue-50 shadow-lg ring-2 ring-blue-200"
+                    : "border-gray-200 hover:bg-gray-50 hover:border-gray-300"
+                }`}
+              >
+                {selectedService === "chat" && (
+                  <CheckCircleIcon className="absolute top-2 right-2 h-5 w-5 text-blue-500" />
+                )}
+                <img
+                  src="/multi-chat.png"
+                  alt="전체 채팅방"
+                  className="h-12 w-12 rounded-lg object-cover mb-2"
+                />
+                <span className="text-xs font-medium text-gray-700">
+                  전체 채팅
+                </span>
+              </button>
+
+              {/* 뉴스 */}
+              <button
+                onClick={() => handleServiceSelect("news")}
+                aria-pressed={selectedService === "news"}
+                className={`relative flex flex-col items-center p-4 rounded-xl border-2 transition-all duration-200 ${
+                  selectedService === "news"
+                    ? "border-blue-500 bg-blue-50 shadow-lg ring-2 ring-blue-200"
+                    : "border-gray-200 hover:bg-gray-50 hover:border-gray-300"
+                }`}
+              >
+                {selectedService === "news" && (
+                  <CheckCircleIcon className="absolute top-2 right-2 h-5 w-5 text-blue-500" />
+                )}
+                <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-green-100 to-green-200 flex items-center justify-center mb-2">
+                  <span className="text-2xl">📰</span>
+                </div>
+                <span className="text-xs font-medium text-gray-700">뉴스</span>
+              </button>
+
+              {/* 회화 시험 */}
               <button
                 onClick={() => handleServiceSelect("conversation")}
                 aria-pressed={selectedService === "conversation"}
@@ -195,7 +249,7 @@ export default function Login() {
                 {selectedService === "conversation" && (
                   <CheckCircleIcon className="absolute top-1 right-1 h-4 w-4 text-blue-500" />
                 )}
-                <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-purple-100 to-purple-200 flex items-center justify-center mb-1">
+                <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center mb-1">
                   <span className="text-lg">💬</span>
                 </div>
                 <span className="text-xs font-medium text-gray-700">
@@ -224,27 +278,63 @@ export default function Login() {
                 </span>
               </button>
 
-              {/* 전체 채팅방 */}
+              {/* 시험 관리 */}
               <button
-                onClick={() => handleServiceSelect("chat")}
-                aria-pressed={selectedService === "chat"}
+                onClick={() => handleServiceSelect("question_bank")}
+                aria-pressed={selectedService === "question_bank"}
                 className={`relative flex flex-col items-center p-4 rounded-xl border-2 transition-all duration-200 ${
-                  selectedService === "chat"
+                  selectedService === "question_bank"
                     ? "border-blue-500 bg-blue-50 shadow-lg ring-2 ring-blue-200"
                     : "border-gray-200 hover:bg-gray-50 hover:border-gray-300"
                 }`}
               >
-                {selectedService === "chat" && (
+                {selectedService === "question_bank" && (
                   <CheckCircleIcon className="absolute top-2 right-2 h-5 w-5 text-blue-500" />
                 )}
-                <img
-                  src="/multi-chat.png"
-                  alt="전체 채팅방"
-                  className="h-12 w-12 rounded-lg object-cover mb-2"
-                />
+                <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-red-100 to-red-200 flex items-center justify-center mb-2">
+                  <span className="text-2xl">🏦</span>
+                </div>
                 <span className="text-xs font-medium text-gray-700">
-                  전체 채팅
+                  시험 관리
                 </span>
+              </button>
+
+              {/* 수학 */}
+              <button
+                onClick={() => handleServiceSelect("math")}
+                aria-pressed={selectedService === "math"}
+                className={`relative flex flex-col items-center p-4 rounded-xl border-2 transition-all duration-200 ${
+                  selectedService === "math"
+                    ? "border-blue-500 bg-blue-50 shadow-lg ring-2 ring-blue-200"
+                    : "border-gray-200 hover:bg-gray-50 hover:border-gray-300"
+                }`}
+              >
+                {selectedService === "math" && (
+                  <CheckCircleIcon className="absolute top-2 right-2 h-5 w-5 text-blue-500" />
+                )}
+                <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-cyan-100 to-cyan-200 flex items-center justify-center mb-2">
+                  <span className="text-2xl">🔢</span>
+                </div>
+                <span className="text-xs font-medium text-gray-700">수학</span>
+              </button>
+
+              {/* 역사 */}
+              <button
+                onClick={() => handleServiceSelect("history")}
+                aria-pressed={selectedService === "history"}
+                className={`relative flex flex-col items-center p-4 rounded-xl border-2 transition-all duration-200 ${
+                  selectedService === "history"
+                    ? "border-blue-500 bg-blue-50 shadow-lg ring-2 ring-blue-200"
+                    : "border-gray-200 hover:bg-gray-50 hover:border-gray-300"
+                }`}
+              >
+                {selectedService === "history" && (
+                  <CheckCircleIcon className="absolute top-2 right-2 h-5 w-5 text-blue-500" />
+                )}
+                <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-amber-100 to-amber-200 flex items-center justify-center mb-2">
+                  <span className="text-2xl">🏛️</span>
+                </div>
+                <span className="text-xs font-medium text-gray-700">역사</span>
               </button>
 
               {/* 게시판 */}
@@ -267,49 +357,6 @@ export default function Login() {
                   게시판
                 </span>
               </button>
-
-              {/* 뉴스 */}
-              <button
-                onClick={() => handleServiceSelect("news")}
-                aria-pressed={selectedService === "news"}
-                className={`relative flex flex-col items-center p-4 rounded-xl border-2 transition-all duration-200 ${
-                  selectedService === "news"
-                    ? "border-blue-500 bg-blue-50 shadow-lg ring-2 ring-blue-200"
-                    : "border-gray-200 hover:bg-gray-50 hover:border-gray-300"
-                }`}
-              >
-                {selectedService === "news" && (
-                  <CheckCircleIcon className="absolute top-2 right-2 h-5 w-5 text-blue-500" />
-                )}
-                <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-green-100 to-green-200 flex items-center justify-center mb-2">
-                  <span className="text-2xl">📰</span>
-                </div>
-                <span className="text-xs font-medium text-gray-700">뉴스</span>
-              </button>
-
-              {/* 문제 은행 */}
-              <button
-                onClick={() => handleServiceSelect("question_bank")}
-                aria-pressed={selectedService === "question_bank"}
-                className={`relative flex flex-col items-center p-4 rounded-xl border-2 transition-all duration-200 ${
-                  selectedService === "question_bank"
-                    ? "border-blue-500 bg-blue-50 shadow-lg ring-2 ring-blue-200"
-                    : "border-gray-200 hover:bg-gray-50 hover:border-gray-300"
-                }`}
-              >
-                {selectedService === "question_bank" && (
-                  <CheckCircleIcon className="absolute top-2 right-2 h-5 w-5 text-blue-500" />
-                )}
-                <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-red-100 to-red-200 flex items-center justify-center mb-2">
-                  <span className="text-2xl">🏦</span>
-                </div>
-                <span className="text-xs font-medium text-gray-700">
-                  시험 관리
-                </span>
-              </button>
-
-              {/* 빈 공간 (3x3 그리드에서 8개 요소만 사용) */}
-              <div></div>
             </div>
 
             {/* 자동 입력 안내 */}
