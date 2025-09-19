@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Card, CardContent } from "../../../components/ui";
 import { Button } from "../../../components/ui";
@@ -9,125 +9,128 @@ import {
   ChatBubbleLeftIcon,
   PencilIcon,
   TrashIcon,
+  PencilSquareIcon,
+  XMarkIcon,
 } from "@heroicons/react/24/outline";
 import { HeartIcon as HeartSolidIcon } from "@heroicons/react/24/solid";
-import type { BoardPost, BoardComment } from "../types";
+
+import {
+  useBoardPost,
+  useBoardComments,
+  useLikePost,
+  useUnlikePost,
+  useCreateComment,
+  useDeletePost,
+} from "../hooks";
+import AppHeader from "../../../components/layout/AppHeader";
 
 const CATEGORY_LABELS = {
-  notice: "공지사항",
-  qna: "질문/답변",
-  free: "자유게시판",
-  review: "학습후기",
+  NOTICE: "공지사항",
+  QNA: "질문/답변",
+  FREE: "자유게시판",
+  REVIEW: "학습후기",
+  FEEDBACK: "건의사항",
 };
 
 const CATEGORY_COLORS = {
-  notice: "bg-red-100 text-red-800",
-  qna: "bg-blue-100 text-blue-800",
-  free: "bg-green-100 text-green-800",
-  review: "bg-purple-100 text-purple-800",
+  NOTICE: "bg-red-100 text-red-800",
+  QNA: "bg-blue-100 text-blue-800",
+  FREE: "bg-green-100 text-green-800",
+  REVIEW: "bg-purple-100 text-purple-800",
+  FEEDBACK: "bg-orange-100 text-orange-800",
 };
 
 export default function BoardDetail() {
   const { postId } = useParams<{ postId: string }>();
   const navigate = useNavigate();
-  const [post, setPost] = useState<BoardPost | null>(null);
-  const [comments, setComments] = useState<BoardComment[]>([]);
   const [newComment, setNewComment] = useState("");
-  const [loading, setLoading] = useState(true);
   const [isLiked, setIsLiked] = useState(false);
+  const [isCommentFormOpen, setIsCommentFormOpen] = useState(false);
 
-  // 더미 데이터
-  useEffect(() => {
-    const dummyPost: BoardPost = {
-      id: Number(postId),
-      title: "AI 챗봇 대화에서 발음 연습은 어떻게 하나요?",
-      content: `안녕하세요! 영어 학습을 시작한 지 얼마 안 된 초보자입니다.
+  const postIdNum = Number(postId);
 
-AI 챗봇과 대화를 나누면서 영어 실력을 늘리고 있는데, 발음 교정 기능이 있는지 궁금합니다.
+  // TanStack Query로 게시글과 댓글 조회
+  const {
+    data: post,
+    isLoading: postLoading,
+    error: postError,
+  } = useBoardPost(postIdNum);
 
-제가 말하는 발음을 분석해서 피드백을 주는 기능이 있나요?
-아니면 어떤 방법으로 발음 연습을 할 수 있을까요?
+  const { data: comments = [], isLoading: commentsLoading } =
+    useBoardComments(postIdNum);
 
-좋은 팁이나 방법이 있다면 공유해주세요!`,
-      author: "학습자123",
-      category: "qna",
-      createdAt: "2025-09-20T09:30:00Z",
-      updatedAt: "2025-09-20T09:30:00Z",
-      viewCount: 45,
-      likeCount: 12,
-      commentCount: 3,
-      isPinned: false,
-    };
+  const loading = postLoading || commentsLoading;
 
-    const dummyComments: BoardComment[] = [
-      {
-        id: 1,
-        postId: Number(postId),
-        content:
-          "음성 인식 기능을 활용해보세요! 챗봇과 대화할 때 마이크 버튼을 누르면 발음을 인식해줍니다.",
-        author: "영어마스터",
-        createdAt: "2025-09-20T10:15:00Z",
-        updatedAt: "2025-09-20T10:15:00Z",
-      },
-      {
-        id: 2,
-        postId: Number(postId),
-        content:
-          "저도 같은 궁금증이 있었는데, 반복 연습이 가장 도움이 되더라고요. 챗봇이 틀린 발음을 지적해주기도 해요.",
-        author: "스터디메이트",
-        createdAt: "2025-09-20T11:00:00Z",
-        updatedAt: "2025-09-20T11:00:00Z",
-      },
-      {
-        id: 3,
-        postId: Number(postId),
-        content:
-          "발음 연습 전용 모드가 따로 있으면 좋겠어요. 관리자님 검토 부탁드립니다!",
-        author: "학습러버",
-        createdAt: "2025-09-20T12:30:00Z",
-        updatedAt: "2025-09-20T12:30:00Z",
-      },
-    ];
+  // Mutations
+  const likePostMutation = useLikePost();
+  const unlikePostMutation = useUnlikePost();
+  const createCommentMutation = useCreateComment();
+  const deletePostMutation = useDeletePost();
 
-    setTimeout(() => {
-      setPost(dummyPost);
-      setComments(dummyComments);
-      setLoading(false);
-    }, 500);
-  }, [postId]);
+  // 에러 처리
+  if (postError) {
+    alert("게시글을 불러오는데 실패했습니다.");
+    navigate("/board");
+    return null;
+  }
 
-  const handleLike = () => {
-    if (post) {
+  const handleLike = async () => {
+    if (!post) return;
+
+    try {
+      if (isLiked) {
+        await unlikePostMutation.mutateAsync(post.id);
+      } else {
+        await likePostMutation.mutateAsync(post.id);
+      }
       setIsLiked(!isLiked);
-      setPost({
-        ...post,
-        likeCount: isLiked ? post.likeCount - 1 : post.likeCount + 1,
-      });
+    } catch (error) {
+      console.error("좋아요 처리 실패:", error);
+      alert("좋아요 처리에 실패했습니다.");
     }
   };
 
-  const handleCommentSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newComment.trim()) return;
+  const handleEdit = () => {
+    if (!post) return;
+    // TODO: 수정 페이지로 이동 (쿼리 파라미터로 post 정보 전달)
+    navigate(`/board/write?edit=${post.id}`);
+  };
 
-    const comment: BoardComment = {
-      id: comments.length + 1,
-      postId: Number(postId),
-      content: newComment,
-      author: "현재사용자", // 실제로는 로그인한 사용자 정보
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
+  const handleDelete = async () => {
+    if (!post) return;
 
-    setComments([...comments, comment]);
-    setNewComment("");
-
-    if (post) {
-      setPost({
-        ...post,
-        commentCount: post.commentCount + 1,
-      });
+    if (confirm("정말로 이 게시글을 삭제하시겠습니까?")) {
+      try {
+        await deletePostMutation.mutateAsync(post.id);
+        alert("게시글이 삭제되었습니다.");
+        navigate("/board");
+      } catch (error) {
+        console.error("게시글 삭제 실패:", error);
+        alert("게시글 삭제에 실패했습니다.");
+      }
     }
+  };
+
+  const handleCommentSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newComment.trim() || !post) return;
+
+    try {
+      await createCommentMutation.mutateAsync({
+        postId: post.id,
+        content: newComment,
+      });
+      setNewComment("");
+      setIsCommentFormOpen(false); // 댓글 작성 후 폼 닫기
+    } catch (error) {
+      console.error("댓글 작성 실패:", error);
+      alert("댓글 작성에 실패했습니다.");
+    }
+  };
+
+  const handleCommentCancel = () => {
+    setNewComment("");
+    setIsCommentFormOpen(false);
   };
 
   if (loading || !post) {
@@ -147,148 +150,214 @@ AI 챗봇과 대화를 나누면서 영어 실력을 늘리고 있는데, 발음
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-4xl">
-      {/* 헤더 */}
-      <div className="flex items-center gap-4 mb-6">
-        <Button variant="outline" size="sm" onClick={() => navigate("/board")}>
-          <ArrowLeftIcon className="h-4 w-4 mr-2" />
-          목록으로
-        </Button>
-
-        <div className="flex-1" />
-
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm">
-            <PencilIcon className="h-4 w-4 mr-2" />
-            수정
+    <div className="min-h-screen bg-gray-50">
+      <AppHeader title="게시판" />
+      <div className="container mx-auto px-4 py-8 max-w-4xl">
+        {/* 헤더 */}
+        <div className="flex items-center gap-4 mb-6">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigate("/board")}
+          >
+            <ArrowLeftIcon className="h-4 w-4 mr-2" />
+            목록으로
           </Button>
-          <Button variant="outline" size="sm">
-            <TrashIcon className="h-4 w-4 mr-2" />
-            삭제
-          </Button>
-        </div>
-      </div>
 
-      {/* 게시글 본문 */}
-      <Card className="mb-6">
-        <CardContent className="px-6 py-8">
-          {/* 카테고리와 제목 */}
-          <div className="mb-4">
-            <span
-              className={`px-2 py-1 text-xs rounded-md ${CATEGORY_COLORS[post.category]}`}
-            >
-              {CATEGORY_LABELS[post.category]}
-            </span>
-          </div>
+          <div className="flex-1" />
 
-          <h1 className="text-2xl font-bold mb-4">{post.title}</h1>
-
-          {/* 게시글 정보 */}
-          <div className="flex items-center justify-between text-sm text-muted-foreground mb-6">
-            <div className="flex items-center gap-4">
-              <span className="font-medium">{post.author}</span>
-              <span>{new Date(post.createdAt).toLocaleString()}</span>
-            </div>
-
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-1">
-                <EyeIcon className="h-4 w-4" />
-                <span>{post.viewCount}</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <HeartIcon className="h-4 w-4" />
-                <span>{post.likeCount}</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <ChatBubbleLeftIcon className="h-4 w-4" />
-                <span>{post.commentCount}</span>
-              </div>
-            </div>
-          </div>
-
-          <hr className="border-gray-200 mb-6" />
-
-          {/* 게시글 내용 */}
-          <div className="prose max-w-none mb-6">
-            <p className="whitespace-pre-wrap leading-relaxed">
-              {post.content}
-            </p>
-          </div>
-
-          <hr className="border-gray-200 mb-4" />
-
-          {/* 좋아요 버튼 */}
-          <div className="flex justify-center">
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={handleEdit}>
+              <PencilIcon className="h-4 w-4 mr-2" />
+              수정
+            </Button>
             <Button
-              variant={isLiked ? "default" : "outline"}
-              onClick={handleLike}
-              className="flex items-center gap-2"
+              variant="outline"
+              size="sm"
+              onClick={handleDelete}
+              disabled={deletePostMutation.isPending}
+              className="text-red-600 hover:text-red-700 hover:bg-red-50"
             >
-              {isLiked ? (
-                <HeartSolidIcon className="h-5 w-5 text-red-500" />
-              ) : (
-                <HeartIcon className="h-5 w-5" />
-              )}
-              좋아요 {post.likeCount}
+              <TrashIcon className="h-4 w-4 mr-2" />
+              {deletePostMutation.isPending ? "삭제 중..." : "삭제"}
             </Button>
           </div>
-        </CardContent>
-      </Card>
+        </div>
 
-      {/* 댓글 섹션 */}
-      <Card>
-        <CardContent className="p-6">
-          <h2 className="text-lg font-semibold mb-4">
-            댓글 {comments.length}개
-          </h2>
+        {/* 게시글 + 댓글 통합 */}
+        <Card>
+          <CardContent className="px-6 py-8">
+            {/* 카테고리와 제목 */}
+            <div className="mb-4 mt-3">
+              <span
+                className={`px-2 py-1 text-xs rounded-md ${CATEGORY_COLORS[post.category]}`}
+              >
+                {CATEGORY_LABELS[post.category]}
+              </span>
+            </div>
 
-          {/* 댓글 작성 */}
-          <form onSubmit={handleCommentSubmit} className="mb-6">
-            <textarea
-              placeholder="댓글을 작성해주세요..."
-              value={newComment}
-              onChange={(e) => setNewComment(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent mb-3"
-              rows={3}
-            />
-            <div className="flex justify-end">
-              <Button type="submit" disabled={!newComment.trim()}>
-                댓글 작성
+            <h1 className="text-2xl font-bold mb-4">{post.title}</h1>
+
+            {/* 게시글 정보 */}
+            <div className="flex items-center justify-between text-sm text-muted-foreground mb-6">
+              <div className="flex items-center gap-4">
+                <span className="font-medium">{post.author}</span>
+                <span>{new Date(post.createdAt).toLocaleString()}</span>
+              </div>
+
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-1">
+                  <EyeIcon className="h-4 w-4" />
+                  <span>{post.viewCount}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <HeartIcon className="h-4 w-4" />
+                  <span>{post.likeCount}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <ChatBubbleLeftIcon className="h-4 w-4" />
+                  <span>{post.commentCount}</span>
+                </div>
+              </div>
+            </div>
+
+            <hr className="border-gray-200 mb-6" />
+
+            {/* 게시글 내용 */}
+            <div className="prose max-w-none mb-8">
+              <p className="whitespace-pre-wrap leading-relaxed">
+                {post.content}
+              </p>
+            </div>
+
+            {/* 좋아요 버튼 */}
+            <div className="flex justify-center mb-8">
+              <Button
+                variant={isLiked ? "default" : "outline"}
+                onClick={handleLike}
+                className="flex items-center gap-2"
+              >
+                {isLiked ? (
+                  <HeartSolidIcon className="h-5 w-5 text-red-500" />
+                ) : (
+                  <HeartIcon className="h-5 w-5" />
+                )}
+                좋아요 {post.likeCount}
               </Button>
             </div>
-          </form>
 
-          <hr className="border-gray-200 mb-4" />
-
-          {/* 댓글 목록 */}
-          <div className="space-y-4">
-            {comments.length > 0 ? (
-              comments.map((comment) => (
-                <div
-                  key={comment.id}
-                  className="border-l-2 border-gray-200 pl-4"
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-medium text-sm">
-                      {comment.author}
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      {new Date(comment.createdAt).toLocaleString()}
-                    </span>
-                  </div>
-                  <p className="text-sm leading-relaxed whitespace-pre-wrap">
-                    {comment.content}
-                  </p>
+            {/* 댓글 섹션 구분선 */}
+            <div className="border-t border-gray-200 pt-8">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-2">
+                  <ChatBubbleLeftIcon className="h-5 w-5 text-gray-600" />
+                  <h2 className="text-lg font-semibold">
+                    댓글 {comments.length}개
+                  </h2>
                 </div>
-              ))
-            ) : (
-              <p className="text-center text-muted-foreground py-8">
-                아직 댓글이 없습니다. 첫 번째 댓글을 작성해보세요!
-              </p>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+
+                {/* 댓글 작성 토글 버튼 */}
+                {!isCommentFormOpen && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsCommentFormOpen(true)}
+                    className="flex items-center gap-2"
+                  >
+                    <PencilSquareIcon className="h-4 w-4" />
+                    댓글 작성
+                  </Button>
+                )}
+              </div>
+
+              {/* 댓글 작성 폼 (토글) */}
+              {isCommentFormOpen && (
+                <form onSubmit={handleCommentSubmit} className="mb-6">
+                  <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                    <textarea
+                      placeholder="댓글을 작성해주세요..."
+                      value={newComment}
+                      onChange={(e) => setNewComment(e.target.value)}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent mb-3 resize-none bg-white"
+                      rows={3}
+                      autoFocus
+                    />
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={handleCommentCancel}
+                        className="flex items-center gap-1"
+                      >
+                        <XMarkIcon className="h-4 w-4" />
+                        취소
+                      </Button>
+                      <Button
+                        type="submit"
+                        disabled={!newComment.trim()}
+                        size="sm"
+                        className="flex items-center gap-1"
+                      >
+                        <PencilSquareIcon className="h-4 w-4" />
+                        등록
+                      </Button>
+                    </div>
+                  </div>
+                </form>
+              )}
+
+              {/* 댓글 목록 */}
+              <div className="space-y-6">
+                {comments.length > 0 ? (
+                  comments.map((comment, index) => (
+                    <div key={comment.id}>
+                      <div className="flex items-start gap-4">
+                        {/* 댓글 아바타 */}
+                        <div className="flex-shrink-0">
+                          <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                            <span className="text-sm font-medium text-gray-600">
+                              {comment.author.charAt(0)}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* 댓글 내용 */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-medium text-sm">
+                              {comment.author}
+                            </span>
+                            <span className="text-xs text-gray-500">
+                              {new Date(comment.createdAt).toLocaleString()}
+                            </span>
+                          </div>
+                          <p className="text-sm leading-relaxed whitespace-pre-wrap text-gray-700">
+                            {comment.content}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* 댓글 구분선 (마지막 댓글 제외) */}
+                      {index < comments.length - 1 && (
+                        <hr className="border-gray-100 mt-4" />
+                      )}
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-12">
+                    <ChatBubbleLeftIcon className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                    <p className="text-gray-500 mb-2">아직 댓글이 없습니다</p>
+                    <p className="text-sm text-gray-400">
+                      첫 번째 댓글을 작성해보세요!
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

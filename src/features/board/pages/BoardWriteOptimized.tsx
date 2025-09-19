@@ -168,7 +168,7 @@ const PageHeader = memo(({ mode }: { mode: FormMode }) => {
 });
 
 // 메인 컴포넌트
-export const BoardWrite = memo(() => {
+export const BoardWriteOptimized = memo(() => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const editId = searchParams.get("edit");
@@ -310,7 +310,7 @@ export const BoardWrite = memo(() => {
   );
 });
 
-BoardWrite.displayName = "BoardWrite";
+BoardWriteOptimized.displayName = "BoardWriteOptimized";
 LoadingSpinner.displayName = "LoadingSpinner";
 ErrorAlert.displayName = "ErrorAlert";
 SuccessAlert.displayName = "SuccessAlert";

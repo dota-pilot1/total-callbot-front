@@ -21,7 +21,7 @@ export interface BoardComment {
   updatedAt: string;
 }
 
-export type PostCategory = 'notice' | 'qna' | 'free' | 'review';
+export type PostCategory = "NOTICE" | "QNA" | "FREE" | "REVIEW" | "FEEDBACK";
 
 export interface CreatePostRequest {
   title: string;
