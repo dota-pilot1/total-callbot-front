@@ -1,4 +1,5 @@
 import axios from "axios";
+import { getAccessToken } from "./tokenProvider";
 
 // Decide API base URL by environment
 // - Local dev: localhost:8080
@@ -29,10 +30,20 @@ export const apiClient = axios.create({
 
 apiClient.interceptors.request.use(
   (config) => {
-    // localStorage에서 직접 토큰 가져오기
-    const token = localStorage.getItem("accessToken");
+    // 토큰 제공자에서 토큰 가져오기 (authStore로 대체 가능)
+    const token = getAccessToken();
+    console.log("API 요청 전 토큰 체크:", {
+      url: config.url,
+      token: token ? `${token.substring(0, 10)}...` : null,
+      hasToken: !!token,
+    });
+
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+      console.log(
+        "토큰 첨부됨:",
+        config.headers.Authorization.substring(0, 20) + "...",
+      );
     }
 
     // FormData일 때는 Content-Type을 제거하여 브라우저가 자동으로 설정하도록 함

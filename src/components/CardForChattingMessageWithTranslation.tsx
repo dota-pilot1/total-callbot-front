@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { useAuthStore } from "../features/auth";
 import { examApi } from "../features/chatbot/exam/api/exam";
 import { examArchiveApi } from "../features/exam/api/examArchive";
 import {
@@ -104,7 +105,7 @@ export default function CardForChattingMessageWithTranslation({
       setIsPlaying(true);
 
       // 백엔드에서 OpenAI API 키 받기
-      const token = localStorage.getItem("accessToken");
+      const token = useAuthStore.getState().getAccessToken();
       const apiUrl =
         window.location.hostname === "localhost"
           ? "/api/config/openai-key"

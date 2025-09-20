@@ -16,8 +16,13 @@ import Practice from "./pages/Practice";
 import Chat from "./pages/Chat";
 import ChatRoomList from "./pages/ChatRoomList";
 import { Study } from "./features/study";
-import { News } from "./features/news";
+import { UserManagementPage } from "./features/user-management/ui/UserManagementPage";
+import ProtectedRoute from "./components/ProtectedRoute";
+import AppHeader from "./components/layout/AppHeader";
+import { useAuthStore } from "./features/auth";
+
 import { ExamManagement, QuestionManagement } from "./features/exam-management";
+import { MemberManagement } from "./features/admin";
 import {
   ListeningTest,
   ListeningTestList,
@@ -31,8 +36,8 @@ import ErrorBoundary from "./components/ErrorBoundary";
 function ProtectedApp() {
   const location = useLocation();
 
-  // 간단한 인증 체크: accessToken이 있는지만 확인
-  const isAuthenticated = !!localStorage.getItem("accessToken");
+  // 간단한 인증 체크: authStore에서 확인
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated());
 
   // 로그인 페이지들은 인증 없이 접근 가능
   const publicPaths = ["/", "/login", "/welcome", "/signup"];
@@ -43,7 +48,9 @@ function ProtectedApp() {
   }
 
   return (
-    <Routes>
+    <>
+      {!isPublicPath && <AppHeader />}
+      <Routes>
       <Route path="/" element={<Login />} />
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
@@ -53,16 +60,24 @@ function ProtectedApp() {
       <Route path="/exam" element={<ExamChat />} />
       <Route path="/practice" element={<Practice />} />
       <Route path="/study" element={<Study />} />
-      <Route path="/news" element={<News />} />
+      <Route
+        path="/user-admin"
+        element={
+          <ProtectedRoute>
+            <UserManagementPage />
+          </ProtectedRoute>
+        }
+      />
       <Route path="/exam-management" element={<ExamManagement />} />
       <Route
         path="/exam-management/:id/questions"
         element={<QuestionManagement />}
       />
+      <Route path="/admin/members" element={<MemberManagement />} />
       <Route path="/quiz-list" element={<ListeningTestList />} />
       <Route path="/quiz" element={<ListeningTest />} />
       <Route path="/math" element={<MathPage />} />
-      <Route path="/history" element={<HistoryPage />} />
+      <Route path="/missions" element={<HistoryPage />} />
       <Route path="/board" element={<BoardList />} />
       <Route path="/board/:postId" element={<BoardDetail />} />
       <Route path="/board/write" element={<BoardWrite />} />
@@ -72,6 +87,7 @@ function ProtectedApp() {
       <Route path="/chat/bot/:botId" element={<CallbotChat />} />
       <Route path="/chat/:chatRoomId" element={<CallbotChat />} />
     </Routes>
+    </>
   );
 }
 

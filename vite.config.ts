@@ -6,6 +6,11 @@ export default defineConfig({
   define: {
     global: "globalThis",
   },
+  resolve: {
+    alias: {
+      "@": "/src",
+    },
+  },
   server: {
     host: "0.0.0.0", // 외부에서 접근 가능하도록
     proxy: {

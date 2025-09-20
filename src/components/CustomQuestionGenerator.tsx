@@ -2,6 +2,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { XMarkIcon, PlayIcon } from "@heroicons/react/24/outline";
 import { useCharacterStore } from "../features/chatbot/character/store";
+import { useAuthStore } from "../features/auth";
 import { CHARACTER_LIST } from "../features/chatbot/character/characters";
 
 interface CustomQuestionGeneratorProps {
@@ -55,7 +56,7 @@ export default function CustomQuestionGenerator({
 
     try {
       // 1. 토큰 가져오기
-      const token = localStorage.getItem("accessToken");
+      const token = useAuthStore.getState().getAccessToken();
       if (!token) {
         throw new Error("로그인이 필요합니다.");
       }

@@ -10,6 +10,7 @@ import {
   StopIcon,
 } from "@heroicons/react/24/outline";
 import { examApi } from "../features/chatbot/exam/api/exam";
+import { useAuthStore } from "../features/auth";
 import { useVoiceToText } from "../features/conversation-archive/hooks/useVoiceToText";
 
 // TypeScript declarations for Web Speech API
@@ -235,7 +236,7 @@ Korean: "${koreanText}"`;
       setSpeakingText(text);
 
       // 백엔드에서 OpenAI API 키 받기
-      const token = localStorage.getItem("accessToken");
+      const token = useAuthStore.getState().getAccessToken();
       const apiUrl =
         window.location.hostname === "localhost"
           ? "/api/config/openai-key"

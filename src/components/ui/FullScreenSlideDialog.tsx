@@ -1,13 +1,14 @@
-import type { ReactNode } from "react";
+import React, { useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { XMarkIcon } from "@heroicons/react/24/outline";
 
 interface FullScreenSlideDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  title: string;
-  children: ReactNode;
+  title?: string;
+  children: React.ReactNode;
   className?: string;
+  showCloseButton?: boolean;
 }
 
 export default function FullScreenSlideDialog({
@@ -16,7 +17,35 @@ export default function FullScreenSlideDialog({
   title,
   children,
   className = "",
+  showCloseButton = true,
 }: FullScreenSlideDialogProps) {
+  // ESC 키로 닫기
+  useEffect(() => {
+    const handleEscapeKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && isOpen) {
+        onClose();
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener("keydown", handleEscapeKey);
+      // 배경 스크롤 방지
+      document.body.style.overflow = "hidden";
+    }
+
+    return () => {
+      document.removeEventListener("keydown", handleEscapeKey);
+      document.body.style.overflow = "unset";
+    };
+  }, [isOpen, onClose]);
+
+  // 배경 클릭으로 닫기 (헤더 영역에서만)
+  const handleBackdropClick = (event: React.MouseEvent) => {
+    if (event.target === event.currentTarget) {
+      onClose();
+    }
+  };
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -27,37 +56,75 @@ export default function FullScreenSlideDialog({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 bg-black bg-opacity-50 z-40"
-            onClick={onClose}
+            className="fixed inset-0 bg-white z-40"
+            onClick={handleBackdropClick}
           />
 
-          {/* 슬라이드 다이얼로그 패널 */}
+          {/* 떨어지는 다이얼로그 */}
           <motion.div
-            initial={{ y: "-100%", opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: "-100%", opacity: 0 }}
+            initial={{
+              y: "-150%",
+              scale: 0.8,
+              opacity: 0,
+            }}
+            animate={{
+              y: 0,
+              scale: 1,
+              opacity: 1,
+            }}
+            exit={{
+              y: "-120%",
+              scale: 0.9,
+              opacity: 0,
+            }}
             transition={{
               type: "spring",
-              damping: 25,
+              damping: 15,
               stiffness: 200,
-              duration: 0.3,
+              mass: 0.8,
             }}
-            className={`fixed top-0 left-0 right-0 bg-white border-b border-gray-200 shadow-lg z-50 max-h-screen overflow-y-auto ${className}`}
+            className={`fixed inset-0 z-50 flex flex-col bg-background ${className}`}
           >
-            <div className="p-4">
-              {/* 헤더 */}
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
-                <button
-                  onClick={onClose}
-                  className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors"
-                >
-                  <XMarkIcon className="h-5 w-5 text-gray-600" />
-                </button>
+            {/* 헤더 영역 */}
+            <div className="flex-shrink-0 bg-white border-b border-border shadow-sm">
+              <div className="flex items-center justify-between px-4 py-3 sm:px-6">
+                {/* 제목 */}
+                <div className="flex items-center">
+                  {title && (
+                    <h2 className="text-lg font-semibold text-foreground">
+                      {title}
+                    </h2>
+                  )}
+                </div>
+
+                {/* 닫기 버튼 */}
+                {showCloseButton && (
+                  <button
+                    onClick={onClose}
+                    className="p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                    aria-label="닫기"
+                  >
+                    <XMarkIcon className="h-6 w-6" />
+                  </button>
+                )}
               </div>
 
-              {/* 콘텐츠 */}
-              <div className="pb-4">{children}</div>
+              {/* 드래그 인디케이터 (모바일용) */}
+              <div className="flex justify-center pb-2 sm:hidden">
+                <div className="w-12 h-1 bg-muted-foreground/30 rounded-full" />
+              </div>
+            </div>
+
+            {/* 메인 콘텐츠 영역 */}
+            <div className="flex-1 overflow-y-auto">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1, duration: 0.3 }}
+                className="h-full"
+              >
+                {children}
+              </motion.div>
             </div>
           </motion.div>
         </>
@@ -65,3 +132,6 @@ export default function FullScreenSlideDialog({
     </AnimatePresence>
   );
 }
+
+// 사용 예시와 타입 export
+export type { FullScreenSlideDialogProps };

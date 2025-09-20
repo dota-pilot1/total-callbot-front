@@ -351,7 +351,7 @@ export default function ExamChat() {
       setPlayingInputText(true);
 
       // 백엔드에서 OpenAI API 키 받기
-      const token = localStorage.getItem("accessToken");
+      const token = useAuthStore.getState().getAccessToken();
 
       const apiUrl =
         window.location.hostname === "localhost"

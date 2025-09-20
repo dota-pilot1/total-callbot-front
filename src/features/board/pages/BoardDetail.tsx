@@ -22,7 +22,7 @@ import {
   useCreateComment,
   useDeletePost,
 } from "../hooks";
-import AppHeader from "../../../components/layout/AppHeader";
+import BoardHeader from "../../../components/layout/BoardHeader";
 import PostImageThumbnail from "../components/PostImageThumbnail";
 
 const CATEGORY_LABELS = {
@@ -163,7 +163,7 @@ export default function BoardDetail() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <AppHeader title="게시판" />
+      <BoardHeader title="📝 게시판" showWriteButton={false} />
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         {/* 헤더 */}
         <div className="flex items-center gap-4 mb-6">

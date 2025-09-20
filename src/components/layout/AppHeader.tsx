@@ -1,15 +1,16 @@
 import { Button } from "../ui";
 import { UserIcon, Cog6ToothIcon } from "@heroicons/react/24/outline";
+import { UserInfoBadge } from "../common/UserInfoBadge";
+import { useAuthStore } from "../../features/auth";
 
 interface AppHeaderProps {
   title?: string;
 }
 
 export default function AppHeader({ title = "Total CallBot" }: AppHeaderProps) {
+  const { logout } = useAuthStore();
   const handleLogout = () => {
-    // TODO: 실제 로그아웃 로직 구현
-    localStorage.removeItem("token");
-    window.location.href = "/login";
+    logout();
   };
 
   const handleProfile = () => {
@@ -53,8 +54,9 @@ export default function AppHeader({ title = "Total CallBot" }: AppHeaderProps) {
             <span className="ml-2 text-sm text-gray-500">v1.0</span>
           </div>
 
-          {/* 사용자 메뉴 */}
-          <div className="flex items-center gap-2">
+          {/* 사용자 정보 + 메뉴 */}
+          <div className="flex items-center gap-3">
+            <UserInfoBadge />
             <Button
               variant="outline"
               size="sm"

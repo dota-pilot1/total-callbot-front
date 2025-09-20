@@ -99,39 +99,44 @@ const CategoryField = memo(
     isLoading: boolean;
     onChange: (value: PostCategory) => void;
   }) => {
-    const handleChange = useCallback(
-      (e: React.ChangeEvent<HTMLSelectElement>) => {
-        onChange(e.target.value as PostCategory);
+    const handleCategoryClick = useCallback(
+      (category: PostCategory) => {
+        if (!isLoading) {
+          onChange(category);
+        }
       },
-      [onChange],
+      [onChange, isLoading],
     );
 
     return (
-      <div className="space-y-1">
-        <label
-          htmlFor="category"
-          className="block text-sm font-medium text-gray-700"
-        >
+      <div className="space-y-3">
+        <label className="block text-sm font-medium text-gray-700">
           카테고리 <span className="text-red-500">*</span>
         </label>
-        <select
-          id="category"
-          value={value}
-          onChange={handleChange}
-          disabled={isLoading}
-          className={`
-          w-full px-3 py-2 border rounded-md shadow-sm
-          focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
-          disabled:bg-gray-50 disabled:text-gray-500
-          ${error ? "border-red-300" : "border-gray-300"}
-        `}
-        >
+        <div className="flex flex-wrap gap-2">
           {CATEGORY_OPTIONS.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label} - {option.description}
-            </option>
+            <button
+              key={option.value}
+              type="button"
+              onClick={() => handleCategoryClick(option.value)}
+              disabled={isLoading}
+              className={`
+                px-4 py-2 rounded-md border transition-colors text-sm font-medium
+                disabled:opacity-50 disabled:cursor-not-allowed
+                ${
+                  value === option.value
+                    ? "bg-blue-600 text-white border-blue-600 ring-2 ring-blue-300"
+                    : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50 hover:border-gray-400"
+                }
+              `}
+            >
+              <div className="text-center">
+                <div className="font-semibold">{option.label}</div>
+                <div className="text-xs opacity-80">{option.description}</div>
+              </div>
+            </button>
           ))}
-        </select>
+        </div>
         {error && (
           <p className="text-sm text-red-600" role="alert">
             {error}
@@ -195,7 +200,11 @@ const ContentField = memo(
 );
 
 const ImageField = memo(
-  ({ isLoading, onChange, resetTrigger }: {
+  ({
+    isLoading,
+    onChange,
+    resetTrigger,
+  }: {
     images: UploadedImage[];
     error?: string;
     isLoading: boolean;
@@ -254,18 +263,18 @@ export const BoardFormFieldsOptimized = memo<BoardFormFieldsOptimizedProps>(
 
     return (
       <div className="space-y-6">
-        <TitleField
-          value={formState.title}
-          error={validationResult.errors.title}
-          isLoading={isLoading}
-          onChange={handleTitleChange}
-        />
-
         <CategoryField
           value={formState.category}
           error={validationResult.errors.category}
           isLoading={isLoading}
           onChange={handleCategoryChange}
+        />
+
+        <TitleField
+          value={formState.title}
+          error={validationResult.errors.title}
+          isLoading={isLoading}
+          onChange={handleTitleChange}
         />
 
         <ContentField

@@ -1,3 +1,5 @@
+import { useAuthStore } from "../../auth";
+
 export interface ArchivedExamQuestion {
   id: number;
   question: string;
@@ -54,10 +56,8 @@ class ExamArchiveApi {
   }
 
   private getAuthToken(): string {
-    const token = localStorage.getItem("accessToken");
-    if (!token) {
-      throw new Error("No access token found");
-    }
+    const token = useAuthStore.getState().getAccessToken();
+    if (!token) throw new Error("No access token found");
     return token;
   }
 

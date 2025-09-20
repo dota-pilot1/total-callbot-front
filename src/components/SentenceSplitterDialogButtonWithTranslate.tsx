@@ -9,6 +9,7 @@ import {
   PauseIcon,
 } from "@heroicons/react/24/outline";
 import { examApi } from "../features/chatbot/exam/api/exam";
+import { useAuthStore } from "../features/auth";
 
 interface SentenceSplitterDialogButtonWithTranslateProps {
   message: string;
@@ -103,7 +104,7 @@ export default function SentenceSplitterDialogButtonWithTranslate({
       setPlayingIndexes((prev) => new Set([...prev, index]));
 
       // 백엔드에서 OpenAI API 키 받기
-      const token = localStorage.getItem("accessToken");
+      const token = useAuthStore.getState().getAccessToken();
       const apiUrl =
         window.location.hostname === "localhost"
           ? "/api/config/openai-key"

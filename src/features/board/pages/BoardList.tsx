@@ -2,8 +2,9 @@ import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Card, CardContent } from "../../../components/ui";
 import { Button } from "../../../components/ui";
+import FullScreenSlideDialog from "../../../components/ui/FullScreenSlideDialog";
+import BoardHeader from "../../../components/layout/BoardHeader";
 import {
-  PlusIcon,
   MagnifyingGlassIcon,
   ChatBubbleLeftIcon,
   EyeIcon,
@@ -11,8 +12,8 @@ import {
 } from "@heroicons/react/24/outline";
 import type { BoardPost, PostCategory } from "../types";
 import { useBoardPosts } from "../hooks";
-import AppHeader from "../../../components/layout/AppHeader";
 import PostImageThumbnail from "../components/PostImageThumbnail";
+import { BoardWriteDialog } from "../components/BoardWriteDialog";
 
 const CATEGORY_LABELS: Record<PostCategory, string> = {
   NOTICE: "공지사항",
@@ -33,6 +34,7 @@ const CATEGORY_COLORS: Record<PostCategory, string> = {
 export default function BoardList() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  const [showWriteDialog, setShowWriteDialog] = useState(false);
 
   const [searchTerm, setSearchTerm] = useState(
     searchParams.get("search") || "",
@@ -73,19 +75,31 @@ export default function BoardList() {
     setSearchParams(params);
   };
 
-  // 서버에서 이미 필터링된 데이터를 사용 (클라이언트 사이드 필터링 제거)
+  const handleWriteClick = () => {
+    setShowWriteDialog(true);
+  };
+
+  const handleWriteSuccess = (postId: number) => {
+    // 게시글 작성 성공 시 해당 게시글로 이동
+    navigate(`/board/${postId}`);
+  };
+
+  // 서버에서 이미 필터링된 데이터를 사용
   const pinnedPosts = posts.filter((post) => post.isPinned);
   const regularPosts = posts.filter((post) => !post.isPinned);
 
   if (loading) {
     return (
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
-        <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 rounded w-1/3 mb-6"></div>
-          <div className="space-y-4">
-            {[...Array(5)].map((_, i) => (
-              <div key={i} className="h-24 bg-gray-200 rounded"></div>
-            ))}
+      <div className="min-h-screen bg-gray-50">
+        <BoardHeader onWriteClick={handleWriteClick} />
+        <div className="container mx-auto px-4 py-8 max-w-4xl">
+          <div className="animate-pulse">
+            <div className="h-8 bg-gray-200 rounded w-1/3 mb-6"></div>
+            <div className="space-y-4">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="h-24 bg-gray-200 rounded"></div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
@@ -94,7 +108,8 @@ export default function BoardList() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <AppHeader title="게시판" />
+      <BoardHeader onWriteClick={handleWriteClick} />
+
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         {/* 페이지 헤더 */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
@@ -103,13 +118,6 @@ export default function BoardList() {
               ? "게시판"
               : CATEGORY_LABELS[selectedCategory]}
           </h1>
-          <Button
-            onClick={() => navigate("/board/write")}
-            className="flex items-center gap-2"
-          >
-            <PlusIcon className="h-4 w-4" />
-            글쓰기
-          </Button>
         </div>
 
         {/* 카테고리 탭 */}
@@ -148,26 +156,27 @@ export default function BoardList() {
           <div className="flex gap-2">
             <input
               type="text"
-              placeholder="제목이나 내용으로 검색..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="게시글 검색..."
+              className="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
-            <Button>
+            <Button type="submit" size="sm" className="flex items-center gap-2">
               <MagnifyingGlassIcon className="h-4 w-4" />
+              검색
             </Button>
           </div>
         </form>
 
-        {/* 공지사항 (고정글) */}
+        {/* 고정 게시글 */}
         {pinnedPosts.length > 0 && (
           <div className="mb-6">
-            <h2 className="text-lg font-semibold mb-3 text-red-600">
-              📌 공지사항
+            <h2 className="text-lg font-semibold mb-3 text-blue-600">
+              📌 고정 게시글
             </h2>
             <div className="space-y-3">
               {pinnedPosts.map((post) => (
-                <PostCard key={post.id} post={post} isPinned />
+                <PostCard key={post.id} post={post} navigate={navigate} />
               ))}
             </div>
           </div>
@@ -175,100 +184,139 @@ export default function BoardList() {
 
         {/* 일반 게시글 */}
         <div className="space-y-3">
-          {regularPosts.length > 0 ? (
-            regularPosts.map((post) => <PostCard key={post.id} post={post} />)
-          ) : (
+          {regularPosts.length === 0 ? (
             <Card>
-              <CardContent className="text-center py-16">
-                <p className="text-muted-foreground">게시글이 없습니다.</p>
-                <Button
-                  className="mt-4"
-                  onClick={() => navigate("/board/write")}
-                >
-                  첫 번째 글 작성하기
-                </Button>
+              <CardContent className="p-8 text-center">
+                <p className="text-gray-500">게시글이 없습니다.</p>
               </CardContent>
             </Card>
+          ) : (
+            regularPosts.map((post) => (
+              <PostCard key={post.id} post={post} navigate={navigate} />
+            ))
           )}
         </div>
+
+        {/* 페이지네이션 */}
+        {postsData && postsData.totalPages > 1 && (
+          <div className="mt-8 flex justify-center">
+            <div className="flex gap-2">
+              {[...Array(Math.min(postsData.totalPages, 10))].map((_, i) => (
+                <Button
+                  key={i}
+                  variant={postsData.pageable.pageNumber === i ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => {
+                    const params = new URLSearchParams(searchParams);
+                    params.set("page", i.toString());
+                    setSearchParams(params);
+                  }}
+                >
+                  {i + 1}
+                </Button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
+
+      {/* 게시글 작성 슬라이드 다이얼로그 */}
+      <FullScreenSlideDialog
+        isOpen={showWriteDialog}
+        onClose={() => setShowWriteDialog(false)}
+        title="✍️ 게시글 작성"
+      >
+        <BoardWriteDialog
+          onClose={() => setShowWriteDialog(false)}
+          onSuccess={handleWriteSuccess}
+        />
+      </FullScreenSlideDialog>
     </div>
   );
 }
 
+// 게시글 카드 컴포넌트
 function PostCard({
   post,
-  isPinned = false,
+  navigate,
 }: {
   post: BoardPost;
-  isPinned?: boolean;
+  navigate: (path: string) => void;
 }) {
-  const navigate = useNavigate();
+  const handlePostClick = () => {
+    navigate(`/board/${post.id}`);
+  };
 
   return (
     <Card
-      className={`hover:shadow-md transition-shadow cursor-pointer ${
-        isPinned ? "border-red-200 bg-red-50/50" : ""
-      }`}
-      onClick={() => navigate(`/board/${post.id}`)}
+      className="hover:shadow-md transition-shadow cursor-pointer"
+      onClick={handlePostClick}
     >
-      <CardContent className="px-6 py-7">
+      <CardContent className="p-4">
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-3 mt-2">
+            {/* 카테고리와 제목 */}
+            <div className="flex items-center gap-2 mb-2">
               <span
-                className={`px-2 py-1 text-xs rounded-md ${CATEGORY_COLORS[post.category]}`}
+                className={`text-xs px-2 py-1 rounded-full ${
+                  CATEGORY_COLORS[post.category]
+                }`}
               >
                 {CATEGORY_LABELS[post.category]}
               </span>
-              {isPinned && (
-                <span className="px-2 py-1 text-xs rounded-md bg-red-100 text-red-800">
-                  공지
+              {post.isPinned && (
+                <span className="text-xs px-2 py-1 rounded-full bg-yellow-100 text-yellow-800">
+                  📌 고정
                 </span>
               )}
             </div>
 
-            <h3 className="font-semibold text-lg mb-2 truncate">
+            <h3 className="font-semibold text-lg mb-2 line-clamp-2">
               {post.title}
             </h3>
 
-            <p className="text-muted-foreground text-sm mb-4 line-clamp-2">
-              {post.content}
-            </p>
-
-            {/* 이미지 썸네일 */}
-            {post.images && post.images.length > 0 && (
-              <div className="mb-4">
-                <PostImageThumbnail
-                  imageUrls={post.images.map((img) => img.webPath)}
-                  size="sm"
-                  maxImages={3}
-                />
-              </div>
+            {post.content && (
+              <p className="text-gray-600 text-sm mb-3 line-clamp-2">
+                {post.content.replace(/<[^>]*>/g, "")}
+              </p>
             )}
 
-            <div className="flex items-center justify-between text-xs text-muted-foreground">
-              <div className="flex items-center gap-4">
-                <span>{post.author}</span>
+            {/* 작성자 및 날짜 */}
+            <div className="flex items-center justify-between text-sm text-gray-500">
+              <div className="flex items-center gap-2">
+                <span>{post.author || "익명"}</span>
+                <span>•</span>
                 <span>{new Date(post.createdAt).toLocaleDateString()}</span>
               </div>
 
-              <div className="flex items-center gap-3">
+              {/* 통계 */}
+              <div className="flex items-center gap-4">
                 <div className="flex items-center gap-1">
-                  <EyeIcon className="h-3 w-3" />
-                  <span>{post.viewCount}</span>
+                  <EyeIcon className="h-4 w-4" />
+                  <span>{post.viewCount || 0}</span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <HeartIcon className="h-3 w-3" />
-                  <span>{post.likeCount}</span>
+                  <ChatBubbleLeftIcon className="h-4 w-4" />
+                  <span>{post.commentCount || 0}</span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <ChatBubbleLeftIcon className="h-3 w-3" />
-                  <span>{post.commentCount}</span>
+                  <HeartIcon className="h-4 w-4" />
+                  <span>{post.likeCount || 0}</span>
                 </div>
               </div>
             </div>
           </div>
+
+          {/* 이미지 썸네일 */}
+          {post.images && post.images.length > 0 && (
+            <div className="flex-shrink-0">
+              <PostImageThumbnail
+                imageUrls={post.images.map((img) => img.webPath)}
+                size="sm"
+                className=""
+              />
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>

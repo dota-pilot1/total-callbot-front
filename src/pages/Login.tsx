@@ -2,6 +2,10 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuthStore } from "../features/auth";
 import { EXAM_CHARACTERS } from "../features/chatbot/exam/examCharacters";
+import {
+  userManagementApi,
+  type UserStatus,
+} from "../features/user-management/api/userApi";
 
 import { PasswordInput } from "../components/ui/PasswordInput";
 
@@ -17,7 +21,7 @@ import {
 type ServiceType =
   | "chatbot"
   | "chat"
-  | "news"
+  | "admin"
   | "conversation"
   | "quiz"
   | "question_bank"
@@ -43,6 +47,8 @@ export default function Login() {
   // 랜덤 계정 선택 및 자동 입력
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showMembers, setShowMembers] = useState<boolean>(false);
+  const [members, setMembers] = useState<UserStatus[]>([]);
 
   useEffect(() => {
     // 페이지 로드시 랜덤 계정 선택하여 자동 입력
@@ -51,6 +57,32 @@ export default function Login() {
     setEmail(randomEmail);
     setPassword("123456");
   }, []);
+
+  // 회원 정보가 표시될 때만 API 호출 (로그인된 상태에서만)
+  useEffect(() => {
+    const fetchMembers = async () => {
+      if (showMembers) {
+        // 토큰이 있는지 확인 (authStore)
+        const token = useAuthStore.getState().getAccessToken();
+        if (!token) {
+          console.log("토큰이 없어서 회원 정보를 가져올 수 없습니다.");
+          setMembers([]);
+          return;
+        }
+
+        try {
+          const membersData = await userManagementApi.getAllUsersWithStatus();
+          setMembers(membersData);
+        } catch (error) {
+          console.error("회원 정보를 가져오는데 실패했습니다:", error);
+          setMembers([]); // 에러 시 빈 배열
+        }
+      }
+    };
+
+    fetchMembers();
+  }, [showMembers]);
+
   const [selectedService, setSelectedService] = useState<ServiceType>(() => {
     // localStorage에서 저장된 서비스 가져오기
     const savedService = localStorage.getItem("selectedService") as ServiceType;
@@ -58,7 +90,7 @@ export default function Login() {
       [
         "chatbot",
         "chat",
-        "news",
+        "admin",
         "conversation",
         "quiz",
         "question_bank",
@@ -77,7 +109,6 @@ export default function Login() {
   };
   const { login, isLoading, getUser } = useAuthStore();
   const navigate = useNavigate();
-  const [showMembers, setShowMembers] = useState<boolean>(false);
 
   // 로봇 이미지 고정
   const robotImages = {
@@ -95,6 +126,16 @@ export default function Login() {
       const user = getUser();
       if (!user) {
         throw new Error("사용자 정보를 가져올 수 없습니다");
+      }
+
+      // 로그인 성공 후 회원 정보 섹션이 열려있다면 데이터 다시 가져오기
+      if (showMembers) {
+        try {
+          const membersData = await userManagementApi.getAllUsersWithStatus();
+          setMembers(membersData);
+        } catch (error) {
+          console.error("로그인 후 회원 정보 업데이트 실패:", error);
+        }
       }
 
       // 선택된 서비스에 따라 이동
@@ -128,8 +169,8 @@ export default function Login() {
         case "chat":
           navigate("/chat"); // 전체 채팅방
           break;
-        case "news":
-          navigate("/news"); // 뉴스 페이지
+        case "admin":
+          navigate("/admin/members"); // 새로운 멤버 관리 페이지
           break;
         case "board":
           console.log("로그인: 게시판 페이지로 이동");
@@ -145,7 +186,7 @@ export default function Login() {
           break;
         case "history":
           console.log("로그인: 미션 페이지로 이동");
-          navigate("/history"); // 미션 페이지
+          navigate("/missions"); // 미션 페이지
           break;
         default:
           navigate(isMobile ? "/mobile" : "/chatbots");
@@ -217,23 +258,25 @@ export default function Login() {
                 </span>
               </button>
 
-              {/* 뉴스 */}
+              {/* 회원관리 */}
               <button
-                onClick={() => handleServiceSelect("news")}
-                aria-pressed={selectedService === "news"}
+                onClick={() => handleServiceSelect("admin")}
+                aria-pressed={selectedService === "admin"}
                 className={`relative flex flex-col items-center p-4 rounded-xl border-2 transition-all duration-200 ${
-                  selectedService === "news"
+                  selectedService === "admin"
                     ? "border-blue-500 bg-blue-50 shadow-lg ring-2 ring-blue-200"
                     : "border-gray-200 hover:bg-gray-50 hover:border-gray-300"
                 }`}
               >
-                {selectedService === "news" && (
+                {selectedService === "admin" && (
                   <CheckCircleIcon className="absolute top-2 right-2 h-5 w-5 text-blue-500" />
                 )}
-                <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-green-100 to-green-200 flex items-center justify-center mb-2">
-                  <span className="text-2xl">📰</span>
+                <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-purple-100 to-purple-200 flex items-center justify-center mb-2">
+                  <span className="text-2xl">👥</span>
                 </div>
-                <span className="text-xs font-medium text-gray-700">뉴스</span>
+                <span className="text-xs font-medium text-gray-700">
+                  회원관리
+                </span>
               </button>
 
               {/* 회화 시험 */}
@@ -383,6 +426,7 @@ export default function Login() {
                   onChange={(e) => setEmail(e.target.value)}
                   className="flex h-10 w-full rounded-md border border-border bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                   placeholder="your@email.com"
+                  autoComplete="username"
                   required
                 />
               </div>
@@ -451,7 +495,24 @@ export default function Login() {
               {showMembers && (
                 <div id="member-info-panel" className="px-4 pb-4 border-t">
                   <div className="pt-3">
-                    <MemberStatusTable bordered={false} />
+                    {useAuthStore.getState().isAuthenticated() ? (
+                      <MemberStatusTable
+                        bordered={false}
+                        members={members.map((m) => ({
+                          id: m.id,
+                          name: m.name,
+                          email: m.email,
+                          createdAt: m.createdAt,
+                          isOnline: m.online,
+                        }))}
+                      />
+                    ) : (
+                      <div className="text-center p-4">
+                        <p className="text-sm text-muted-foreground">
+                          회원 정보를 보려면 먼저 로그인해주세요.
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}

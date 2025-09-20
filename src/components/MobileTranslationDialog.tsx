@@ -6,6 +6,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { examApi } from "../features/chatbot/exam/api/exam";
 import FullScreenSlideDialog from "./ui/FullScreenSlideDialog";
+import { useAuthStore } from "../features/auth";
 
 interface MobileTranslationDialogProps {
   open: boolean;
@@ -113,7 +114,7 @@ export default function MobileTranslationDialog({
       }
 
       // 백엔드에서 OpenAI API 키 받기
-      const token = localStorage.getItem("accessToken");
+      const token = useAuthStore.getState().getAccessToken();
       // alert(`토큰: ${token ? "있음" : "없음"}`);
 
       // EC2 환경에서는 절대 URL 사용
