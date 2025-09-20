@@ -1,4 +1,5 @@
 import type { PostCategory } from "./index";
+import type { UploadedImage } from "../components/ImageUploader";
 
 // 폼 모드 정의
 export type FormMode = "create" | "edit";
@@ -8,6 +9,7 @@ export interface BoardFormState {
   title: string;
   content: string;
   category: PostCategory;
+  images: UploadedImage[];
 }
 
 // 폼 검증 결과

@@ -4,6 +4,7 @@ import type {
   FormConfig,
   FormValidationError,
 } from "../types/form";
+import type { UploadedImage } from "../components/ImageUploader";
 
 // 기본 폼 설정
 export const DEFAULT_FORM_CONFIG: FormConfig = {
@@ -46,12 +47,27 @@ export const validators = {
     }
     return null;
   },
+
+  images: (value: UploadedImage[], _config: FormConfig): string | null => {
+    // images는 선택사항이므로 빈 배열도 유효함
+    if (!Array.isArray(value)) {
+      return null; // 배열이 아닌 경우 무시 (선택사항)
+    }
+
+    // 최대 이미지 개수 체크 (일반적으로 5개 제한)
+    if (value.length > 5) {
+      return "이미지는 최대 5개까지 첨부할 수 있습니다.";
+    }
+
+    // UploadedImage는 이미 업로드 완료된 이미지만 포함하므로 추가 검증 불필요
+    return null;
+  },
 } as const;
 
 // 단일 필드 검증 함수
 export function validateField(
   field: keyof BoardFormState,
-  value: string,
+  value: BoardFormState[keyof BoardFormState],
   config: FormConfig = DEFAULT_FORM_CONFIG,
 ): string | null {
   const validator = validators[field];
@@ -72,7 +88,7 @@ export function validateForm(
 
   // 각 필드 검증
   (Object.keys(formState) as (keyof BoardFormState)[]).forEach((field) => {
-    const error = validateField(field, formState[field] as string, config);
+    const error = validateField(field, formState[field], config);
     if (error) {
       errors[field] = error;
     }
@@ -87,12 +103,17 @@ export function validateForm(
 // 실시간 검증용 - 덜 엄격한 검증
 export function validateFieldRealtime(
   field: keyof BoardFormState,
-  value: string,
+  value: BoardFormState[keyof BoardFormState],
   config: FormConfig = DEFAULT_FORM_CONFIG,
 ): string | null {
-  // 빈 값에 대해서는 실시간으로 에러 표시하지 않음
-  if (!value.trim() && field !== "category") {
+  // 문자열 필드의 경우 빈 값에 대해서는 실시간으로 에러 표시하지 않음
+  if (typeof value === "string" && !value.trim() && field !== "category") {
     return null;
+  }
+
+  // images 필드의 경우 항상 검증
+  if (field === "images") {
+    return validateField(field, value, config);
   }
 
   return validateField(field, value, config);

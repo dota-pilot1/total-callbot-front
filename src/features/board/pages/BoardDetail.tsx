@@ -23,6 +23,7 @@ import {
   useDeletePost,
 } from "../hooks";
 import AppHeader from "../../../components/layout/AppHeader";
+import PostImageGallery from "../components/PostImageGallery";
 
 const CATEGORY_LABELS = {
   NOTICE: "공지사항",
@@ -229,6 +230,15 @@ export default function BoardDetail() {
                 {post.content}
               </p>
             </div>
+
+            {/* 첨부 이미지 갤러리 */}
+            {post.images && post.images.length > 0 && (
+              <div className="mb-8">
+                <PostImageGallery
+                  imageUrls={post.images.map((img) => img.webPath)}
+                />
+              </div>
+            )}
 
             {/* 좋아요 버튼 */}
             <div className="flex justify-center mb-8">

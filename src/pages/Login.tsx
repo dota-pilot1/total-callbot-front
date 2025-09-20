@@ -144,8 +144,8 @@ export default function Login() {
           navigate("/math"); // 수학 페이지
           break;
         case "history":
-          console.log("로그인: 역사 페이지로 이동");
-          navigate("/history"); // 역사 페이지
+          console.log("로그인: 미션 페이지로 이동");
+          navigate("/history"); // 미션 페이지
           break;
         default:
           navigate(isMobile ? "/mobile" : "/chatbots");
@@ -318,7 +318,7 @@ export default function Login() {
                 <span className="text-xs font-medium text-gray-700">수학</span>
               </button>
 
-              {/* 역사 */}
+              {/* 미션 */}
               <button
                 onClick={() => handleServiceSelect("history")}
                 aria-pressed={selectedService === "history"}
@@ -332,9 +332,9 @@ export default function Login() {
                   <CheckCircleIcon className="absolute top-2 right-2 h-5 w-5 text-blue-500" />
                 )}
                 <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-amber-100 to-amber-200 flex items-center justify-center mb-2">
-                  <span className="text-2xl">🏛️</span>
+                  <span className="text-2xl">🎯</span>
                 </div>
-                <span className="text-xs font-medium text-gray-700">역사</span>
+                <span className="text-xs font-medium text-gray-700">미션</span>
               </button>
 
               {/* 게시판 */}

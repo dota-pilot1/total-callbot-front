@@ -10,6 +10,7 @@ export interface BoardPost {
   likeCount: number;
   commentCount: number;
   isPinned: boolean;
+  images?: BoardImageInfo[];
 }
 
 export interface BoardComment {
@@ -27,6 +28,15 @@ export interface CreatePostRequest {
   title: string;
   content: string;
   category: PostCategory;
+  images?: BoardImageInfo[];
+}
+
+export interface BoardImageInfo {
+  originalName: string;
+  webPath: string;
+  fileSize: number;
+  mimeType: string;
+  displayOrder: number;
 }
 
 export interface CreateCommentRequest {

@@ -12,6 +12,7 @@ import {
 import type { BoardPost, PostCategory } from "../types";
 import { useBoardPosts } from "../hooks";
 import AppHeader from "../../../components/layout/AppHeader";
+import PostImageThumbnail from "../components/PostImageThumbnail";
 
 const CATEGORY_LABELS: Record<PostCategory, string> = {
   NOTICE: "공지사항",
@@ -234,6 +235,17 @@ function PostCard({
             <p className="text-muted-foreground text-sm mb-4 line-clamp-2">
               {post.content}
             </p>
+
+            {/* 이미지 썸네일 */}
+            {post.images && post.images.length > 0 && (
+              <div className="mb-4">
+                <PostImageThumbnail
+                  imageUrls={post.images.map((img) => img.webPath)}
+                  size="sm"
+                  maxImages={3}
+                />
+              </div>
+            )}
 
             <div className="flex items-center justify-between text-xs text-muted-foreground">
               <div className="flex items-center gap-4">

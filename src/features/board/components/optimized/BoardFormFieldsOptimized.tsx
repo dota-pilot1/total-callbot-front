@@ -2,6 +2,7 @@ import React, { memo, useCallback } from "react";
 import type { BoardFormState, ValidationResult } from "../../types/form";
 import type { PostCategory } from "../../types";
 import { LexicalEditor } from "../editor/LexicalEditor";
+import ImageUploader, { type UploadedImage } from "../ImageUploader";
 
 interface BoardFormFieldsOptimizedProps {
   formState: BoardFormState;
@@ -11,6 +12,7 @@ interface BoardFormFieldsOptimizedProps {
     field: K,
     value: BoardFormState[K],
   ) => void;
+  imageResetTrigger?: number;
 }
 
 // 카테고리 옵션들 - 메모이제이션을 위해 컴포넌트 외부에 정의
@@ -192,9 +194,41 @@ const ContentField = memo(
   },
 );
 
+const ImageField = memo(
+  ({
+    images,
+    error,
+    isLoading,
+    onChange,
+    resetTrigger,
+  }: {
+    images: UploadedImage[];
+    error?: string;
+    isLoading: boolean;
+    onChange: (images: UploadedImage[]) => void;
+    resetTrigger?: number;
+  }) => {
+    return (
+      <ImageUploader
+        onImagesChange={onChange}
+        disabled={isLoading}
+        maxImages={3}
+        maxSizePerImage={5 * 1024 * 1024} // 5MB
+        resetTrigger={resetTrigger}
+      />
+    );
+  },
+);
+
 // 메인 컴포넌트
 export const BoardFormFieldsOptimized = memo<BoardFormFieldsOptimizedProps>(
-  ({ formState, validationResult, isLoading, onFieldChange }) => {
+  ({
+    formState,
+    validationResult,
+    isLoading,
+    onFieldChange,
+    imageResetTrigger,
+  }) => {
     // 각 필드별 onChange 핸들러를 메모이제이션
     const handleTitleChange = useCallback(
       (value: string) => {
@@ -213,6 +247,13 @@ export const BoardFormFieldsOptimized = memo<BoardFormFieldsOptimizedProps>(
     const handleContentChange = useCallback(
       (value: string) => {
         onFieldChange("content", value);
+      },
+      [onFieldChange],
+    );
+
+    const handleImagesChange = useCallback(
+      (images: AttachedImage[]) => {
+        onFieldChange("images", images);
       },
       [onFieldChange],
     );
@@ -239,6 +280,14 @@ export const BoardFormFieldsOptimized = memo<BoardFormFieldsOptimizedProps>(
           isLoading={isLoading}
           onChange={handleContentChange}
         />
+
+        <ImageField
+          images={formState.images}
+          error={validationResult.errors.images}
+          isLoading={isLoading}
+          onChange={handleImagesChange}
+          resetTrigger={imageResetTrigger}
+        />
       </div>
     );
   },
@@ -248,3 +297,4 @@ BoardFormFieldsOptimized.displayName = "BoardFormFieldsOptimized";
 TitleField.displayName = "TitleField";
 CategoryField.displayName = "CategoryField";
 ContentField.displayName = "ContentField";
+ImageField.displayName = "ImageField";

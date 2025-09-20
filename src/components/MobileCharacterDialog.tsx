@@ -7,7 +7,7 @@ import { Button } from "./ui";
 export type CharacterOption = { id: string; name: string; emoji: string };
 export type ScenarioOption = { id: string; name: string; desc: string };
 export type GenderOption = "male" | "female";
-export type ExamTypeOption = "none" | "general" | "history" | "coding";
+export type ExamTypeOption = "none" | "general" | "mission" | "coding";
 
 // 공통 캐릭터 버튼 컴포넌트
 interface CharacterButtonProps {
@@ -223,7 +223,7 @@ export default function MobileCharacterDialog({
                       [
                         "none",
                         "general",
-                        "history",
+                        "mission",
                         "coding",
                       ] as ExamTypeOption[]
                     ).map((type) => (
@@ -240,8 +240,8 @@ export default function MobileCharacterDialog({
                           ? "없음"
                           : type === "general"
                             ? "상식"
-                            : type === "history"
-                              ? "역사"
+                            : type === "mission"
+                              ? "미션"
                               : "개발"}
                       </button>
                     ))}

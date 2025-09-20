@@ -1,13 +1,13 @@
-export interface HistoricalEvent {
+export interface Mission {
   id: string;
   title: string;
   description: string;
-  year: number;
-  category: 'ancient' | 'medieval' | 'modern' | 'contemporary';
-  country: string;
+  difficulty: "easy" | "medium" | "hard";
+  category: "learning" | "health" | "skill";
+  points: number;
 }
 
-export interface HistoryQuiz {
+export interface MissionQuiz {
   id: string;
   question: string;
   options: string[];

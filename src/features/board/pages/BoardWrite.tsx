@@ -276,6 +276,7 @@ export const BoardWrite = memo(() => {
                   validationResult={validationResult}
                   isLoading={isLoading}
                   onFieldChange={handlers.onFieldChange}
+                  imageResetTrigger={undefined}
                 />
 
                 <ActionButtons
