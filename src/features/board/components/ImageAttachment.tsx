@@ -1,10 +1,5 @@
 import React, { memo, useCallback, useRef, useState } from "react";
-import {
-  XMarkIcon,
-  PhotoIcon,
-  ArrowUpTrayIcon,
-  ChevronDownIcon,
-} from "@heroicons/react/24/outline";
+import { PhotoIcon, ArrowUpTrayIcon, ChevronDownIcon } from "@heroicons/react/24/outline";
 import { uploadImage } from "../api/imageApi";
 
 export interface AttachedImage {

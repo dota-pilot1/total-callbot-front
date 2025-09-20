@@ -195,13 +195,7 @@ const ContentField = memo(
 );
 
 const ImageField = memo(
-  ({
-    images,
-    error,
-    isLoading,
-    onChange,
-    resetTrigger,
-  }: {
+  ({ isLoading, onChange, resetTrigger }: {
     images: UploadedImage[];
     error?: string;
     isLoading: boolean;
@@ -252,7 +246,7 @@ export const BoardFormFieldsOptimized = memo<BoardFormFieldsOptimizedProps>(
     );
 
     const handleImagesChange = useCallback(
-      (images: AttachedImage[]) => {
+      (images: UploadedImage[]) => {
         onFieldChange("images", images);
       },
       [onFieldChange],

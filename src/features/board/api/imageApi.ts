@@ -1,4 +1,5 @@
 import { apiClient } from "../../../shared/api/client";
+import axios from "axios";
 
 const API_BASE_URL = "/board";
 
@@ -60,11 +61,11 @@ export const uploadImage = async (file: File): Promise<ImageUploadResponse> => {
     );
 
     return response.data;
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("이미지 업로드 실패:", error);
 
-    if (error.response) {
-      return error.response.data;
+    if (axios.isAxiosError(error) && error.response) {
+      return error.response.data as ImageUploadResponse;
     }
 
     return {
@@ -95,11 +96,11 @@ export const uploadMultipleImages = async (
     );
 
     return response.data;
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("다중 이미지 업로드 실패:", error);
 
-    if (error.response) {
-      return error.response.data;
+    if (axios.isAxiosError(error) && error.response) {
+      return error.response.data as MultipleImageUploadResponse;
     }
 
     return {
@@ -120,11 +121,11 @@ export const deleteImage = async (
     );
 
     return response.data;
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("이미지 삭제 실패:", error);
 
-    if (error.response) {
-      return error.response.data;
+    if (axios.isAxiosError(error) && error.response) {
+      return error.response.data as { success: boolean; error?: string };
     }
 
     return {

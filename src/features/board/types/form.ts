@@ -37,7 +37,7 @@ export type FormAction =
   | {
       type: "SET_FIELD";
       field: keyof BoardFormState;
-      value: string | PostCategory;
+      value: BoardFormState[keyof BoardFormState];
     }
   | { type: "SET_FORM"; data: BoardFormState }
   | { type: "RESET_FORM" }
