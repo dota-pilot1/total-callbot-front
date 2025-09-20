@@ -112,8 +112,8 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
             // 🎯 내부 상태 업데이트
             setImages((prev) => {
               const updated = [...prev, newImage];
-              // 부모에게 최종 결과 전달
-              onImagesChange(updated);
+              // 부모에게 최종 결과 전달을 다음 렌더링 사이클로 지연
+              setTimeout(() => onImagesChange(updated), 0);
               return updated;
             });
           } else {
@@ -138,7 +138,8 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
     (imageId: string) => {
       setImages((prev) => {
         const updated = prev.filter((img) => img.id !== imageId);
-        onImagesChange(updated);
+        // 부모에게 최종 결과 전달을 다음 렌더링 사이클로 지연
+        setTimeout(() => onImagesChange(updated), 0);
         return updated;
       });
     },
