@@ -90,59 +90,75 @@ const PostImageGallery = memo<PostImageGalleryProps>(
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {imageUrls.map((url, index) => (
-              <div
-                key={index}
-                className="
-                relative aspect-video bg-gray-100 rounded-lg overflow-hidden
-                border border-gray-200 cursor-pointer group hover:shadow-lg
-                transition-all duration-200
-              "
-                onClick={() => handleImageClick(index)}
-              >
-                {!imageLoadErrors.has(index) ? (
+            {imageUrls.map((url, index) => {
+              console.log(`🖼️ [PostImageGallery] 이미지 ${index + 1} URL:`, url);
+              return (
+                <div
+                  key={index}
+                  className="
+                  relative h-48 bg-gray-100 rounded-lg overflow-hidden
+                  border border-gray-200 cursor-pointer group hover:shadow-lg
+                  transition-all duration-200
+                "
+                  onClick={() => handleImageClick(index)}
+                >
                   <img
                     src={url}
                     alt={`첨부 이미지 ${index + 1}`}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
                     loading="lazy"
-                    onError={() => handleImageError(index)}
+                    onError={(e) => {
+                      console.error(`❌ [PostImageGallery] 이미지 로드 실패:`, url, e);
+                      // PostImageThumbnail과 동일한 에러 처리
+                      const target = e.target as HTMLImageElement;
+                      target.style.display = 'none';
+                      const parent = target.parentElement;
+                      if (parent && !parent.querySelector('.error-placeholder')) {
+                        const placeholder = document.createElement('div');
+                        placeholder.className = 'error-placeholder w-full h-full flex items-center justify-center bg-gray-100 text-gray-400';
+                        placeholder.innerHTML = `
+                          <div class="text-center">
+                            <svg class="w-8 h-8 mx-auto mb-2" fill="currentColor" viewBox="0 0 24 24">
+                              <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/>
+                            </svg>
+                            <p class="text-sm">이미지를 불러올 수 없습니다</p>
+                          </div>
+                        `;
+                        parent.appendChild(placeholder);
+                      }
+                    }}
+                    onLoad={() => {
+                      console.log(`✅ [PostImageGallery] 이미지 로드 성공:`, url);
+                    }}
                   />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-gray-400">
-                    <div className="text-center">
-                      <MagnifyingGlassPlusIcon className="w-8 h-8 mx-auto mb-2" />
-                      <p className="text-sm">이미지를 불러올 수 없습니다</p>
-                    </div>
-                  </div>
-                )}
 
-                {/* 호버 오버레이 */}
-                <div
-                  className="
+                  {/* 호버 오버레이 */}
+                  <div
+                    className="
                 absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20
                 transition-all duration-200 flex items-center justify-center
               "
-                >
-                  <MagnifyingGlassPlusIcon
-                    className="
+                  >
+                    <MagnifyingGlassPlusIcon
+                      className="
                   w-8 h-8 text-white opacity-0 group-hover:opacity-100
                   transition-opacity duration-200
                 "
-                  />
-                </div>
+                    />
+                  </div>
 
-                {/* 이미지 번호 */}
-                <div
-                  className="
+                  {/* 이미지 번호 */}
+                  <div
+                    className="
                 absolute top-2 right-2 bg-black bg-opacity-60 text-white
                 text-xs px-2 py-1 rounded
               "
-                >
-                  {index + 1}/{imageUrls.length}
+                  >
+                    {index + 1}/{imageUrls.length}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 

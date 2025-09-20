@@ -23,6 +23,7 @@ import {
   useDeletePost,
 } from "../hooks";
 import AppHeader from "../../../components/layout/AppHeader";
+import PostImageThumbnail from "../components/PostImageThumbnail";
 import PostImageGallery from "../components/PostImageGallery";
 
 const CATEGORY_LABELS = {
@@ -47,6 +48,10 @@ export default function BoardDetail() {
   const [newComment, setNewComment] = useState("");
   const [isLiked, setIsLiked] = useState(false);
   const [isCommentFormOpen, setIsCommentFormOpen] = useState(false);
+  const [imageModalData, setImageModalData] = useState<{
+    urls: string[];
+    currentIndex: number;
+  } | null>(null);
 
   const postIdNum = Number(postId);
 
@@ -132,6 +137,13 @@ export default function BoardDetail() {
   const handleCommentCancel = () => {
     setNewComment("");
     setIsCommentFormOpen(false);
+  };
+
+  const handleImageClick = (imageUrls: string[], clickedIndex: number) => {
+    setImageModalData({
+      urls: imageUrls,
+      currentIndex: clickedIndex,
+    });
   };
 
   if (loading || !post) {
@@ -231,11 +243,14 @@ export default function BoardDetail() {
               </p>
             </div>
 
-            {/* 첨부 이미지 갤러리 */}
+            {/* 첨부 이미지 썸네일 */}
             {post.images && post.images.length > 0 && (
               <div className="mb-8">
-                <PostImageGallery
+                <PostImageThumbnail
                   imageUrls={post.images.map((img) => img.webPath)}
+                  size="lg"
+                  maxImages={5}
+                  onClick={handleImageClick}
                 />
               </div>
             )}
@@ -367,6 +382,50 @@ export default function BoardDetail() {
             </div>
           </CardContent>
         </Card>
+
+        {/* 이미지 뷰어 모달 */}
+        {imageModalData && (
+          <div
+            className="fixed inset-0 z-50 bg-black bg-opacity-90 flex items-center justify-center p-4"
+            onClick={() => setImageModalData(null)}
+          >
+            {/* 닫기 버튼 */}
+            <button
+              onClick={() => setImageModalData(null)}
+              className="
+                absolute top-4 right-4 z-10 p-3 bg-black bg-opacity-70
+                hover:bg-opacity-90 rounded-full text-white transition-all
+                border-2 border-white border-opacity-50 hover:border-opacity-80
+                shadow-lg hover:scale-105
+              "
+              title="닫기 (ESC)"
+            >
+              <XMarkIcon className="w-7 h-7 stroke-2" />
+            </button>
+
+            {/* 이미지 */}
+            <div
+              className="relative max-w-full max-h-full"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <img
+                src={imageModalData.urls[imageModalData.currentIndex]}
+                alt={`첨부 이미지 ${imageModalData.currentIndex + 1}`}
+                className="max-w-full max-h-full object-contain"
+              />
+
+              {/* 이미지 정보 */}
+              <div
+                className="
+                absolute bottom-4 left-1/2 transform -translate-x-1/2
+                bg-black bg-opacity-60 text-white text-sm px-4 py-2 rounded
+              "
+              >
+                {imageModalData.currentIndex + 1} / {imageModalData.urls.length}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
