@@ -24,7 +24,6 @@ import {
 } from "../hooks";
 import AppHeader from "../../../components/layout/AppHeader";
 import PostImageThumbnail from "../components/PostImageThumbnail";
-import PostImageGallery from "../components/PostImageGallery";
 
 const CATEGORY_LABELS = {
   NOTICE: "공지사항",

@@ -18,9 +18,7 @@ const PostImageGallery = memo<PostImageGalleryProps>(
     const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(
       null,
     );
-    const [imageLoadErrors, setImageLoadErrors] = useState<Set<number>>(
-      new Set(),
-    );
+    const [, setImageLoadErrors] = useState<Set<number>>(new Set());
 
     // 빈 배열이거나 유효하지 않은 경우 렌더링하지 않음
     if (!imageUrls || imageUrls.length === 0) {
