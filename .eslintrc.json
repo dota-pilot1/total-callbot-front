@@ -1,0 +1,44 @@
+{
+  "root": true,
+  "env": {
+    "browser": true,
+    "es2020": true,
+    "node": true
+  },
+  "extends": [
+    "eslint:recommended",
+    "@typescript-eslint/recommended",
+    "plugin:react-hooks/recommended",
+    "plugin:react/recommended",
+    "plugin:react/jsx-runtime"
+  ],
+  "ignorePatterns": ["dist", ".eslintrc.json"],
+  "parser": "@typescript-eslint/parser",
+  "plugins": ["react-refresh", "@typescript-eslint"],
+  "rules": {
+    "react-refresh/only-export-components": [
+      "warn",
+      { "allowConstantExport": true }
+    ],
+    "@typescript-eslint/no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
+    "@typescript-eslint/no-explicit-any": "error",
+    "@typescript-eslint/prefer-const": "error",
+    "react/prop-types": "off",
+    "react/react-in-jsx-scope": "off",
+    "prefer-const": "error",
+    "no-var": "error",
+    "no-console": ["warn", { "allow": ["warn", "error"] }],
+    "quotes": ["error", "single", { "avoidEscape": true }],
+    "semi": ["error", "always"],
+    "indent": ["error", 2],
+    "comma-dangle": ["error", "always-multiline"],
+    "object-curly-spacing": ["error", "always"],
+    "array-bracket-spacing": ["error", "never"],
+    "max-len": ["warn", { "code": 100, "ignoreComments": true }]
+  },
+  "settings": {
+    "react": {
+      "version": "detect"
+    }
+  }
+}

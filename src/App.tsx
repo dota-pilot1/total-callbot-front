@@ -30,7 +30,8 @@ import {
 import { MathPage } from "./features/math";
 import { HistoryPage } from "./features/history";
 import { BoardList, BoardDetail, BoardWrite } from "./features/board";
-import { TestCenter, TestCenterRoom } from "./features/test-center";
+import { TestCenter } from "./features/test-center";
+import TestRoomDetail from "./features/test-center/pages/TestRoomDetail";
 
 import ErrorBoundary from "./components/ErrorBoundary";
 
@@ -107,7 +108,7 @@ function ProtectedApp() {
         <Route path="/chat/bot/:botId" element={<CallbotChat />} />
         <Route path="/chat/:chatRoomId" element={<CallbotChat />} />
         <Route path="/test-center" element={<TestCenter />} />
-        <Route path="/test-center/room/:roomId" element={<TestCenterRoom />} />
+        <Route path="/test-center/room/:roomId" element={<TestRoomDetail />} />
       </Routes>
     </>
   );

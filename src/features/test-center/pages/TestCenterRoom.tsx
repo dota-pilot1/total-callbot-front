@@ -79,10 +79,7 @@ const mockParticipants: Participant[] = [
 ];
 
 export default function TestCenterRoom() {
-  const [participants] =
-    useState<
-      (Participant & { answer?: string | null; isCorrect?: boolean | null })[]
-    >(mockParticipants);
+  const [participants] = useState<Participant[]>(mockParticipants);
   const [timeLeft, setTimeLeft] = useState(45); // 45 seconds left
   const [isPlaying, setIsPlaying] = useState(false);
 
@@ -105,12 +102,7 @@ export default function TestCenterRoom() {
     console.log("Moving to next question...");
   };
 
-  const getStatusIcon = (
-    participant: Participant & {
-      answer?: string | null;
-      isCorrect?: boolean | null;
-    },
-  ) => {
+  const getStatusIcon = (participant: Participant) => {
     if (participant.status === "disconnected") {
       return <div className="w-3 h-3 rounded-full bg-gray-400"></div>;
     }
@@ -126,12 +118,7 @@ export default function TestCenterRoom() {
     );
   };
 
-  const getStatusText = (
-    participant: Participant & {
-      answer?: string | null;
-      isCorrect?: boolean | null;
-    },
-  ) => {
+  const getStatusText = (participant: Participant) => {
     if (participant.status === "disconnected") return "연결끊김";
     if (participant.answer === null) return "답변중...";
     return participant.isCorrect ? "정답" : "오답";
