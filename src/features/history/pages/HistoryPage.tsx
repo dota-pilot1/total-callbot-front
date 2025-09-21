@@ -9,7 +9,7 @@ export default function HistoryPage() {
     "영어 회화" | "영어 읽기" | "개발 챌린지"
   >("영어 회화");
   const navigate = useNavigate();
-  const { logout } = useAuthStore();
+  const {} = useAuthStore();
 
   return (
     <div className="min-h-screen bg-background">

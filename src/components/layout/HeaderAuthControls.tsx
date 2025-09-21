@@ -6,7 +6,7 @@ import { useAuthStore } from "../../features/auth";
 interface HeaderAuthControlsProps {
   showProfile?: boolean;
   showSettings?: boolean;
-  size?: "sm" | "md" | "lg";
+  size?: "default" | "sm" | "lg" | "icon";
 }
 
 export function HeaderAuthControls({
@@ -60,4 +60,3 @@ export function HeaderAuthControls({
     </div>
   );
 }
-

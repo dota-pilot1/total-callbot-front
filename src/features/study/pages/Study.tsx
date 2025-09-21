@@ -13,7 +13,7 @@ import {
 
 export default function Study() {
   const navigate = useNavigate();
-  const { logout, getUser } = useAuthStore();
+  const { getUser } = useAuthStore();
   const user = getUser();
 
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
