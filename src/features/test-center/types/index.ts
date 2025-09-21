@@ -4,7 +4,7 @@ export interface TestRoom {
   description?: string;
   createdAt: string;
   participants: Participant[];
-  status: 'waiting' | 'active' | 'completed';
+  status: "waiting" | "active" | "completed";
   maxParticipants: number;
 }
 
@@ -13,13 +13,15 @@ export interface Participant {
   name: string;
   email: string;
   joinedAt: string;
-  status: 'connected' | 'disconnected';
+  status: "connected" | "disconnected";
+  answer?: string | null;
+  isCorrect?: boolean | null;
 }
 
 export interface TestSession {
   id: string;
   roomId: string;
-  testType: 'listening' | 'conversation' | 'quiz';
+  testType: "listening" | "conversation" | "quiz";
   startTime?: string;
   endTime?: string;
   settings: TestSettings;
