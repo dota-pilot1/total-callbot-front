@@ -49,18 +49,30 @@ export const MemberManagement: React.FC = () => {
     fetchMembers();
   }, []);
 
+  // 웹소켓 연결이 완료되면 멤버 목록을 다시 조회하여 최신 온라인 상태 반영
+  useEffect(() => {
+    if (isConnected) {
+      console.log("웹소켓 연결 완료 - 멤버 목록 재조회");
+      fetchMembers();
+    }
+  }, [isConnected]);
+
   // 2. 웹소켓으로 받은 실시간 상태 업데이트를 members 목록에 반영
   useEffect(() => {
     if (onlineStatusUpdates.length === 0) return;
 
     const latestUpdate = onlineStatusUpdates[0];
-    setMembers((prevMembers) =>
-      prevMembers.map((member) =>
+    console.log("=== 멤버 상태 업데이트 적용 ===", latestUpdate);
+
+    setMembers((prevMembers) => {
+      const updatedMembers = prevMembers.map((member) =>
         member.id === latestUpdate.userId
           ? { ...member, isOnline: latestUpdate.isOnline }
           : member,
-      ),
-    );
+      );
+      console.log("멤버 목록 업데이트 완료:", updatedMembers);
+      return updatedMembers;
+    });
   }, [onlineStatusUpdates]);
 
   const onlineCount = members.filter((member) => member.isOnline).length;

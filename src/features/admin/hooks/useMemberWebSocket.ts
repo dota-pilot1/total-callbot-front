@@ -88,8 +88,9 @@ export const useMemberWebSocket = (): UseMemberWebSocketReturn => {
         // 멤버 상태 업데이트 구독
         client.subscribe("/topic/member/status", (message) => {
           try {
+            console.log("=== 웹소켓 메시지 수신 ===", message.body);
             const statusUpdate: MemberStatusUpdate = JSON.parse(message.body);
-            console.log("멤버 상태 업데이트 수신:", statusUpdate);
+            console.log("파싱된 멤버 상태 업데이트:", statusUpdate);
 
             setOnlineStatusUpdates((prev) => {
               // 중복 방지: 최근 5초 내 같은 사용자의 같은 상태 업데이트는 무시
@@ -102,11 +103,14 @@ export const useMemberWebSocket = (): UseMemberWebSocketReturn => {
               );
 
               if (recentUpdate) {
+                console.log("중복 업데이트 무시:", statusUpdate);
                 return prev;
               }
 
               // 새로운 업데이트를 맨 앞에 추가하고, 최대 50개까지만 유지
-              return [statusUpdate, ...prev.slice(0, 49)];
+              const newUpdates = [statusUpdate, ...prev.slice(0, 49)];
+              console.log("상태 업데이트 목록 갱신:", newUpdates);
+              return newUpdates;
             });
           } catch (error) {
             console.error("멤버 상태 업데이트 파싱 에러:", error);
