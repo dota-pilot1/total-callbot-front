@@ -54,10 +54,10 @@ export const useMemberWebSocket = (): UseMemberWebSocketReturn => {
 
             const host = window.location.hostname;
             const isLocal = host === "localhost" || host === "127.0.0.1";
-            // 로컬 백엔드는 /ws (SockJS) 엔드포인트 사용
+            // 모든 환경에서 /ws (SockJS) 엔드포인트 사용
             return isLocal
               ? `http://localhost:8080/ws`
-              : `https://api.total-callbot.cloud/ws-stomp`;
+              : `https://api.total-callbot.cloud/ws`;
           };
 
           const base = resolveWebSocketUrl();
