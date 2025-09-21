@@ -30,6 +30,7 @@ import {
 import { MathPage } from "./features/math";
 import { HistoryPage } from "./features/history";
 import { BoardList, BoardDetail, BoardWrite } from "./features/board";
+import { TestCenter } from "./features/test-center";
 
 import ErrorBoundary from "./components/ErrorBoundary";
 
@@ -56,6 +57,7 @@ function ProtectedApp() {
     "/study",
     "/practice",
     "/missions",
+    "/test-center",
   ];
   const usesDedicatedHeader = dedicatedHeaderPrefixes.some((p) =>
     location.pathname.startsWith(p),
@@ -69,42 +71,43 @@ function ProtectedApp() {
     <>
       {!isPublicPath && !usesDedicatedHeader && <AppHeader />}
       <Routes>
-      <Route path="/" element={<Login />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/signup" element={<Signup />} />
-      <Route path="/welcome" element={<Welcome />} />
-      <Route path="/chatbots" element={<ChatbotSelector />} />
-      <Route path="/mobile" element={<MobileChat />} />
-      <Route path="/exam" element={<ExamChat />} />
-      <Route path="/practice" element={<Practice />} />
-      <Route path="/study" element={<Study />} />
-      <Route
-        path="/user-admin"
-        element={
-          <ProtectedRoute>
-            <UserManagementPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route path="/exam-management" element={<ExamManagement />} />
-      <Route
-        path="/exam-management/:id/questions"
-        element={<QuestionManagement />}
-      />
-      <Route path="/admin/members" element={<MemberManagement />} />
-      <Route path="/quiz-list" element={<ListeningTestList />} />
-      <Route path="/quiz" element={<ListeningTest />} />
-      <Route path="/math" element={<MathPage />} />
-      <Route path="/missions" element={<HistoryPage />} />
-      <Route path="/board" element={<BoardList />} />
-      <Route path="/board/:postId" element={<BoardDetail />} />
-      <Route path="/board/write" element={<BoardWrite />} />
-      <Route path="/chat" element={<Chat />} />
-      <Route path="/chat/rooms" element={<ChatRoomList />} />
-      <Route path="/chat/room/:roomId" element={<Chat />} />
-      <Route path="/chat/bot/:botId" element={<CallbotChat />} />
-      <Route path="/chat/:chatRoomId" element={<CallbotChat />} />
-    </Routes>
+        <Route path="/" element={<Login />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
+        <Route path="/welcome" element={<Welcome />} />
+        <Route path="/chatbots" element={<ChatbotSelector />} />
+        <Route path="/mobile" element={<MobileChat />} />
+        <Route path="/exam" element={<ExamChat />} />
+        <Route path="/practice" element={<Practice />} />
+        <Route path="/study" element={<Study />} />
+        <Route
+          path="/user-admin"
+          element={
+            <ProtectedRoute>
+              <UserManagementPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="/exam-management" element={<ExamManagement />} />
+        <Route
+          path="/exam-management/:id/questions"
+          element={<QuestionManagement />}
+        />
+        <Route path="/admin/members" element={<MemberManagement />} />
+        <Route path="/quiz-list" element={<ListeningTestList />} />
+        <Route path="/quiz" element={<ListeningTest />} />
+        <Route path="/math" element={<MathPage />} />
+        <Route path="/missions" element={<HistoryPage />} />
+        <Route path="/board" element={<BoardList />} />
+        <Route path="/board/:postId" element={<BoardDetail />} />
+        <Route path="/board/write" element={<BoardWrite />} />
+        <Route path="/chat" element={<Chat />} />
+        <Route path="/chat/rooms" element={<ChatRoomList />} />
+        <Route path="/chat/room/:roomId" element={<Chat />} />
+        <Route path="/chat/bot/:botId" element={<CallbotChat />} />
+        <Route path="/chat/:chatRoomId" element={<CallbotChat />} />
+        <Route path="/test-center" element={<TestCenter />} />
+      </Routes>
     </>
   );
 }

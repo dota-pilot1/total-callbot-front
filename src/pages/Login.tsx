@@ -15,6 +15,7 @@ import {
   CheckCircleIcon,
   ArrowRightIcon,
   ChevronDownIcon,
+  CogIcon,
 } from "@heroicons/react/24/outline";
 // Simplified login; added collapsible full member info box
 
@@ -177,8 +178,8 @@ export default function Login() {
           navigate("/board"); // 게시판 페이지
           break;
         case "question_bank":
-          console.log("로그인: 시험 관리 페이지로 이동");
-          navigate("/exam-management"); // 시험 관리 페이지
+          console.log("로그인: 테스트 센터 페이지로 이동");
+          navigate("/test-center"); // 테스트 센터 페이지
           break;
         case "math":
           console.log("로그인: 수학 페이지로 이동");
@@ -198,20 +199,32 @@ export default function Login() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="flex items-center justify-center min-h-screen px-4 py-8">
+      {/* Thin Header */}
+      <header className="h-12 bg-card border-b border-border flex items-center justify-between px-4">
+        <div className="flex items-center gap-3">
+          <img
+            src="/simple-chatbot.png"
+            alt="콜봇"
+            className="h-6 w-6 rounded-md object-cover"
+          />
+          <span className="text-sm font-medium text-foreground">
+            Total Callbot
+          </span>
+        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => navigate("/exam-management")}
+          className="flex items-center gap-2"
+        >
+          <CogIcon className="h-4 w-4" />
+          <span className="text-sm">관리</span>
+        </Button>
+      </header>
+
+      <div className="flex items-center justify-center min-h-[calc(100vh-3rem)] px-4 py-8">
         <div className="w-full max-w-sm">
           <div className="rounded-lg bg-card p-6 shadow-lg">
-            {/* 브랜드 라인 (심플, 공간 채움) */}
-            <div className="flex items-center gap-3 mb-3">
-              <img
-                src={robotImages.brand}
-                alt="콜봇"
-                className="h-6 w-6 rounded-md object-cover"
-              />
-              <span className="text-xs font-medium text-muted-foreground">
-                Total Callbot
-              </span>
-            </div>
             {/* 서비스 선택 (3x3 그리드) */}
             <div className="grid grid-cols-3 gap-3 mb-6">
               {/* 챗봇 */}
@@ -321,7 +334,7 @@ export default function Login() {
                 </span>
               </button>
 
-              {/* 시험 관리 */}
+              {/* 테스트 센터 */}
               <button
                 onClick={() => handleServiceSelect("question_bank")}
                 aria-pressed={selectedService === "question_bank"}
@@ -335,10 +348,10 @@ export default function Login() {
                   <CheckCircleIcon className="absolute top-2 right-2 h-5 w-5 text-blue-500" />
                 )}
                 <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-red-100 to-red-200 flex items-center justify-center mb-2">
-                  <span className="text-2xl">🏦</span>
+                  <span className="text-2xl">🏛️</span>
                 </div>
                 <span className="text-xs font-medium text-gray-700">
-                  시험 관리
+                  테스트 센터
                 </span>
               </button>
 
