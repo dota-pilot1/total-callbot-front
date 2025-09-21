@@ -79,7 +79,7 @@ const mockParticipants: Participant[] = [
 ];
 
 export default function TestCenterRoom() {
-  const [participants, setParticipants] =
+  const [participants] =
     useState<
       (Participant & { answer?: string | null; isCorrect?: boolean | null })[]
     >(mockParticipants);
