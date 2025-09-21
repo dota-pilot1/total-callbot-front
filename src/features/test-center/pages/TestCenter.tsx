@@ -4,6 +4,8 @@ import { useTestRooms, useTestCenterStats } from "../api/useTestRooms";
 import RoomCard from "../components/RoomCard";
 import CreateRoomModal from "../components/CreateRoomModal";
 import TestCenterHeader from "../components/TestCenterHeader";
+import QuestionManagementDialog from "../components/QuestionManagementDialog";
+
 import { Button } from "../../../components/ui";
 import {
   FunnelIcon,
@@ -23,6 +25,12 @@ export default function TestCenter() {
   const [selectedTestType, setSelectedTestType] = useState<string>("");
   const [showAvailableOnly, setShowAvailableOnly] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isQuestionManagementOpen, setIsQuestionManagementOpen] =
+    useState(false);
+  const [selectedRoomForQuestions, setSelectedRoomForQuestions] = useState<{
+    id: number;
+    name: string;
+  } | null>(null);
 
   // API 훅들
   const {
@@ -42,8 +50,11 @@ export default function TestCenter() {
   };
 
   const handleManageRoom = (roomId: number) => {
-    console.log("관리하기:", roomId);
-    // TODO: 시험방 관리 모달 열기
+    const room = rooms.find((r) => r.id === roomId);
+    if (room) {
+      setSelectedRoomForQuestions({ id: room.id, name: room.name });
+      setIsQuestionManagementOpen(true);
+    }
   };
 
   const handleCreateRoom = () => {
@@ -201,6 +212,17 @@ export default function TestCenter() {
       <CreateRoomModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
+      />
+
+      {/* Question Management Dialog */}
+      <QuestionManagementDialog
+        isOpen={isQuestionManagementOpen && selectedRoomForQuestions !== null}
+        onClose={() => {
+          setIsQuestionManagementOpen(false);
+          setSelectedRoomForQuestions(null);
+        }}
+        roomId={selectedRoomForQuestions?.id || 0}
+        roomName={selectedRoomForQuestions?.name || ""}
       />
     </div>
   );

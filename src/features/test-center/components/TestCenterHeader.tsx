@@ -5,6 +5,7 @@ import {
   HomeIcon,
   PlusIcon,
   Cog6ToothIcon,
+  DocumentTextIcon,
 } from "@heroicons/react/24/outline";
 import ParticipantsButton from "./ParticipantsButton";
 
@@ -13,10 +14,12 @@ interface TestCenterHeaderProps {
   showBackButton?: boolean;
   showCreateButton?: boolean;
   showSettingsButton?: boolean;
+  showQuestionManagementButton?: boolean;
   showParticipantsButton?: boolean;
   participantCount?: number;
   onlineCount?: number;
   onCreateRoom?: () => void;
+  onQuestionManagement?: () => void;
   onParticipantsClick?: () => void;
   children?: React.ReactNode;
 }
@@ -26,10 +29,12 @@ export default function TestCenterHeader({
   showBackButton = false,
   showCreateButton = false,
   showSettingsButton = false,
+  showQuestionManagementButton = false,
   showParticipantsButton = false,
   participantCount = 0,
   onlineCount = 0,
   onCreateRoom,
+  onQuestionManagement,
   onParticipantsClick,
   children,
 }: TestCenterHeaderProps) {
@@ -94,6 +99,29 @@ export default function TestCenterHeader({
                   onClick={onParticipantsClick}
                 />
               </div>
+            )}
+
+            {showQuestionManagementButton && onQuestionManagement && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onQuestionManagement}
+                className="hidden sm:flex items-center gap-2"
+              >
+                <DocumentTextIcon className="w-4 h-4" />
+                문제 관리
+              </Button>
+            )}
+
+            {showQuestionManagementButton && onQuestionManagement && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onQuestionManagement}
+                className="sm:hidden p-2"
+              >
+                <DocumentTextIcon className="w-5 h-5" />
+              </Button>
             )}
 
             {showSettingsButton && (

@@ -1,11 +1,12 @@
-import type { TestRoom } from '../types';
-import { Button } from '../../../components/ui';
+import type { TestRoom } from "../types";
+import { Button } from "../../../components/ui";
 import {
   UsersIcon,
   ClockIcon,
   CheckCircleIcon,
-  XCircleIcon
-} from '@heroicons/react/24/outline';
+  XCircleIcon,
+  DocumentTextIcon,
+} from "@heroicons/react/24/outline";
 
 interface RoomCardProps {
   room: TestRoom;
@@ -15,21 +16,23 @@ interface RoomCardProps {
 
 const getTestTypeColor = (testType: string) => {
   switch (testType) {
-    case 'ENGLISH_CONVERSATION':
-      return 'bg-blue-100 text-blue-800 border-blue-200';
-    case 'ENGLISH_LISTENING':
-      return 'bg-green-100 text-green-800 border-green-200';
-    case 'ENGLISH_VOCABULARY':
-      return 'bg-purple-100 text-purple-800 border-purple-200';
-    case 'MATHEMATICS':
-      return 'bg-orange-100 text-orange-800 border-orange-200';
+    case "ENGLISH_CONVERSATION":
+      return "bg-blue-100 text-blue-800 border-blue-200";
+    case "ENGLISH_LISTENING":
+      return "bg-green-100 text-green-800 border-green-200";
+    case "ENGLISH_VOCABULARY":
+      return "bg-purple-100 text-purple-800 border-purple-200";
+    case "MATHEMATICS":
+      return "bg-orange-100 text-orange-800 border-orange-200";
     default:
-      return 'bg-gray-100 text-gray-800 border-gray-200';
+      return "bg-gray-100 text-gray-800 border-gray-200";
   }
 };
 
 export default function RoomCard({ room, onEnter, onManage }: RoomCardProps) {
-  const progressPercentage = Math.round((room.currentParticipants / room.capacity) * 100);
+  const progressPercentage = Math.round(
+    (room.currentParticipants / room.capacity) * 100,
+  );
 
   return (
     <div className="bg-card border border-border rounded-lg p-6 hover:shadow-md transition-shadow">
@@ -62,7 +65,9 @@ export default function RoomCard({ room, onEnter, onManage }: RoomCardProps) {
 
       {/* Test Type Badge */}
       <div className="mb-4">
-        <span className={`inline-flex items-center px-3 py-1 rounded-md text-sm font-medium border ${getTestTypeColor(room.testType)}`}>
+        <span
+          className={`inline-flex items-center px-3 py-1 rounded-md text-sm font-medium border ${getTestTypeColor(room.testType)}`}
+        >
           {room.testTypeDisplayName}
         </span>
       </div>
@@ -84,10 +89,10 @@ export default function RoomCard({ room, onEnter, onManage }: RoomCardProps) {
           <div
             className={`h-2 rounded-full transition-all ${
               progressPercentage >= 90
-                ? 'bg-red-500'
+                ? "bg-red-500"
                 : progressPercentage >= 70
-                ? 'bg-yellow-500'
-                : 'bg-green-500'
+                  ? "bg-yellow-500"
+                  : "bg-green-500"
             }`}
             style={{ width: `${Math.min(progressPercentage, 100)}%` }}
           />
@@ -101,45 +106,49 @@ export default function RoomCard({ room, onEnter, onManage }: RoomCardProps) {
       <div className="flex items-center gap-1 text-xs text-muted-foreground mb-4">
         <ClockIcon className="w-3 h-3" />
         <span>
-          업데이트: {new Date(room.updatedAt).toLocaleString('ko-KR', {
-            month: 'short',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
+          업데이트:{" "}
+          {new Date(room.updatedAt).toLocaleString("ko-KR", {
+            month: "short",
+            day: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
           })}
         </span>
       </div>
 
-      {/* Actions */}
-      <div className="flex gap-2">
-        {room.isAvailable && onEnter && (
-          <Button
-            onClick={() => onEnter(room.id)}
-            className="flex-1"
-          >
-            입장하기
-          </Button>
-        )}
+      {/* 모바일 우선 액션 버튼들 */}
+      <div className="space-y-2">
+        {/* 주요 액션 버튼 */}
+        <div className="flex gap-2">
+          {room.isAvailable && onEnter && (
+            <Button
+              onClick={() => onEnter(room.id)}
+              className="flex-1 min-h-[44px]"
+            >
+              입장하기
+            </Button>
+          )}
 
-        {onManage && (
-          <Button
-            variant="outline"
-            onClick={() => onManage(room.id)}
-            className={room.isAvailable ? 'flex-none' : 'flex-1'}
-          >
-            관리
-          </Button>
-        )}
+          {onManage && (
+            <Button
+              variant="outline"
+              onClick={() => {
+                console.log("문제 관리 버튼 클릭됨:", room.id);
+                onManage(room.id);
+              }}
+              className={`${room.isAvailable ? "flex-none" : "flex-1"} min-h-[44px] px-4`}
+            >
+              <DocumentTextIcon className="w-4 h-4 sm:mr-2" />
+              <span className="hidden sm:inline">문제 관리</span>
+            </Button>
+          )}
 
-        {!room.isAvailable && !onManage && (
-          <Button
-            variant="outline"
-            disabled
-            className="flex-1"
-          >
-            사용 중
-          </Button>
-        )}
+          {!room.isAvailable && !onManage && (
+            <Button variant="outline" disabled className="flex-1 min-h-[44px]">
+              사용 중
+            </Button>
+          )}
+        </div>
       </div>
     </div>
   );

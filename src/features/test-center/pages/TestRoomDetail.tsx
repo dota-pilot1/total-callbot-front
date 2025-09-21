@@ -7,6 +7,7 @@ import QuestionSection from "../components/QuestionSection";
 import ChatSection from "../components/ChatSection";
 import ParticipantsPanel from "../components/ParticipantsPanel";
 import ParticipantsDialog from "../components/ParticipantsDialog";
+import QuestionManagementDialog from "../components/QuestionManagementDialog";
 
 // 타입 및 데이터 import
 import type { AnswerSubmission } from "../types/exam";
@@ -27,6 +28,8 @@ export default function TestRoomDetail() {
   const [timeLeft, setTimeLeft] = useState(525); // 8분 45초
   const [chatMessages, setChatMessages] = useState(dummyChatMessages);
   const [isParticipantsDialogOpen, setIsParticipantsDialogOpen] =
+    useState(false);
+  const [isQuestionManagementOpen, setIsQuestionManagementOpen] =
     useState(false);
 
   // API 훅
@@ -165,11 +168,13 @@ export default function TestRoomDetail() {
       <TestCenterHeader
         title={`${room.name} - 단체 시험`}
         showBackButton={true}
+        showQuestionManagementButton={true}
         showParticipantsButton={true}
         participantCount={dummyParticipants.length}
         onlineCount={
           dummyParticipants.filter((p) => p.status !== "WAITING").length
         }
+        onQuestionManagement={() => setIsQuestionManagementOpen(true)}
         onParticipantsClick={() => setIsParticipantsDialogOpen(true)}
       />
 
@@ -229,6 +234,14 @@ export default function TestRoomDetail() {
           capacity: room.capacity,
           currentParticipants: room.currentParticipants,
         }}
+      />
+
+      {/* Question Management Dialog */}
+      <QuestionManagementDialog
+        isOpen={isQuestionManagementOpen}
+        onClose={() => setIsQuestionManagementOpen(false)}
+        roomId={Number(roomId)}
+        roomName={room.name}
       />
     </div>
   );
