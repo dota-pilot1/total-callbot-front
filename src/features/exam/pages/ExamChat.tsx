@@ -268,7 +268,9 @@ export default function ExamChat() {
     },
   });
 
-  // 시험 모드 자동 음성 시작 설정
+  // 자동 시작 제거 - 기존 수동 연결 방식 사용
+
+  // 시험 모드 자동 음성 시작 설정 (기존 코드 유지)
   useEffect(() => {
     if (examMode && !voiceEnabled) {
       const voiceStartCallback = async () => {

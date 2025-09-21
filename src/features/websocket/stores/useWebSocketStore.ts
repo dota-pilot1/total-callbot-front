@@ -132,17 +132,29 @@ export const useWebSocketStore = create<WebSocketState>((set, get) => ({
 
       const host = window.location.hostname;
       const isLocal = host === "localhost" || host === "127.0.0.1";
-      if (isLocal) return "http://localhost:8080/ws-stomp";
+      if (isLocal) return "http://localhost:8080/websocket-stomp";
 
       // EC2 환경에서는 API와 같은 도메인 사용
-      return "https://api.total-callbot.cloud/ws-stomp";
+      return "https://api.total-callbot.cloud/websocket-stomp";
     };
 
     const wsUrl = resolveWebSocketUrl();
     console.log("WebSocket: 연결 URL:", wsUrl);
 
-    const socket = new SockJS(wsUrl);
-    const client = Stomp.over(socket);
+    // SockJS 먼저 시도
+    let client;
+    try {
+      const socket = new SockJS(wsUrl);
+      client = Stomp.over(socket);
+    } catch (sockjsError) {
+      console.log("SockJS 실패, 순수 WebSocket으로 폴백:", sockjsError);
+      // 순수 WebSocket으로 폴백
+      const wsOnlyUrl = wsUrl
+        .replace("/websocket-stomp", "/websocket")
+        .replace("http://", "ws://")
+        .replace("https://", "wss://");
+      client = Stomp.over(() => new WebSocket(wsOnlyUrl));
+    }
 
     client.connect(
       {},
