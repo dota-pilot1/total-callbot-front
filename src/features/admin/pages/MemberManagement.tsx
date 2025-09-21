@@ -122,41 +122,33 @@ export const MemberManagement: React.FC = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center gap-3">
-              <Users className="h-8 w-8 text-blue-500" />
+      <Card>
+        <CardContent className="p-4">
+          <div className="grid grid-cols-3 gap-4">
+            <div className="flex items-center justify-center gap-2 text-center">
+              <Users className="h-5 w-5 text-blue-500 flex-shrink-0" />
               <div>
-                <p className="text-2xl font-bold">{totalCount}</p>
-                <p className="text-sm text-muted-foreground">총 멤버</p>
+                <p className="text-lg font-bold">{totalCount}</p>
+                <p className="text-xs text-muted-foreground">총 멤버</p>
               </div>
             </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center gap-3">
-              <UserCheck className="h-8 w-8 text-green-500" />
+            <div className="flex items-center justify-center gap-2 text-center">
+              <UserCheck className="h-5 w-5 text-green-500 flex-shrink-0" />
               <div>
-                <p className="text-2xl font-bold">{onlineCount}</p>
-                <p className="text-sm text-muted-foreground">온라인</p>
+                <p className="text-lg font-bold">{onlineCount}</p>
+                <p className="text-xs text-muted-foreground">온라인</p>
               </div>
             </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center gap-3">
-              <UserX className="h-8 w-8 text-gray-500" />
+            <div className="flex items-center justify-center gap-2 text-center">
+              <UserX className="h-5 w-5 text-gray-500 flex-shrink-0" />
               <div>
-                <p className="text-2xl font-bold">{totalCount - onlineCount}</p>
-                <p className="text-sm text-muted-foreground">오프라인</p>
+                <p className="text-lg font-bold">{totalCount - onlineCount}</p>
+                <p className="text-xs text-muted-foreground">오프라인</p>
               </div>
             </div>
-          </CardContent>
-        </Card>
-      </div>
+          </div>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
