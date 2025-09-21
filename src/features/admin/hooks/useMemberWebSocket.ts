@@ -62,8 +62,10 @@ export const useMemberWebSocket = (): UseMemberWebSocketReturn => {
 
           const base = resolveWebSocketUrl();
           const wsUrl = `${base}?token=${encodeURIComponent(token)}`;
-          // 강제로 WebSocket 전송만 사용하여 JSONP 등의 폴백 방지
-          return new SockJS(wsUrl, undefined, { transports: ["websocket"] });
+          // 프록시 업그레이드 문제를 우회하기 위해 XHR 기반 전송만 사용
+          return new SockJS(wsUrl, undefined, {
+            transports: ["xhr-streaming", "xhr-polling"],
+          });
         },
         // STOMP CONNECT 프레임에 Authorization 포함 (서버 ChannelInterceptor용)
         connectHeaders: (() => {

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../../auth";
 import { Button } from "../../../components/ui";
+import { HeaderAuthControls } from "../../../components/layout/HeaderAuthControls";
 import {
   ArrowLeftIcon,
   BookOpenIcon,
@@ -81,14 +82,7 @@ export default function Study() {
                 </p>
               </div>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={logout}
-              className="text-gray-600 hover:text-gray-900"
-            >
-              로그아웃
-            </Button>
+            <HeaderAuthControls showProfile={false} showSettings={false} />
           </div>
         </div>
       </div>

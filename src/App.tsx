@@ -42,6 +42,24 @@ function ProtectedApp() {
   // 로그인 페이지들은 인증 없이 접근 가능
   const publicPaths = ["/", "/login", "/welcome", "/signup"];
   const isPublicPath = publicPaths.includes(location.pathname);
+  // 전용 헤더를 사용하는 경로들: 공통 헤더(AppHeader) 숨김
+  const dedicatedHeaderPrefixes = [
+    "/board",
+    "/mobile",
+    "/exam",
+    "/chat",
+    "/chatbots",
+    "/quiz",
+    "/quiz-list",
+    "/exam-management",
+    "/admin",
+    "/study",
+    "/practice",
+    "/missions",
+  ];
+  const usesDedicatedHeader = dedicatedHeaderPrefixes.some((p) =>
+    location.pathname.startsWith(p),
+  );
 
   if (!isAuthenticated && !isPublicPath) {
     return <Navigate to="/login" replace />;
@@ -49,7 +67,7 @@ function ProtectedApp() {
 
   return (
     <>
-      {!isPublicPath && <AppHeader />}
+      {!isPublicPath && !usesDedicatedHeader && <AppHeader />}
       <Routes>
       <Route path="/" element={<Login />} />
       <Route path="/login" element={<Login />} />

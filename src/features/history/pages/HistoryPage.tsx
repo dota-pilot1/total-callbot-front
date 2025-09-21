@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button, Card, CardContent, CardHeader, CardTitle } from "../../../components/ui";
-import { UserInfoBadge } from "../../../components/common/UserInfoBadge";
+import { HeaderAuthControls } from "../../../components/layout/HeaderAuthControls";
 import { useAuthStore } from "../../auth";
 
 export default function HistoryPage() {
@@ -19,16 +19,8 @@ export default function HistoryPage() {
           <div className="flex items-center justify-between h-16">
             <h1 className="text-xl font-bold text-gray-900">미션 설정</h1>
             <div className="flex items-center gap-3">
-              <UserInfoBadge />
               <Button size="sm" onClick={() => console.log("미션 설정 클릭")}>미션 설정</Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={logout}
-                className="text-red-600 hover:text-red-700 hover:bg-red-50"
-              >
-                로그아웃
-              </Button>
+              <HeaderAuthControls showProfile={false} showSettings={false} />
             </div>
           </div>
         </div>

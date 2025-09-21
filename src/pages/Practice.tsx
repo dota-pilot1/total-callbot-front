@@ -12,6 +12,7 @@ import {
 import { examApi } from "../features/chatbot/exam/api/exam";
 import { useAuthStore } from "../features/auth";
 import { useVoiceToText } from "../features/conversation-archive/hooks/useVoiceToText";
+import { HeaderAuthControls } from "../components/layout/HeaderAuthControls";
 
 // TypeScript declarations for Web Speech API
 declare global {
@@ -342,6 +343,7 @@ Korean: "${koreanText}"`;
                 음성 입력 연습장
               </h1>
             </div>
+            <HeaderAuthControls showProfile={false} showSettings={false} />
           </div>
         </div>
       </div>

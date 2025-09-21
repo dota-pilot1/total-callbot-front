@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { ArrowLeftIcon, Cog6ToothIcon } from "@heroicons/react/24/outline";
 import { useAuthStore } from "../../auth";
+import { HeaderAuthControls } from "../../../components/layout/HeaderAuthControls";
 
 interface ListeningHeaderProps {
   title?: string;
@@ -36,14 +37,17 @@ export default function ListeningHeader({
               </p>
             </div>
           </div>
-          {showSettingsButton && onSettingsClick && (
-            <button
-              onClick={onSettingsClick}
-              className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors"
-            >
-              <Cog6ToothIcon className="h-5 w-5 text-gray-600" />
-            </button>
-          )}
+          <div className="flex items-center gap-2">
+            {showSettingsButton && onSettingsClick && (
+              <button
+                onClick={onSettingsClick}
+                className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors"
+              >
+                <Cog6ToothIcon className="h-5 w-5 text-gray-600" />
+              </button>
+            )}
+            <HeaderAuthControls showProfile={false} showSettings={false} />
+          </div>
         </div>
       </div>
     </div>

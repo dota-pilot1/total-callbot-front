@@ -9,6 +9,8 @@ import {
   ArrowLeftIcon,
 } from "@heroicons/react/24/outline";
 import { motion, AnimatePresence } from "framer-motion";
+import { HeaderAuthControls } from "./HeaderAuthControls";
+import { useAuthStore } from "../../features/auth";
 
 interface BoardHeaderProps {
   title?: string;
@@ -25,11 +27,7 @@ export default function BoardHeader({
 }: BoardHeaderProps) {
   const navigate = useNavigate();
   const [showMobileMenu, setShowMobileMenu] = useState(false);
-
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    window.location.href = "/login";
-  };
+  const { logout } = useAuthStore();
 
   const handleSettings = () => {
     console.log("설정 메뉴");
@@ -89,25 +87,8 @@ export default function BoardHeader({
                   <span className="hidden sm:inline">글쓰기</span>
                 </Button>
               )}
-
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleSettings}
-                className="flex items-center gap-2"
-              >
-                <Cog6ToothIcon className="h-4 w-4" />
-                <span className="hidden sm:inline">설정</span>
-              </Button>
-
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleLogout}
-                className="text-red-600 hover:text-red-700 hover:bg-red-50"
-              >
-                로그아웃
-              </Button>
+              {/* 공통 로그인/로그아웃 컴포넌트 */}
+              <HeaderAuthControls />
             </div>
 
             {/* 모바일 메뉴 버튼 */}
@@ -206,7 +187,7 @@ export default function BoardHeader({
                     variant="outline"
                     className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
                     onClick={() => {
-                      handleLogout();
+                      logout();
                       setShowMobileMenu(false);
                     }}
                   >
