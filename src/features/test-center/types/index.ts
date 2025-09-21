@@ -56,3 +56,47 @@ export interface UpdateRoomRequest {
   capacity: number;
   testType: string;
 }
+
+// Question related types
+export interface Question {
+  id: number;
+  title: string;
+  content: string;
+  optionA: string;
+  optionB: string;
+  optionC: string;
+  optionD: string;
+  correctAnswer: string;
+  questionOrder: number;
+  isActive: boolean;
+  timeLimit?: number;
+  points?: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateQuestionRequest {
+  title: string;
+  content: string;
+  optionA: string;
+  optionB: string;
+  optionC: string;
+  optionD: string;
+  correctAnswer: string;
+}
+
+export interface UpdateQuestionRequest {
+  title: string;
+  content: string;
+  optionA: string;
+  optionB: string;
+  optionC: string;
+  optionD: string;
+  correctAnswer: string;
+}
+
+export interface QuestionStats {
+  totalQuestions: number;
+  activeQuestions: number;
+  inactiveQuestions: number;
+}

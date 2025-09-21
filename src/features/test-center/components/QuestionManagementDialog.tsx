@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   PlusIcon,
   PencilIcon,
@@ -14,23 +14,13 @@ import {
   CardHeader,
   CardTitle,
 } from "../../../components/ui";
-
-interface Question {
-  id: number;
-  title: string;
-  content: string;
-  optionA: string;
-  optionB: string;
-  optionC: string;
-  optionD: string;
-  correctAnswer: string;
-  questionOrder: number;
-  isActive: boolean;
-  timeLimit?: number;
-  points: number;
-  createdAt: string;
-  updatedAt: string;
-}
+import AddQuestionDialog from "./AddQuestionDialog";
+import {
+  useQuestions,
+  useDeleteQuestion,
+  useToggleQuestionStatus,
+} from "../api/useQuestions";
+import type { Question } from "../types";
 
 interface QuestionManagementDialogProps {
   isOpen: boolean;
@@ -45,91 +35,53 @@ export default function QuestionManagementDialog({
   roomId,
   roomName,
 }: QuestionManagementDialogProps) {
-  const [questions, setQuestions] = useState<Question[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [showAddQuestionDialog, setShowAddQuestionDialog] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
 
-  // Mock data for demo
-  useEffect(() => {
-    if (!isOpen) {
-      setShowCreateForm(false);
-      setEditingQuestion(null);
-      return;
-    }
-
-    setLoading(true);
-
-    const timer = setTimeout(() => {
-      setQuestions([
-        {
-          id: 1,
-          title: "영어 회화 기초 문제",
-          content: "What is the correct way to greet someone in the morning?",
-          optionA: "Good night",
-          optionB: "Good morning",
-          optionC: "Good evening",
-          optionD: "Good afternoon",
-          correctAnswer: "B",
-          questionOrder: 1,
-          isActive: true,
-          timeLimit: 30,
-          points: 10,
-          createdAt: "2024-01-01",
-          updatedAt: "2024-01-01",
-        },
-        {
-          id: 2,
-          title: "영어 문법 문제",
-          content: "Choose the correct sentence:",
-          optionA: "I am go to school",
-          optionB: "I go to school",
-          optionC: "I goes to school",
-          optionD: "I going to school",
-          correctAnswer: "B",
-          questionOrder: 2,
-          isActive: true,
-          timeLimit: 45,
-          points: 15,
-          createdAt: "2024-01-01",
-          updatedAt: "2024-01-01",
-        },
-      ]);
-      setLoading(false);
-      setShowCreateForm(false);
-      setEditingQuestion(null);
-    }, 200);
-
-    return () => clearTimeout(timer);
-  }, [isOpen, roomId]);
+  // API 훅들
+  const {
+    data: questions = [],
+    isLoading: loading,
+    error,
+  } = useQuestions(roomId, true); // includeInactive = true
+  const deleteQuestionMutation = useDeleteQuestion();
+  const toggleStatusMutation = useToggleQuestionStatus();
 
   const handleCreateQuestion = () => {
     setEditingQuestion(null);
-    setShowCreateForm(true);
+    setShowAddQuestionDialog(true);
   };
 
   const handleEditQuestion = (question: Question) => {
-    setShowCreateForm(false);
+    setShowAddQuestionDialog(false);
     setEditingQuestion(question);
   };
 
-  const handleToggleActive = (questionId: number) => {
-    setQuestions((prev) =>
-      prev.map((q) =>
-        q.id === questionId ? { ...q, isActive: !q.isActive } : q,
-      ),
-    );
-  };
-
-  const handleDeleteQuestion = (questionId: number) => {
-    if (confirm("문제를 삭제하시겠습니까?")) {
-      setQuestions((prev) => prev.filter((q) => q.id !== questionId));
-      setEditingQuestion((prev) => (prev?.id === questionId ? null : prev));
+  const handleToggleActive = async (question: Question) => {
+    try {
+      await toggleStatusMutation.mutateAsync({
+        roomId,
+        questionId: question.id,
+        activate: !question.isActive,
+      });
+    } catch (error) {
+      console.error("문제 상태 변경 실패:", error);
     }
   };
 
-  const handleCancelCreate = () => {
-    setShowCreateForm(false);
+  const handleDeleteQuestion = async (questionId: number) => {
+    if (confirm("문제를 삭제하시겠습니까?")) {
+      try {
+        await deleteQuestionMutation.mutateAsync({ roomId, questionId });
+        setEditingQuestion((prev) => (prev?.id === questionId ? null : prev));
+      } catch (error) {
+        console.error("문제 삭제 실패:", error);
+      }
+    }
+  };
+
+  const handleCloseAddDialog = () => {
+    setShowAddQuestionDialog(false);
   };
 
   const handleCancelEdit = () => {
@@ -165,7 +117,7 @@ export default function QuestionManagementDialog({
               {question.isActive ? "활성" : "비활성"}
             </span>
             <span className="text-xs text-muted-foreground">
-              {question.points}점
+              {question.points || 0}점
             </span>
           </div>
         </div>
@@ -208,7 +160,7 @@ export default function QuestionManagementDialog({
         {/* 모바일 최적화된 하단 정보 및 액션 */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 border-t border-gray-100">
           <div className="text-xs text-muted-foreground">
-            제한시간: {question.timeLimit}초
+            제한시간: {question.timeLimit || "무제한"}초
           </div>
 
           {/* 모바일 친화적인 액션 버튼들 */}
@@ -216,8 +168,9 @@ export default function QuestionManagementDialog({
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => handleToggleActive(question.id)}
+              onClick={() => handleToggleActive(question)}
               className="min-h-[44px] px-3 flex items-center gap-2 flex-1 sm:flex-none"
+              disabled={toggleStatusMutation.isPending}
             >
               {question.isActive ? (
                 <>
@@ -245,6 +198,7 @@ export default function QuestionManagementDialog({
               size="sm"
               onClick={() => handleDeleteQuestion(question.id)}
               className="min-h-[44px] px-3 flex items-center gap-2 text-red-600 hover:text-red-700 flex-1 sm:flex-none"
+              disabled={deleteQuestionMutation.isPending}
             >
               <TrashIcon className="w-4 h-4" />
               <span className="text-xs font-medium">삭제</span>
@@ -262,138 +216,129 @@ export default function QuestionManagementDialog({
       title={`${roomName} (ID: ${roomId}) - 문제 관리`}
     >
       <div className="p-4 space-y-4">
-          {/* 모바일 우선 헤더 */}
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-            <div className="flex-1">
-              <h2 className="text-lg sm:text-xl font-semibold mb-1">
-                문제 목록
-              </h2>
-              <p className="text-sm text-muted-foreground mb-1">
-                총 {questions.length}개 문제 (활성:{" "}
-                {questions.filter((q) => q.isActive).length}개)
-              </p>
-              <p className="text-xs text-muted-foreground">
-                테스트룸 ID: {roomId}
-              </p>
-            </div>
-
-            {/* 모바일 친화적인 문제 추가 버튼 */}
-            <Button
-              onClick={handleCreateQuestion}
-              className="min-h-[48px] px-6 flex items-center gap-2 w-full sm:w-auto"
-            >
-              <PlusIcon className="w-5 h-5" />
-              <span className="font-medium">문제 추가</span>
-            </Button>
+        {/* 모바일 우선 헤더 */}
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex-1">
+            <h2 className="text-lg sm:text-xl font-semibold mb-1">문제 목록</h2>
+            <p className="text-sm text-muted-foreground mb-1">
+              총 {questions.length}개 문제 (활성:{" "}
+              {questions.filter((q) => q.isActive).length}개)
+            </p>
+            <p className="text-xs text-muted-foreground">
+              테스트룸 ID: {roomId}
+            </p>
           </div>
 
-          {showCreateForm && (
-            <Card className="border-dashed">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base">새 문제 만들기</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <p className="text-sm text-muted-foreground">
-                  문제 생성 양식은 아직 준비 중입니다. 필요한 필드를 정의한 뒤
-                  API와 연동해주세요.
-                </p>
-                <div className="flex items-center justify-end gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleCancelCreate}
-                  >
-                    취소
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+          {/* 모바일 친화적인 문제 추가 버튼 */}
+          <Button
+            onClick={handleCreateQuestion}
+            className="min-h-[48px] px-6 flex items-center gap-2 w-full sm:w-auto"
+          >
+            <PlusIcon className="w-5 h-5" />
+            <span className="font-medium">문제 추가</span>
+          </Button>
+        </div>
 
-          {editingQuestion && (
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base">
-                  "{editingQuestion.title}" 문제 편집 준비 중
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3 text-sm">
-                <p className="text-muted-foreground">
-                  세부 편집 UI가 연결되면 이 영역에서 내용을 수정할 수 있습니다.
-                </p>
-                <div className="flex items-center justify-end gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleCancelEdit}
-                  >
-                    편집 취소
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+        {/* Error State */}
+        {error && (
+          <Card className="border-red-200 bg-red-50">
+            <CardContent className="p-4">
+              <p className="text-sm text-red-600">
+                문제를 불러오는 중 오류가 발생했습니다:{" "}
+                {error instanceof Error ? error.message : "알 수 없는 오류"}
+              </p>
+            </CardContent>
+          </Card>
+        )}
 
-          {/* Questions List */}
-          <div className="space-y-4">
-            {loading ? (
-              <div className="flex items-center justify-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        {editingQuestion && (
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">
+                "{editingQuestion.title}" 문제 편집 준비 중
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3 text-sm">
+              <p className="text-muted-foreground">
+                세부 편집 UI가 연결되면 이 영역에서 내용을 수정할 수 있습니다.
+              </p>
+              <div className="flex items-center justify-end gap-2">
+                <Button variant="outline" size="sm" onClick={handleCancelEdit}>
+                  편집 취소
+                </Button>
               </div>
-            ) : questions.length === 0 ? (
-              <Card>
-                <CardContent className="text-center py-8">
-                  <p className="text-muted-foreground mb-4">
-                    아직 문제가 없습니다.
-                  </p>
-                  <Button onClick={handleCreateQuestion}>
-                    첫 번째 문제 만들기
-                  </Button>
-                </CardContent>
-              </Card>
-            ) : (
-              questions
-                .sort((a, b) => a.questionOrder - b.questionOrder)
-                .map((question) => (
-                  <QuestionCard
-                    key={question.id}
-                    question={question}
-                    isEditing={editingQuestion?.id === question.id}
-                  />
-                ))
-            )}
-          </div>
+            </CardContent>
+          </Card>
+        )}
 
-          {/* 모바일 우선 하단 액션 */}
-          <div className="pt-4 border-t space-y-3 sm:space-y-0">
-            {/* 모바일에서는 세로 배치, 데스크톱에서는 가로 배치 */}
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        {/* Questions List */}
+        <div className="space-y-4">
+          {loading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+          ) : questions.length === 0 ? (
+            <Card>
+              <CardContent className="text-center py-8">
+                <p className="text-muted-foreground mb-4">
+                  아직 문제가 없습니다.
+                </p>
+                <Button onClick={handleCreateQuestion}>
+                  첫 번째 문제 만들기
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            questions
+              .sort((a, b) => a.questionOrder - b.questionOrder)
+              .map((question) => (
+                <QuestionCard
+                  key={question.id}
+                  question={question}
+                  isEditing={editingQuestion?.id === question.id}
+                />
+              ))
+          )}
+        </div>
+
+        {/* 모바일 우선 하단 액션 */}
+        <div className="pt-4 border-t space-y-3 sm:space-y-0">
+          {/* 모바일에서는 세로 배치, 데스크톱에서는 가로 배치 */}
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <Button
+              variant="outline"
+              onClick={onClose}
+              className="min-h-[48px] w-full sm:w-auto order-last sm:order-first"
+            >
+              닫기
+            </Button>
+
+            {/* 부가 기능 버튼들 */}
+            <div className="flex flex-col gap-2 sm:flex-row sm:gap-2">
               <Button
                 variant="outline"
-                onClick={onClose}
-                className="min-h-[48px] w-full sm:w-auto order-last sm:order-first"
+                className="min-h-[48px] w-full sm:w-auto"
               >
-                닫기
+                문제 가져오기
               </Button>
-
-              {/* 부가 기능 버튼들 */}
-              <div className="flex flex-col gap-2 sm:flex-row sm:gap-2">
-                <Button
-                  variant="outline"
-                  className="min-h-[48px] w-full sm:w-auto"
-                >
-                  문제 가져오기
-                </Button>
-                <Button
-                  variant="outline"
-                  className="min-h-[48px] w-full sm:w-auto"
-                >
-                  AI 문제 생성
-                </Button>
-              </div>
+              <Button
+                variant="outline"
+                className="min-h-[48px] w-full sm:w-auto"
+              >
+                AI 문제 생성
+              </Button>
             </div>
           </div>
+        </div>
       </div>
+
+      {/* AddQuestionDialog */}
+      <AddQuestionDialog
+        isOpen={showAddQuestionDialog}
+        onClose={handleCloseAddDialog}
+        roomId={roomId}
+        roomName={roomName}
+      />
     </FullScreenSlideDialog>
   );
 }
