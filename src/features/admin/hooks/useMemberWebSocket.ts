@@ -16,6 +16,7 @@ interface UseMemberWebSocketReturn {
   isConnected: boolean;
   connectionError: string | null;
   reconnect: () => void;
+  disconnect: () => void; // 수동 연결 해제 함수
 }
 
 export const useMemberWebSocket = (): UseMemberWebSocketReturn => {
@@ -29,6 +30,7 @@ export const useMemberWebSocket = (): UseMemberWebSocketReturn => {
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
+  const manualDisconnectRef = useRef(false);
 
   const connect = () => {
     try {
@@ -36,6 +38,9 @@ export const useMemberWebSocket = (): UseMemberWebSocketReturn => {
       if (clientRef.current) {
         clientRef.current.deactivate();
       }
+
+      // 수동 해제 상태 해제 (자동 재연결 허용)
+      manualDisconnectRef.current = false;
 
       const client = new Client({
         webSocketFactory: () => {
@@ -137,15 +142,17 @@ export const useMemberWebSocket = (): UseMemberWebSocketReturn => {
         console.log("웹소켓 연결 해제:", frame);
         setIsConnected(false);
 
-        // 자동 재연결 시도 (5초 후)
-        if (reconnectTimeoutRef.current) {
-          clearTimeout(reconnectTimeoutRef.current);
-        }
+        // 수동 해제가 아닌 경우에만 자동 재연결 시도
+        if (!manualDisconnectRef.current) {
+          if (reconnectTimeoutRef.current) {
+            clearTimeout(reconnectTimeoutRef.current);
+          }
 
-        reconnectTimeoutRef.current = setTimeout(() => {
-          console.log("웹소켓 자동 재연결 시도...");
-          connect();
-        }, 5000);
+          reconnectTimeoutRef.current = setTimeout(() => {
+            console.log("웹소켓 자동 재연결 시도...");
+            connect();
+          }, 5000);
+        }
       };
 
       clientRef.current = client;
@@ -162,6 +169,21 @@ export const useMemberWebSocket = (): UseMemberWebSocketReturn => {
     console.log("수동 웹소켓 재연결 시도...");
     setConnectionError(null);
     connect();
+  };
+
+  const disconnect = () => {
+    console.log("수동 웹소켓 연결 해제");
+    // 수동 해제 플래그 설정하여 자동 재연결 방지
+    manualDisconnectRef.current = true;
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current);
+      reconnectTimeoutRef.current = null;
+    }
+    if (clientRef.current) {
+      clientRef.current.deactivate();
+      clientRef.current = null;
+    }
+    setIsConnected(false);
   };
 
   useEffect(() => {
@@ -188,5 +210,6 @@ export const useMemberWebSocket = (): UseMemberWebSocketReturn => {
     isConnected,
     connectionError,
     reconnect,
+    disconnect,
   };
 };

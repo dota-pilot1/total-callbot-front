@@ -25,17 +25,16 @@ export const MemberManagement: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // 웹소켓 훅으로 실시간 상태 업데이트 수신
+  // 웹소켓 훅 사용 (실시간 업데이트용)
   const { onlineStatusUpdates, isConnected } = useMemberWebSocket();
 
-  // 초기 멤버 목록 로드
+  // 1. API로 전체 멤버 목록 로드 (초기 상태)
   const fetchMembers = async () => {
     try {
       setLoading(true);
       setError(null);
-
       const response = await apiClient.get("/members");
-      setMembers(response.data);
+      setMembers(response.data || []);
     } catch (err) {
       console.error("멤버 목록 조회 에러:", err);
       setError(
@@ -46,22 +45,22 @@ export const MemberManagement: React.FC = () => {
     }
   };
 
-  // 컴포넌트 마운트 시 멤버 목록 로드
   useEffect(() => {
     fetchMembers();
   }, []);
 
-  // 웹소켓으로 받은 상태 업데이트를 멤버 목록에 반영
+  // 2. 웹소켓으로 받은 실시간 상태 업데이트를 members 목록에 반영
   useEffect(() => {
-    onlineStatusUpdates.forEach((update) => {
-      setMembers((prevMembers) =>
-        prevMembers.map((member) =>
-          member.id === update.userId
-            ? { ...member, isOnline: update.isOnline }
-            : member,
-        ),
-      );
-    });
+    if (onlineStatusUpdates.length === 0) return;
+
+    const latestUpdate = onlineStatusUpdates[0];
+    setMembers((prevMembers) =>
+      prevMembers.map((member) =>
+        member.id === latestUpdate.userId
+          ? { ...member, isOnline: latestUpdate.isOnline }
+          : member,
+      ),
+    );
   }, [onlineStatusUpdates]);
 
   const onlineCount = members.filter((member) => member.isOnline).length;
@@ -100,7 +99,6 @@ export const MemberManagement: React.FC = () => {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
-      {/* 헤더 */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">멤버 관리</h1>
@@ -124,7 +122,6 @@ export const MemberManagement: React.FC = () => {
         </div>
       </div>
 
-      {/* 통계 카드 */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardContent className="p-6">
@@ -137,7 +134,6 @@ export const MemberManagement: React.FC = () => {
             </div>
           </CardContent>
         </Card>
-
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center gap-3">
@@ -149,7 +145,6 @@ export const MemberManagement: React.FC = () => {
             </div>
           </CardContent>
         </Card>
-
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center gap-3">
@@ -163,7 +158,6 @@ export const MemberManagement: React.FC = () => {
         </Card>
       </div>
 
-      {/* 멤버 목록 */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
