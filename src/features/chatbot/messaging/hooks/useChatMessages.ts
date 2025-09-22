@@ -161,15 +161,96 @@ export const useChatMessages = (
       const enhancedContext = `Recent conversation:
 ${tail}
 
-The last message from the ASSISTANT is a question. Please provide a natural, helpful ANSWER to that question that:
-1. Directly addresses the question being asked
-2. Is appropriate for English conversation practice
-3. Sounds natural and conversational
-4. Provides a good example response that the user can learn from
-5. IMPORTANT: Keep your answer to MAXIMUM ${maxSentenceCount} sentence${maxSentenceCount > 1 ? "s" : ""} for speaking practice
-6. LANGUAGE LEVEL: ${englishLevel.toUpperCase()} - ${levelDescriptions[englishLevel]}
-7. FORMAT: Provide only the answer the user should give, without explanations or additional text
-8. Make it personal and relatable (use "I", "my", etc. as appropriate)`;
+The last message from the ASSISTANT may contain different types of communication (questions, instructions, commentary, encouragement, etc.). First UNDERSTAND THE INTENT, then provide a natural, conversational RESPONSE that:
+
+1. **LOGICAL COMPREHENSION**: Understand the EXACT question being asked and respond logically. Pay attention to "or" questions, yes/no questions, and specific context
+2. **AVOID PARROTING**: Don't repeat the exact words/phrases from the assistant. Use different, natural expressions that mean the same thing
+3. **NATURAL & CASUAL**: Sound like a real person speaking, not a formal textbook response
+4. **CONTEXTUALLY APPROPRIATE**: Match the situation and tone (airport security, casual chat, etc.)
+5. **SITUATIONAL TONE**: Use appropriate formality and attitude for the setting (calm/focused at airport, relaxed in casual chat, professional in business contexts)
+6. **EMOTIONALLY AUTHENTIC**: Include natural reactions, feelings, or attitudes that fit the context - but keep them realistic and situationally appropriate
+7. **CONVERSATIONAL FLOW**: Use phrases that keep the conversation going naturally
+8. **REAL-WORLD LANGUAGE**: Use contractions (I'll, that's, don't), filler words (well, actually, oh), and natural expressions
+9. **PERSONAL & RELATABLE**: Use "I", "my", personal experiences, and human touches
+10. **SITUATIONAL AWARENESS**: If it's about airport security, shopping, travel, etc., respond with realistic concerns/reactions
+11. **VARIED EXPRESSIONS**: Use synonyms and different phrasing rather than echoing the assistant's exact words
+12. **NATIVE-LIKE FLUENCY**: Prioritize how real native speakers talk - use contractions, casual connectors (like "got", "yep", "all set"), and natural rhythm over formal textbook English
+13. **AVOID OVER-EXPLAINING**: Don't add unnecessary details. Answer the specific question asked, not more.
+14. **KEEP IT BRIEF**: Maximum ${maxSentenceCount} sentence${maxSentenceCount > 1 ? "s" : ""} for speaking practice
+15. **LANGUAGE LEVEL**: ${englishLevel.toUpperCase()} - ${levelDescriptions[englishLevel]}
+
+EXAMPLES OF GOOD vs BAD responses by INTENT:
+
+**INSTRUCTIONS** ("laptop out, jacket off, put in bins"):
+❌ BAD (incomplete): "I got my laptop out now."
+✅ GOOD (comprehensive): "Got it! I'll take out my laptop, remove my jacket, and put everything in the bins."
+
+**COMMENTARY/NARRATION** ("step forward, raise arms, go through scanner, all clear, pick up stuff"):
+❌ BAD (parroting actions): "Okay, I'm stepping forward and raising my arms now. Great, I'm all clear!"
+✅ GOOD (appropriate reaction): "Thanks! That went smoothly." or "Phew, glad that's over!"
+
+**ENCOURAGEMENT** ("You're doing great!"):
+❌ BAD (ignoring): "I will continue with the process."
+✅ GOOD (acknowledging): "Thanks! I appreciate the help." or "That's a relief!"
+
+**QUESTIONS** ("Do you have your passport and boarding pass?"):
+❌ BAD (partial): "Yes, I have my passport."
+✅ GOOD (complete): "Yes, I have both right here in my hand."
+
+**"OR" QUESTIONS** ("Do you have carry-on luggage, or just this checked bag?"):
+❌ BAD (illogical): "Yes, I have a small backpack with me. Just a few things for the flight."
+✅ GOOD (logical options):
+- "Just this carry-on." (if only carry-on)
+- "Both - checking this and keeping the backpack." (if both)
+- "Just what I'm checking." (if no carry-on)
+
+**MIXED** (Questions + Instructions + Commentary):
+Identify the PRIMARY intent and respond accordingly, acknowledging all parts naturally.
+
+**SITUATIONAL TONE EXAMPLES**:
+
+Airport/Travel (calm, focused, practical):
+❌ BAD (too excited): "I'm excited to print my boarding pass!"
+✅ GOOD (appropriate): "Yes, I have everything ready. I'll get that sorted."
+
+Business/Professional (polite, efficient):
+❌ BAD (too casual): "Yeah, whatever works!"
+✅ GOOD (professional): "That sounds good. I'll take care of it."
+
+Casual/Social (relaxed, friendly):
+❌ BAD (too formal): "I shall proceed with your recommendation."
+✅ GOOD (casual): "Sounds great! I'll give it a try."
+
+Emergency/Serious (calm, direct):
+❌ BAD (inappropriate lightness): "Oh fun, an emergency!"
+✅ GOOD (appropriate seriousness): "Understood. I'll do that right away."
+
+**NATIVE-LIKE EXPRESSION EXAMPLES**:
+
+🛫 For airport check-in scenarios:
+❌ STIFF: "Yes, I'm ready! I have my luggage here with me."
+✅ NATIVE OPTIONS:
+- "All set! Got my bag right here." (casual)
+- "Yes, I'm ready. My luggage is right here." (standard)
+- "Yep, ready to go. This is everything." (relaxed)
+
+🍽️ For restaurant scenarios:
+❌ STIFF: "I would like to order the chicken please."
+✅ NATIVE OPTIONS:
+- "I'll have the chicken, please." (standard)
+- "Can I get the chicken?" (casual)
+- "I'll go with the chicken." (relaxed)
+
+💼 For business scenarios:
+❌ STIFF: "I understand your recommendation and will implement it."
+✅ NATIVE OPTIONS:
+- "That makes sense. I'll take care of it." (professional)
+- "Sounds good. I'll get that done." (efficient)
+- "Got it. I'll handle that." (confident)
+
+USE VARIED, NATURAL EXPRESSIONS: Prioritize how native speakers actually talk in real situations, not textbook English.
+
+FORMAT: Provide ONLY the natural response the user should give, without explanations or meta-commentary.`;
 
       const resp = await examApi.getSampleAnswers({
         question: lastBot,
