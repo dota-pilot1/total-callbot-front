@@ -28,7 +28,9 @@ import {
   ListeningTestList,
 } from "./features/english-listening-test";
 import { MathPage } from "./features/math";
-import { HistoryPage } from "./features/history";
+import { DailyEnglish } from "./features/daily-english";
+import { DailyMath } from "./features/daily-math";
+import { DailyEnglishExam } from "./features/daily-english-exam";
 import { BoardList, BoardDetail, BoardWrite } from "./features/board";
 import { TestCenter } from "./features/test-center";
 import TestRoomDetail from "./features/test-center/pages/TestRoomDetail";
@@ -57,7 +59,9 @@ function ProtectedApp() {
     "/admin",
     "/study",
     "/practice",
-    "/missions",
+    "/daily-english",
+    "/daily-math",
+    "/daily-english-exam",
     "/test-center",
   ];
   const usesDedicatedHeader = dedicatedHeaderPrefixes.some((p) =>
@@ -98,7 +102,9 @@ function ProtectedApp() {
         <Route path="/quiz-list" element={<ListeningTestList />} />
         <Route path="/quiz" element={<ListeningTest />} />
         <Route path="/math" element={<MathPage />} />
-        <Route path="/missions" element={<HistoryPage />} />
+        <Route path="/daily-english" element={<DailyEnglish />} />
+        <Route path="/daily-math" element={<DailyMath />} />
+        <Route path="/daily-english-exam" element={<DailyEnglishExam />} />
         <Route path="/board" element={<BoardList />} />
         <Route path="/board/:postId" element={<BoardDetail />} />
         <Route path="/board/write" element={<BoardWrite />} />

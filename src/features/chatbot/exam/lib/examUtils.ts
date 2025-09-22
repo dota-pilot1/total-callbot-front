@@ -14,6 +14,7 @@ export const getRandomExamTopic = (): ExamTopic => {
 export const buildSingleExamPromptForCharacter = (
   character: ExamCharacter,
 ): string => {
+  const isDailyScenario = character.questionStyle === "daily_scenario";
   const header = [
     `시험 출제자: ${character.name}`,
     "",
@@ -31,6 +32,18 @@ export const buildSingleExamPromptForCharacter = (
     "4. END session immediately",
     "",
   ];
+
+  const scenarioGuidance = isDailyScenario
+    ? [
+        "Daily Scenario Guidelines:",
+        `- Learner-selected scenario: "${character.description}"`,
+        "- Lead a short role-play that realistically fits this context.",
+        "- Ask about specific details that would naturally arise in this situation (service request, clarification, problem-solving, etc.).",
+        "- Keep the conversation grounded in this scenario and reference it in your feedback.",
+        "- Encourage the learner to speak in complete sentences and provide polite/appropriate expressions for the situation.",
+        "",
+      ]
+    : [];
 
   const format = [
     "Format / 형식:",
@@ -89,6 +102,7 @@ export const buildSingleExamPromptForCharacter = (
 
   return [
     ...header,
+    ...scenarioGuidance,
     ...format,
     ...characterSpecific,
     ...grading,

@@ -2,22 +2,14 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuthStore } from "../features/auth";
 import { EXAM_CHARACTERS } from "../features/chatbot/exam/examCharacters";
-import {
-  userManagementApi,
-  type UserStatus,
-} from "../features/user-management/api/userApi";
-
 import { PasswordInput } from "../components/ui/PasswordInput";
 
 import { Button } from "../components/ui";
-import MemberStatusTable from "../components/MemberStatusTable";
 import {
   CheckCircleIcon,
   ArrowRightIcon,
-  ChevronDownIcon,
   CogIcon,
 } from "@heroicons/react/24/outline";
-// Simplified login; added collapsible full member info box
 
 type ServiceType =
   | "chatbot"
@@ -26,8 +18,8 @@ type ServiceType =
   | "conversation"
   | "quiz"
   | "question_bank"
-  | "math"
-  | "history"
+  | "daily_english"
+  | "daily_math"
   | "board";
 
 export default function Login() {
@@ -48,8 +40,6 @@ export default function Login() {
   // 랜덤 계정 선택 및 자동 입력
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [showMembers, setShowMembers] = useState<boolean>(false);
-  const [members, setMembers] = useState<UserStatus[]>([]);
 
   useEffect(() => {
     // 페이지 로드시 랜덤 계정 선택하여 자동 입력
@@ -59,48 +49,36 @@ export default function Login() {
     setPassword("123456");
   }, []);
 
-  // 회원 정보가 표시될 때만 API 호출 (로그인된 상태에서만)
-  useEffect(() => {
-    const fetchMembers = async () => {
-      if (showMembers) {
-        // 토큰이 있는지 확인 (authStore)
-        const token = useAuthStore.getState().getAccessToken();
-        if (!token) {
-          console.log("토큰이 없어서 회원 정보를 가져올 수 없습니다.");
-          setMembers([]);
-          return;
-        }
-
-        try {
-          const membersData = await userManagementApi.getAllUsersWithStatus();
-          setMembers(membersData);
-        } catch (error) {
-          console.error("회원 정보를 가져오는데 실패했습니다:", error);
-          setMembers([]); // 에러 시 빈 배열
-        }
-      }
-    };
-
-    fetchMembers();
-  }, [showMembers]);
-
   const [selectedService, setSelectedService] = useState<ServiceType>(() => {
     // localStorage에서 저장된 서비스 가져오기
-    const savedService = localStorage.getItem("selectedService") as ServiceType;
-    return savedService &&
-      [
-        "chatbot",
-        "chat",
-        "admin",
-        "conversation",
-        "quiz",
-        "question_bank",
-        "math",
-        "history",
-        "board",
-      ].includes(savedService)
-      ? savedService
-      : "chatbot";
+    const savedService = localStorage.getItem("selectedService");
+    const normalizedService =
+      savedService === "history"
+        ? "daily_english"
+        : savedService === "math"
+          ? "daily_math"
+          : savedService;
+
+    const validServices: ServiceType[] = [
+      "chatbot",
+      "chat",
+      "admin",
+      "conversation",
+      "quiz",
+      "question_bank",
+      "daily_english",
+      "daily_math",
+      "board",
+    ];
+
+    if (
+      normalizedService &&
+      validServices.includes(normalizedService as ServiceType)
+    ) {
+      return normalizedService as ServiceType;
+    }
+
+    return "chatbot";
   });
 
   // 서비스 선택 시 localStorage에 저장
@@ -127,16 +105,6 @@ export default function Login() {
       const user = getUser();
       if (!user) {
         throw new Error("사용자 정보를 가져올 수 없습니다");
-      }
-
-      // 로그인 성공 후 회원 정보 섹션이 열려있다면 데이터 다시 가져오기
-      if (showMembers) {
-        try {
-          const membersData = await userManagementApi.getAllUsersWithStatus();
-          setMembers(membersData);
-        } catch (error) {
-          console.error("로그인 후 회원 정보 업데이트 실패:", error);
-        }
       }
 
       // 선택된 서비스에 따라 이동
@@ -181,13 +149,13 @@ export default function Login() {
           console.log("로그인: 테스트 센터 페이지로 이동");
           navigate("/test-center"); // 테스트 센터 페이지
           break;
-        case "math":
-          console.log("로그인: 수학 페이지로 이동");
-          navigate("/math"); // 수학 페이지
+        case "daily_english":
+          console.log("로그인: 일일 영어 페이지로 이동");
+          navigate("/daily-english");
           break;
-        case "history":
-          console.log("로그인: 미션 페이지로 이동");
-          navigate("/missions"); // 미션 페이지
+        case "daily_math":
+          console.log("로그인: 일일 수학 페이지로 이동");
+          navigate("/daily-math");
           break;
         default:
           navigate(isMobile ? "/mobile" : "/chatbots");
@@ -355,42 +323,42 @@ export default function Login() {
                 </span>
               </button>
 
-              {/* 수학 */}
+              {/* 일일 영어 */}
               <button
-                onClick={() => handleServiceSelect("math")}
-                aria-pressed={selectedService === "math"}
+                onClick={() => handleServiceSelect("daily_english")}
+                aria-pressed={selectedService === "daily_english"}
                 className={`relative flex flex-col items-center p-4 rounded-xl border-2 transition-all duration-200 ${
-                  selectedService === "math"
+                  selectedService === "daily_english"
                     ? "border-blue-500 bg-blue-50 shadow-lg ring-2 ring-blue-200"
                     : "border-gray-200 hover:bg-gray-50 hover:border-gray-300"
                 }`}
               >
-                {selectedService === "math" && (
+                {selectedService === "daily_english" && (
+                  <CheckCircleIcon className="absolute top-2 right-2 h-5 w-5 text-blue-500" />
+                )}
+                <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-sky-100 to-indigo-200 flex items-center justify-center mb-2">
+                  <span className="text-2xl">🇺🇸</span>
+                </div>
+                <span className="text-xs font-medium text-gray-700">일일 영어</span>
+              </button>
+
+              {/* 일일 수학 */}
+              <button
+                onClick={() => handleServiceSelect("daily_math")}
+                aria-pressed={selectedService === "daily_math"}
+                className={`relative flex flex-col items-center p-4 rounded-xl border-2 transition-all duration-200 ${
+                  selectedService === "daily_math"
+                    ? "border-blue-500 bg-blue-50 shadow-lg ring-2 ring-blue-200"
+                    : "border-gray-200 hover:bg-gray-50 hover:border-gray-300"
+                }`}
+              >
+                {selectedService === "daily_math" && (
                   <CheckCircleIcon className="absolute top-2 right-2 h-5 w-5 text-blue-500" />
                 )}
                 <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-cyan-100 to-cyan-200 flex items-center justify-center mb-2">
                   <span className="text-2xl">🔢</span>
                 </div>
-                <span className="text-xs font-medium text-gray-700">수학</span>
-              </button>
-
-              {/* 미션 */}
-              <button
-                onClick={() => handleServiceSelect("history")}
-                aria-pressed={selectedService === "history"}
-                className={`relative flex flex-col items-center p-4 rounded-xl border-2 transition-all duration-200 ${
-                  selectedService === "history"
-                    ? "border-blue-500 bg-blue-50 shadow-lg ring-2 ring-blue-200"
-                    : "border-gray-200 hover:bg-gray-50 hover:border-gray-300"
-                }`}
-              >
-                {selectedService === "history" && (
-                  <CheckCircleIcon className="absolute top-2 right-2 h-5 w-5 text-blue-500" />
-                )}
-                <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-amber-100 to-amber-200 flex items-center justify-center mb-2">
-                  <span className="text-2xl">🎯</span>
-                </div>
-                <span className="text-xs font-medium text-gray-700">미션</span>
+                <span className="text-xs font-medium text-gray-700">일일 수학</span>
               </button>
 
               {/* 게시판 */}
@@ -491,45 +459,6 @@ export default function Login() {
               </Link>
             </div>
 
-            {/* 전체 회원 정보 (접이식) */}
-            <div className="mt-6 rounded-lg border border-border bg-card">
-              <button
-                type="button"
-                onClick={() => setShowMembers((v) => !v)}
-                className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium"
-                aria-expanded={showMembers}
-                aria-controls="member-info-panel"
-              >
-                <span>전체 회원 정보</span>
-                <ChevronDownIcon
-                  className={`h-5 w-5 transition-transform ${showMembers ? "rotate-180" : "rotate-0"}`}
-                />
-              </button>
-              {showMembers && (
-                <div id="member-info-panel" className="px-4 pb-4 border-t">
-                  <div className="pt-3">
-                    {useAuthStore.getState().isAuthenticated() ? (
-                      <MemberStatusTable
-                        bordered={false}
-                        members={members.map((m) => ({
-                          id: m.id,
-                          name: m.name,
-                          email: m.email,
-                          createdAt: m.createdAt,
-                          isOnline: m.online,
-                        }))}
-                      />
-                    ) : (
-                      <div className="text-center p-4">
-                        <p className="text-sm text-muted-foreground">
-                          회원 정보를 보려면 먼저 로그인해주세요.
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
           </div>
         </div>
       </div>
