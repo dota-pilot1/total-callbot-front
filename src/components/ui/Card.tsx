@@ -1,6 +1,7 @@
 import React from 'react';
 
 type DivProps = React.HTMLAttributes<HTMLDivElement>;
+type ParagraphProps = React.HTMLAttributes<HTMLParagraphElement>;
 
 export function Card({ className = '', ...props }: DivProps) {
   return (
@@ -23,3 +24,11 @@ export function CardContent({ className = '', ...props }: DivProps) {
   return <div className={`p-6 pt-0 ${className}`} {...props} />;
 }
 
+export function CardDescription({ className = '', ...props }: ParagraphProps) {
+  return (
+    <p
+      className={`text-sm text-muted-foreground ${className}`}
+      {...props}
+    />
+  );
+}

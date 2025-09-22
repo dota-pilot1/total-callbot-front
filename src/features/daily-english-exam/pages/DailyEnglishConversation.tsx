@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuthStore } from "../../auth";
 import { Button } from "../../../components/ui";
@@ -15,19 +15,15 @@ import {
   ChatBubbleLeftRightIcon,
   SpeakerWaveIcon,
   PauseIcon,
+  ArrowLeftIcon,
+  ChartBarIcon,
 } from "@heroicons/react/24/outline";
 import { useVoiceConnection } from "../../chatbot/voice";
 import { useChatMessages } from "../../chatbot/messaging";
+import { useConversationStore } from "../../chatbot/messaging/stores/conversationStore";
 import VoicePulse from "../../../components/VoicePulse";
 import MobileSettingsDropdown from "../../../components/MobileSettingsDropdown";
 
-import ExamCharacterDialog from "../../../components/ExamCharacterDialog";
-import {
-  EXAM_CHARACTERS,
-  getExamCharacterById,
-  getDefaultExamCharacter,
-  type ExamCharacter,
-} from "../../chatbot/exam/examCharacters";
 import { VOICE_OPTIONS } from "../../chatbot/character";
 import { useWebSocketStore } from "../../websocket/stores/useWebSocketStore";
 import MobileTranslationDialog from "../../../components/MobileTranslationDialog";
@@ -37,29 +33,43 @@ import { MyConversationArchive } from "../../conversation-archive";
 
 import { useAudioSettings } from "../../chatbot/settings";
 import ExamResultsSlideDown from "../../../components/ExamResultsSlideDown";
-import { useExamMode } from "../../chatbot/exam";
 import { useToast } from "../../../components/ui/Toast";
+import ConversationEvaluationDialog from "../../../components/ConversationEvaluationDialog";
 
-type DailyScenario = {
+interface DailyScenario {
   id: string;
   title: string;
   description: string;
   category: string;
-};
+}
 
-export default function ExamChat() {
+interface ExamCharacter {
+  id: string;
+  name: string;
+  emoji: string;
+  description: string;
+  questionStyle: string;
+  prompt: string;
+}
+
+export default function DailyEnglishConversation() {
   const { logout, getUser } = useAuthStore();
   const user = getUser();
   const navigate = useNavigate();
   const location = useLocation();
   const { ToastContainer } = useToast();
 
-  const isDailyExamRoute = location.pathname.startsWith("/daily-english-exam");
+  // Zustand 대화 스토어
+  const {
+    addMessage,
+    clearMessages: clearStoreMessages,
+    startNewConversation,
+    getUserMessages,
+    getFullConversation,
+  } = useConversationStore();
 
-  const initialDailyScenarioRef = useRef<DailyScenario | null>(null);
-
-  useEffect(() => {
-    if (!isDailyExamRoute) return;
+  // 세션에서 시나리오 복원
+  const dailyScenario = useMemo<DailyScenario | null>(() => {
     const stateScenario = (location.state as { scenario?: DailyScenario })
       ?.scenario;
     if (stateScenario) {
@@ -67,43 +77,34 @@ export default function ExamChat() {
         "dailyExamScenario",
         JSON.stringify(stateScenario),
       );
-      initialDailyScenarioRef.current = stateScenario;
-      setDailyExamStatus("idle");
-      navigate(location.pathname, { replace: true, state: undefined });
+      return stateScenario;
     }
-  }, [isDailyExamRoute, location.state, location.pathname, navigate]);
 
-  const dailyScenario = useMemo<DailyScenario | null>(() => {
-    if (!isDailyExamRoute) return null;
-    if (initialDailyScenarioRef.current) {
-      return initialDailyScenarioRef.current;
-    }
     const stored = sessionStorage.getItem("dailyExamScenario");
     if (stored) {
       try {
-        const parsed = JSON.parse(stored) as DailyScenario;
-        initialDailyScenarioRef.current = parsed;
-        return parsed;
+        return JSON.parse(stored) as DailyScenario;
       } catch (error) {
-        console.warn("Failed to restore daily exam scenario", error);
+        console.error("Failed to parse stored scenario", error);
       }
     }
     return null;
-  }, [isDailyExamRoute]);
+  }, [location.state]);
 
-  const [dailyExamStatus, setDailyExamStatus] = useState<
-    "idle" | "ready" | "started" | "failed"
-  >("idle");
+  // 시나리오가 없으면 메인으로 리다이렉트
+  useEffect(() => {
+    if (!dailyScenario) {
+      navigate("/daily-english", { replace: true });
+    }
+  }, [dailyScenario, navigate]);
 
-  // WebSocket Store 사용 (중복 연결 제거)
+  // WebSocket Store 사용
   const {
     participantCount,
     connected,
     connecting,
     connect,
     disconnect,
-    examMode,
-    setExamMode,
     clearExamMode,
   } = useWebSocketStore();
 
@@ -117,60 +118,66 @@ export default function ExamChat() {
     };
   }, [connected, disconnect, clearExamMode]);
 
-  // 시험 캐릭터 상태 관리 (로그인에서 미리 선택된 캐릭터 확인)
-  const [selectedExamCharacterId, setSelectedExamCharacterId] = useState(() => {
-    if (initialDailyScenarioRef.current) {
-      return initialDailyScenarioRef.current.id;
+  // 일일 영어를 위한 ExamCharacter 생성
+  const dailyExamCharacter = useMemo<ExamCharacter>(() => {
+    if (!dailyScenario) {
+      return {
+        id: "daily-default",
+        name: "일일 영어",
+        emoji: "🎯",
+        description: "일일 영어 회화 연습",
+        questionStyle: "daily_scenario",
+        prompt:
+          "You are an English conversation partner helping the user practice daily English conversation.",
+      };
     }
 
-    const preSelectedCharacterId = localStorage.getItem(
-      "selectedExamCharacter",
-    );
-    if (preSelectedCharacterId) {
-      // 로그인에서 선택된 캐릭터가 있으면 사용 후 localStorage 정리
-      localStorage.removeItem("selectedExamCharacter");
-      console.log(
-        "ExamChat: 로그인에서 미리 선택된 캐릭터 사용:",
-        preSelectedCharacterId,
-      );
-      return preSelectedCharacterId;
-    }
-    return getDefaultExamCharacter().id;
-  });
-  const [examCharacterDialogOpen, setExamCharacterDialogOpen] = useState(false);
-  const [selectedVoice, setSelectedVoice] = useState<string>("alloy");
-
-  useEffect(() => {
-    if (isDailyExamRoute && dailyScenario) {
-      setSelectedExamCharacterId(dailyScenario.id);
-    }
-  }, [isDailyExamRoute, dailyScenario]);
-
-  const dailyExamCharacter = useMemo<ExamCharacter | null>(() => {
-    if (!dailyScenario) return null;
     return {
       id: dailyScenario.id,
       name: dailyScenario.title,
       emoji: "🎯",
       description: dailyScenario.description,
       questionStyle: "daily_scenario",
-      prompt: `You are an English conversation evaluator helping the learner practice the situation: "${dailyScenario.title}". Use realistic dialogue based on this context: ${dailyScenario.description}. Guide the user through a short role-play, ask follow-up questions, and provide feedback at the end.`,
+      prompt: `You are an English conversation partner role-playing the situation: "${dailyScenario.title}".
+
+SITUATION: ${dailyScenario.description}
+
+IMPORTANT INSTRUCTIONS:
+- You MUST start every conversation by immediately beginning the role-play scenario
+- Act naturally as if you are really in this situation with the user
+- Use realistic, everyday English appropriate for this context
+- Keep responses conversational and natural (1-2 sentences usually)
+- Ask questions and guide the conversation to practice different aspects of this situation
+- Be encouraging and supportive of the user's English practice
+- If the user makes mistakes, gently guide them with natural corrections
+- Stay in character for this specific situation throughout the conversation
+
+REMEMBER: Always start the conversation immediately when prompted, don't wait for the user to speak first. Begin with a natural greeting or comment that fits this exact situation.`,
     };
   }, [dailyScenario]);
 
-  const selectedExamCharacter =
-    isDailyExamRoute && dailyExamCharacter
-      ? dailyExamCharacter
-      : getExamCharacterById(selectedExamCharacterId) ||
-        getDefaultExamCharacter();
+  const [selectedVoice, setSelectedVoice] = useState<string>("alloy");
+
+  const characterOptions = useMemo(
+    () => [
+      {
+        id: dailyExamCharacter.id,
+        name: dailyExamCharacter.name,
+        emoji: dailyExamCharacter.emoji,
+      },
+    ],
+    [dailyExamCharacter],
+  );
+
+  const [selectedCharacterId, setSelectedCharacterId] = useState<string>(
+    dailyExamCharacter.id,
+  );
 
   useEffect(() => {
-    if (isDailyExamRoute) {
-      setExamCharacterDialogOpen(false);
-    }
-  }, [isDailyExamRoute]);
+    setSelectedCharacterId(dailyExamCharacter.id);
+  }, [dailyExamCharacter.id]);
 
-  // 오디오 설정 훅 (responseDelayMs: 2초로 설정하여 사용자 메시지 등록 후 적절한 대기시간 제공)
+  // 오디오 설정 훅
   const {
     settings: {
       speechLang,
@@ -210,6 +217,15 @@ export default function ExamChat() {
   const [examResultsVisible, setExamResultsVisible] = useState(false);
   const [examResultsText, setExamResultsText] = useState("");
 
+  // 대화 시작 상태
+  const [conversationStarted, setConversationStarted] = useState(false);
+  const [rolePlayStarted, setRolePlayStarted] = useState(false);
+
+  // 평가 다이얼로그 상태
+  const [evaluationOpen, setEvaluationOpen] = useState(false);
+  const [evaluationLoading, setEvaluationLoading] = useState(false);
+  const [evaluationData, setEvaluationData] = useState<any>(null);
+
   // 채팅 메시지 훅
   const {
     messages,
@@ -226,7 +242,7 @@ export default function ExamChat() {
     suggestReply,
   } = useChatMessages({
     responseDelayMs,
-    selectedCharacterId: selectedExamCharacterId,
+    selectedCharacterId,
     maxSentenceCount,
     englishLevel,
     onSendMessage: (text: string) => {
@@ -241,14 +257,15 @@ export default function ExamChat() {
     },
   });
 
-  // 시험 완료 감지를 위한 어시스턴트 메시지 핸들러
+  // 어시스턴트 메시지 핸들러
   const handleAssistantMessage = (message: string) => {
     addAssistantMessage(message);
+    // Zustand store에도 저장
+    addMessage({ sender: "callbot", text: message, type: "text" });
 
-    // 시험 완료 감지
+    // 시험 완료 감지 (옵션)
     if (detectExamCompletion(message)) {
       setExamResultsText(message);
-      // 약간의 지연 후 슬라이드 다운 표시 (자연스러운 UX)
       setTimeout(() => {
         setExamResultsVisible(true);
       }, 1000);
@@ -257,20 +274,19 @@ export default function ExamChat() {
 
   // 시험 캐릭터를 일반 캐릭터 형식으로 변환
   const actualPersonaCharacter = {
-    id: selectedExamCharacter.id,
-    name: selectedExamCharacter.name,
-    emoji: selectedExamCharacter.emoji,
-    persona: selectedExamCharacter.prompt,
-    scenario: `${selectedExamCharacter.description} 상황에서 영어 대화를 진행합니다.`,
-    firstMessage: `안녕하세요! 저는 ${selectedExamCharacter.name}입니다. ${selectedExamCharacter.description} 상황으로 영어 회화를 연습해보겠습니다.`,
-    personality: selectedExamCharacter.description,
-    background: `${selectedExamCharacter.name} 역할을 맡아 ${selectedExamCharacter.description} 상황에서 시험을 진행합니다.`,
+    id: dailyExamCharacter.id,
+    name: dailyExamCharacter.name,
+    emoji: dailyExamCharacter.emoji,
+    persona: dailyExamCharacter.prompt,
+    scenario: `${dailyExamCharacter.description} 상황에서 영어 대화를 진행합니다.`,
+    firstMessage: `안녕하세요! ${dailyExamCharacter.description} 상황으로 영어 회화를 연습해보겠습니다.`,
+    personality: dailyExamCharacter.description,
+    background: `${dailyExamCharacter.name} 역할을 맡아 ${dailyExamCharacter.description} 상황에서 대화를 진행합니다.`,
     defaultGender: "female" as const,
   };
 
   /**
-   * 시험 완료 여부를 감지하는 함수
-   * 빠른 테스트 결과 메시지 감지
+   * 시험 완료 여부를 감지하는 함수 (옵션)
    */
   const detectExamCompletion = (message: string): boolean => {
     const examCompletionIndicators = [
@@ -318,11 +334,13 @@ export default function ExamChat() {
     autoGainControl,
     selectedVoice,
     personaCharacter: actualPersonaCharacter,
-    personaGender: "female", // 시험에서는 기본값 사용
+    personaGender: "female",
     onUserMessage: (text: string) => {
       // 최종 메시지가 오면 임시 메시지 제거하고 정식 메시지 추가
       setTempVoiceMessage(null);
       addUserMessage(text);
+      // Zustand store에도 저장
+      addMessage({ sender: "user", text: text, type: "text" });
     },
     onAssistantMessage: handleAssistantMessage,
     onUserSpeechStart: () => {
@@ -330,120 +348,309 @@ export default function ExamChat() {
       console.log("🎤 음성 시작 - 임시 메시지 표시");
       setTempVoiceMessage("🎤 말하는 중...");
 
-      // 테스트 시작 토스트 (첫 번째 음성 시작 시에만)
+      // 대화 시작 토스트 (첫 번째 음성 시작 시에만)
       if (messages.length === 0) {
-        setToastMessage("⚡ 빠른 테스트가 시작되었습니다!");
+        setToastMessage("🎯 일일 영어 대화가 시작되었습니다!");
         setTimeout(() => setToastMessage(null), 2000);
       }
     },
     onUserTranscriptUpdate: (text: string, isFinal: boolean) => {
-      // 실시간 텍스트 업데이트만 처리 (중복 방지를 위해 addUserMessage 제거)
+      // 실시간 텍스트 업데이트만 처리
       if (!isFinal && text.trim()) {
         console.log("🎤 실시간 업데이트:", text);
         setTempVoiceMessage(text);
       } else if (isFinal) {
-        // 음성 인식 완료 시 임시 메시지만 제거 (실제 메시지 추가는 onUserMessage에서 처리)
+        // 음성 인식 완료 시 임시 메시지만 제거
         console.log("🎤 음성 인식 완료 - 임시 메시지 제거");
         setTempVoiceMessage(null);
       }
     },
   });
 
-  // 시험 모드 자동 음성 시작 설정 (기존 코드 유지)
-  useEffect(() => {
-    if (examMode && !voiceEnabled) {
-      const voiceStartCallback = async () => {
-        console.log("ExamChat: 시험 모드 콜백 - 음성 연결 시작");
-        setVoiceEnabled(true);
-        await startVoice();
-      };
-
-      // 이미 연결되어 있으면 바로 실행, 아니면 연결 완료 시 실행되도록 콜백 설정
-      if (connected) {
-        setTimeout(voiceStartCallback, 500);
-      } else {
-        setExamMode(true, voiceStartCallback);
-      }
-    }
-  }, [
-    examMode,
-    connected,
-    voiceEnabled,
-    setVoiceEnabled,
-    startVoice,
-    setExamMode,
-  ]);
-
-  // 시험 연결 및 준비 함수
+  // 연결 및 준비 함수
   const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-  const ensureConnectedAndReady = useCallback(async () => {
-    // Ensure WebSocket connection
-    if (user && !connected) {
-      connect("general", user.name, user.email, "전체 채팅");
-      // Wait for connection
-      for (let i = 0; i < 20; i++) {
-        if (connected) break;
-        await sleep(200);
-      }
+  // 상황극 시작 함수
+  const startRolePlay = () => {
+    if (
+      !dailyScenario ||
+      !voiceConn?.dc ||
+      voiceConn.dc.readyState !== "open"
+    ) {
+      setToastMessage("❌ 음성 연결을 확인해주세요.");
+      setTimeout(() => setToastMessage(null), 2000);
+      return;
     }
 
-    // Ensure voice connection
-    if (!voiceEnabled || !voiceConn) {
-      setVoiceEnabled(true);
-      await startVoice();
+    // 새로운 대화 시작 (Zustand store)
+    startNewConversation(dailyScenario);
+
+    const rolePlayStartMessage = `START ROLE-PLAY NOW!
+
+You are in this exact situation: "${dailyScenario.title}"
+Context: ${dailyScenario.description}
+
+INSTRUCTIONS:
+- Begin the conversation immediately with a natural greeting or comment that fits this situation
+- Act as if you are really there in this situation with me
+- Use realistic everyday English
+- Don't explain the situation, just start talking naturally
+- Keep it conversational and engaging
+
+Start speaking now!`;
+
+    console.log("상황극 시작 명령 전송:", rolePlayStartMessage);
+    sendVoiceMessage(rolePlayStartMessage);
+    setRolePlayStarted(true);
+    setToastMessage("🎭 상황극이 시작되었습니다!");
+    setTimeout(() => setToastMessage(null), 2000);
+  };
+
+  // 회화 평가 함수
+  const evaluateConversation = async () => {
+    // Zustand store에서 메시지 가져오기
+    const storeUserMessages = getUserMessages();
+    const storeFullConversation = getFullConversation();
+
+    if (storeUserMessages.length === 0) {
+      setToastMessage("❌ 평가할 대화가 없습니다.");
+      setTimeout(() => setToastMessage(null), 2000);
+      return;
     }
 
-    // Wait for data channel open with longer timeout
-    for (let i = 0; i < 30; i++) {
-      if (voiceConn?.dc && voiceConn.dc.readyState === "open") {
-        console.log("Voice data channel ready");
+    setEvaluationLoading(true);
+    setEvaluationOpen(true);
+
+    try {
+      console.log("📊 평가 시작 - 사용자 메시지 수:", storeUserMessages.length);
+      console.log("📊 사용자 메시지들:", storeUserMessages);
+
+      // 사용자 메시지만 추출 (실제 영어 학습자가 말한 내용)
+      const userMessages = storeUserMessages.join("\n");
+
+      // 전체 대화 흐름 (AI 응답 포함)
+      const fullConversation = storeFullConversation;
+
+      console.log("🎤 사용자 영어 발화:", userMessages);
+      console.log("💬 전체 대화:", fullConversation);
+
+      if (!userMessages.trim()) {
+        setToastMessage("❌ 평가할 사용자 발화가 없습니다.");
+        setTimeout(() => setToastMessage(null), 2000);
+        setEvaluationOpen(false);
         return;
       }
-      console.log(`Waiting for voice connection... ${i + 1}/30`);
-      await sleep(300);
+
+      const evaluationPrompt = `한국 영어 학습자의 회화를 평가해주세요. JSON 형식으로만 답변하세요.
+
+대화 상황: "${dailyScenario?.title}"
+사용자 발화: "${userMessages}"
+
+다음 JSON 형식으로만 응답하세요:
+{
+  "scores": {"fluency": 7, "grammar": 8, "comprehension": 7},
+  "goodExpressions": ["잘 사용한 표현 → 한국어 설명"],
+  "weakPoints": ["개선할 점"],
+  "recommendations": ["학습 제안"],
+  "mainMessages": ["주요 메시지"],
+  "keyExpressions": ["핵심 표현"],
+  "overallComment": "한국어로 총평 (2-3문장)"
+}`;
+
+      console.log("📤 평가 프롬프트 전송:", evaluationPrompt);
+
+      // examApi를 사용해서 평가 요청
+      const { examApi } = await import("../../chatbot/exam/api/exam");
+
+      let response;
+      try {
+        // 첫 번째 시도: 상세 평가
+        response = await examApi.getSampleAnswers({
+          question: evaluationPrompt,
+          topic: "conversation_evaluation",
+          level: "intermediate",
+          count: 1,
+          englishOnly: false,
+        });
+      } catch (apiError) {
+        console.log("⚠️ 첫 번째 API 호출 실패, 간단한 프롬프트로 재시도");
+
+        // Fallback: 간단한 프롬프트로 재시도
+        const simplePrompt = `"${userMessages}" 영어 평가. JSON만 반환: {"scores":{"fluency":5,"grammar":5,"comprehension":5},"goodExpressions":["연습중"],"weakPoints":["더 연습 필요"],"recommendations":["꾸준히 연습"],"mainMessages":["기본 의사소통"],"keyExpressions":["기본 표현"],"overallComment":"오늘도 영어로 대화하려고 노력하신 점이 훌륭합니다. 꾸준히 연습하시면 분명 늘어요!"}`;
+
+        response = await examApi.getSampleAnswers({
+          question: simplePrompt,
+          topic: "simple",
+          level: "beginner",
+          count: 1,
+          englishOnly: false,
+        });
+      }
+
+      console.log("📥 API 응답 구조:", response);
+      console.log("📥 첫 번째 샘플:", response.samples?.[0]);
+
+      if (!response.samples || response.samples.length === 0) {
+        throw new Error("API에서 응답을 받지 못했습니다.");
+      }
+
+      const firstSample = response.samples[0];
+      console.log("📥 첫 번째 샘플 전체:", firstSample);
+
+      const evaluationResult = firstSample?.text;
+      console.log("📥 추출된 텍스트:", evaluationResult);
+
+      if (!evaluationResult || evaluationResult.trim() === "") {
+        console.log("📥 샘플 객체 키들:", Object.keys(firstSample || {}));
+        throw new Error(
+          `비어있는 응답을 받았습니다. 샘플 구조: ${JSON.stringify(firstSample)}`,
+        );
+      }
+
+      console.log("📥 GPT 응답 전체:", evaluationResult);
+
+      // 안전한 JSON 파싱 로직
+      try {
+        console.log("🔍 원본 응답:", evaluationResult);
+
+        // JSON 추출 함수
+        const extractJSON = (text: string): string => {
+          // 1단계: ```json 블록 추출
+          let match = text.match(/```json\s*(\{[\s\S]*?\})\s*```/);
+          if (match) return match[1].trim();
+
+          // 2단계: ``` 일반 블록 추출
+          match = text.match(/```\s*(\{[\s\S]*?\})\s*```/);
+          if (match) return match[1].trim();
+
+          // 3단계: 첫 번째 { 부터 마지막 } 까지 추출
+          const startIdx = text.indexOf("{");
+          const endIdx = text.lastIndexOf("}");
+          if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
+            return text.substring(startIdx, endIdx + 1);
+          }
+
+          return text.trim();
+        };
+
+        const jsonString = extractJSON(evaluationResult);
+        console.log("🔍 추출된 JSON:", jsonString);
+
+        // JSON 파싱 시도
+        const evaluationData = JSON.parse(jsonString);
+
+        // 데이터 유효성 검사
+        if (
+          !evaluationData.scores ||
+          !evaluationData.goodExpressions ||
+          !evaluationData.weakPoints
+        ) {
+          throw new Error("필수 평가 항목이 누락되었습니다");
+        }
+
+        console.log("✅ 평가 데이터 파싱 성공:", evaluationData);
+        setEvaluationData(evaluationData);
+      } catch (parseError) {
+        console.error("❌ JSON 파싱 실패:", parseError);
+        console.log("❌ 원본 응답:", evaluationResult);
+
+        // 파싱 실패 시 기본 평가 데이터 생성
+        const fallbackData = {
+          scores: {
+            fluency: 5,
+            grammar: 5,
+            comprehension: 5,
+          },
+          goodExpressions: ["평가 처리 중 오류가 발생했습니다"],
+          weakPoints: ["정확한 평가를 위해 다시 시도해주세요"],
+          recommendations: ["나중에 다시 평가해보시기 바랍니다"],
+          mainMessages: ["의사소통 시도"],
+          keyExpressions: ["기본 표현 연습"],
+          overallComment:
+            "시스템 오류로 정확한 평가가 어렵지만, 영어로 대화를 시도하신 것만으로도 훌륭합니다. 다음에 다시 도전해보세요!",
+        };
+
+        setEvaluationData(fallbackData);
+        setToastMessage(
+          "⚠️ 평가 처리 중 문제가 발생했지만 기본 결과를 표시합니다.",
+        );
+        setTimeout(() => setToastMessage(null), 3000);
+      }
+    } catch (error) {
+      console.error("❌ 평가 요청 실패:", error);
+      const message =
+        error instanceof Error
+          ? error.message
+          : "알 수 없는 오류가 발생했습니다.";
+      setToastMessage(`❌ 평가 실패: ${message}`);
+      setTimeout(() => setToastMessage(null), 3000);
+      setEvaluationOpen(false);
+    } finally {
+      setEvaluationLoading(false);
     }
-    // last attempt if state lagged
-    if (!(voiceConn?.dc && voiceConn.dc.readyState === "open")) {
-      console.error("Voice connection state:", voiceConn?.dc?.readyState);
-      throw new Error("음성 연결이 준비되지 않았습니다. 다시 시도해주세요.");
+  };
+
+  // 대화 자동 시작
+  useEffect(() => {
+    if (!conversationStarted && dailyScenario && user) {
+      setConversationStarted(true);
+
+      const startConversation = async () => {
+        try {
+          console.log("일일 영어 대화 자동 시작");
+
+          // WebSocket 연결
+          if (!connected && !connecting) {
+            connect("general", user.name, user.email, "전체 채팅");
+
+            // 연결 완료까지 대기
+            for (let i = 0; i < 30; i++) {
+              await sleep(200);
+              if (connected) break;
+            }
+          }
+
+          // 음성 연결 시작
+          if (!voiceEnabled) {
+            setVoiceEnabled(true);
+            await startVoice();
+
+            // 음성 연결 완료까지 대기
+            for (let i = 0; i < 50; i++) {
+              await sleep(200);
+              if (voiceConn?.dc && voiceConn.dc.readyState === "open") {
+                break;
+              }
+            }
+          }
+
+          setToastMessage(
+            "🎯 연결이 완료되었습니다! 상황극 시작 버튼을 눌러주세요.",
+          );
+          setTimeout(() => setToastMessage(null), 4000);
+        } catch (error) {
+          console.error("대화 시작 실패:", error);
+          setToastMessage("❌ 대화 시작에 실패했습니다. 다시 시도해주세요.");
+          setTimeout(() => setToastMessage(null), 3000);
+        }
+      };
+
+      // 약간의 지연 후 시작
+      setTimeout(startConversation, 1000);
     }
   }, [
+    conversationStarted,
+    dailyScenario,
     user,
     connected,
-    connect,
+    connecting,
     voiceEnabled,
     voiceConn,
+    connect,
     setVoiceEnabled,
     startVoice,
+    sendVoiceMessage,
   ]);
-
-  // 시험 모드 훅
-  const { examSending, triggerSingleExamWithCharacter } = useExamMode({
-    voiceConnection: voiceConn,
-    selectedVoice,
-    ensureConnectedAndReady,
-    onAddAssistantMessage: handleAssistantMessage,
-  });
-
-  useEffect(() => {
-    if (!isDailyExamRoute) {
-      if (dailyExamStatus !== "idle") {
-        setDailyExamStatus("idle");
-      }
-      return;
-    }
-
-    if (!dailyScenario) {
-      return;
-    }
-
-    if (dailyExamStatus !== "idle") {
-      return;
-    }
-
-    setDailyExamStatus("ready");
-  }, [isDailyExamRoute, dailyScenario, dailyExamStatus]);
 
   const openTranslation = (text: string) => {
     setTranslationText(text);
@@ -550,6 +757,10 @@ export default function ExamChat() {
     setPlayingInputText(false);
   };
 
+  if (!dailyScenario) {
+    return null;
+  }
+
   return (
     <div className="h-screen bg-white flex flex-col">
       {/* Hidden audio sink for AI voice */}
@@ -558,7 +769,7 @@ export default function ExamChat() {
       {/* 토스트 메시지 */}
       {toastMessage && (
         <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 animate-pulse">
-          <div className="bg-purple-500 text-white px-4 py-2 rounded-lg shadow-lg text-sm font-medium">
+          <div className="bg-blue-500 text-white px-4 py-2 rounded-lg shadow-lg text-sm font-medium">
             {toastMessage}
           </div>
         </div>
@@ -569,10 +780,20 @@ export default function ExamChat() {
         <div className="p-4">
           <div className="flex justify-between items-center">
             <div className="flex items-center space-x-3">
-              {/* 시험 로고 */}
-              <Button variant="outline" size="sm" className="w-8 h-8 p-0">
-                <span className="text-lg">🎓</span>
+              {/* 뒤로가기 버튼 */}
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-8 h-8 p-0"
+                onClick={() => navigate("/daily-english")}
+              >
+                <ArrowLeftIcon className="h-4 w-4" />
               </Button>
+              {/* 일일 영어 로고 */}
+              <div className="flex items-center gap-2">
+                <span className="text-lg">🎯</span>
+                <span className="font-semibold text-sm">일일 영어 대화</span>
+              </div>
             </div>
             <div className="flex items-center space-x-1">
               {/* 전체 채팅방 버튼 */}
@@ -627,7 +848,9 @@ export default function ExamChat() {
                 variant="outline"
                 size="sm"
                 onClick={() => {
-                  console.log("Logout button clicked in ExamChat");
+                  console.log(
+                    "Logout button clicked in DailyEnglishConversation",
+                  );
                   logout();
                 }}
                 title="로그아웃"
@@ -640,25 +863,54 @@ export default function ExamChat() {
         </div>
       </div>
 
-      {/* 시험 정보 및 연결 상태 */}
+      {/* 시나리오 정보 및 연결 상태 */}
       <div className="bg-card border-b border-border p-4 flex-shrink-0">
-        <div className="text-center">
-          <div className="mb-2" />
+        <div className="rounded-xl border border-border bg-blue-50/40 p-4 shadow-sm mb-4">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">{dailyExamCharacter.emoji}</span>
+            <div>
+              <p className="text-xs font-medium text-blue-600 uppercase tracking-wider">
+                오늘의 시나리오
+              </p>
+              <h2 className="text-base font-semibold text-foreground">
+                {dailyScenario.title}
+              </h2>
+            </div>
+          </div>
+          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+            {dailyScenario.description}
+          </p>
+          <p className="mt-2 text-xs text-blue-500">
+            이 상황에 맞게 자연스럽게 대화를 이어가며 영어로 답변해 주세요.
+          </p>
 
+          {/* 상황극 시작 버튼 */}
+          {connected && !rolePlayStarted && (
+            <div className="mt-4 flex justify-center">
+              <Button
+                onClick={startRolePlay}
+                size="lg"
+                className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold px-8 py-3 rounded-xl shadow-lg"
+              >
+                🎭 상황극 시작하기
+              </Button>
+            </div>
+          )}
+
+          {rolePlayStarted && (
+            <div className="mt-4 text-center">
+              <p className="text-xs text-green-600 font-medium">
+                ✅ 상황극이 진행 중입니다. AI의 응답을 기다려주세요!
+              </p>
+            </div>
+          )}
+        </div>
+
+        <div className="text-center">
           {/* 음성 시작 버튼 또는 파동 표시 */}
           <div className="flex justify-center items-center space-x-3">
             {voiceEnabled && isRecording ? (
               <>
-                {/* 시험 출제자 선택 버튼 */}
-                <Button
-                  onClick={() => setExamCharacterDialogOpen(true)}
-                  variant="outline"
-                  size="sm"
-                  className="w-12 h-12 p-0"
-                  title={selectedExamCharacter.name}
-                >
-                  <span className="text-lg">{selectedExamCharacter.emoji}</span>
-                </Button>
                 {/* 음성 파동 + 상태 점 오버레이 (compact) */}
                 <div className="relative">
                   <div className="bg-card rounded-lg p-3 shadow-lg border border-border">
@@ -682,187 +934,76 @@ export default function ExamChat() {
                   />
                 </div>
 
-                {/* 중단 버튼 */}
+                {/* 대화 종료 버튼 */}
                 <Button
                   onClick={() => {
                     stopVoice();
                     setVoiceEnabled(false);
                     disconnect();
                     clearChat();
+                    navigate("/daily-english");
                   }}
                   variant="destructive"
                   size="sm"
                   className="w-12 h-12 p-0"
-                  title="시험 중단"
+                  title="대화 종료"
                 >
                   <XMarkIcon className="h-4 w-4" />
                 </Button>
 
-                {/* 시험 내용 클리어 버튼 (연결된 상태에서만) */}
+                {/* 대화 내용 클리어 버튼 (연결된 상태에서만) */}
                 {connected && (
                   <Button
-                    onClick={clearChat}
+                    onClick={() => {
+                      clearChat();
+                      clearStoreMessages();
+                    }}
                     variant="outline"
                     size="sm"
                     className="w-12 h-12 p-0"
-                    title="시험 내용 지우기"
+                    title="대화 내용 지우기"
                   >
                     <TrashIcon className="h-4 w-4" />
                   </Button>
                 )}
 
-                {/* 빠른 테스트 버튼 (연결된 상태에서만) */}
-                {connected && (
+                {/* 평가 버튼 (대화가 있을 때만) */}
+                {connected && getUserMessages().length > 0 && (
                   <Button
-                    onClick={async () => {
-                      try {
-                        // 기존 대화 내용 지우기
-                        clearChat();
-                        // 1문제 빠른 시험 시작
-                        await triggerSingleExamWithCharacter(
-                          selectedExamCharacter,
-                        );
-                        if (isDailyExamRoute) {
-                          setDailyExamStatus("started");
-                        }
-                      } catch (error) {
-                        console.error("빠른 테스트 시작 실패:", error);
-                        console.error(
-                          "빠른 테스트를 시작할 수 없습니다:",
-                          error,
-                        );
-                      }
-                    }}
+                    onClick={evaluateConversation}
                     variant="outline"
                     size="sm"
-                    className="w-12 h-12 p-0 bg-green-100 hover:bg-green-200"
-                    title="빠른 테스트"
-                    disabled={examSending}
+                    className="w-12 h-12 p-0 bg-blue-50 hover:bg-blue-100"
+                    title="회화 평가"
+                    disabled={evaluationLoading}
                   >
-                    <span className="text-lg">⚡</span>
+                    <ChartBarIcon className="h-4 w-4 text-blue-600" />
                   </Button>
                 )}
               </>
             ) : (
-              <>
-                {/* 시험 출제자 선택 버튼 */}
-                {!isDailyExamRoute ? (
-                  <Button
-                    onClick={() => setExamCharacterDialogOpen(true)}
-                    variant="outline"
-                    size="sm"
-                    className="w-12 h-12 p-0"
-                    title={selectedExamCharacter.name}
-                  >
-                    <span className="text-lg">
-                      {selectedExamCharacter.emoji}
-                    </span>
-                  </Button>
-                ) : (
-                  <div className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-left">
-                    <span className="text-lg">
-                      {selectedExamCharacter.emoji}
-                    </span>
-                    <div className="flex flex-col">
-                      <span className="text-xs font-semibold text-muted-foreground">
-                        데일리 시나리오
-                      </span>
-                      <span className="text-sm font-semibold text-foreground">
-                        {selectedExamCharacter.name}
-                      </span>
-                    </div>
-                  </div>
-                )}
-
-                {/* Connection and Exam Buttons */}
-                {!isDailyExamRoute && (
-                  <div className="relative inline-block">
-                    <Button
-                      onClick={async () => {
-                        try {
-                          // 연결되지 않은 상태라면 먼저 연결
-                          if (!connected && !connecting && user) {
-                            console.log("시험 버튼: WebSocket 연결 시작");
-                            connect(
-                              "general",
-                              user.name,
-                              user.email,
-                              "전체 채팅",
-                            );
-
-                            // 연결 완료까지 대기 (최대 4초)
-                            for (let i = 0; i < 20; i++) {
-                              await sleep(200);
-                              if (connected) break;
-                            }
-                          }
-
-                          // 음성 연결이 없다면 시작
-                          if (!voiceEnabled) {
-                            console.log("시험 버튼: 음성 연결 시작");
-                            setVoiceEnabled(true);
-                            await startVoice();
-                          }
-
-                          // 연결 완료 후 시험 시작
-                        if (connected) {
-                          console.log("시험 버튼: 빠른 테스트 시작");
-                          clearChat();
-                          await triggerSingleExamWithCharacter(
-                            selectedExamCharacter,
-                          );
-                          if (isDailyExamRoute) {
-                            setDailyExamStatus("started");
-                          }
-                        } else {
-                          throw new Error("연결에 실패했습니다");
-                        }
-                      } catch (error) {
-                        console.error("시험 시작 실패:", error);
-                          console.error("시험을 시작할 수 없습니다:", error);
-                        }
-                      }}
-                      variant="outline"
-                      size="sm"
-                      className="h-12 px-4 text-sm bg-green-100 hover:bg-green-200"
-                      disabled={connecting || examSending}
-                    >
-                      {connecting
-                        ? "연결중..."
-                        : examSending
-                          ? "준비중..."
-                          : connected
-                            ? "빠른 테스트"
-                            : "시험 시작"}
-                    </Button>
-                    <span
-                      className={`absolute -top-1 -right-1 w-3 h-3 rounded-full ring-2 ring-card ${
-                        connecting
-                          ? "bg-amber-500 animate-pulse"
-                          : connected
-                            ? "bg-emerald-500"
-                            : "bg-gray-400"
-                      }`}
-                    />
-                  </div>
-                )}
-
-                {isDailyExamRoute && (
-                  <div className="text-xs text-muted-foreground text-center">
-                    {dailyExamStatus === "ready"
-                      ? "빠른 테스트(⚡) 버튼을 누르면 선택한 시나리오로 회화 시험이 시작됩니다."
-                      : dailyExamStatus === "started"
-                        ? "시험이 진행 중입니다. 필요하면 ⚡ 버튼으로 문제를 다시 요청할 수 있습니다."
-                        : dailyExamStatus === "failed"
-                          ? "시험을 시작하지 못했습니다. 새로고침한 뒤 다시 시도해 주세요."
-                          : "잠시만 기다리세요. 선택한 시나리오를 불러오고 있습니다."}
-                  </div>
-                )}
-              </>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <div
+                  className={`w-2 h-2 rounded-full ${
+                    connecting
+                      ? "bg-yellow-500 animate-pulse"
+                      : connected
+                        ? "bg-green-500"
+                        : "bg-red-500"
+                  }`}
+                />
+                <span>
+                  {connecting
+                    ? "연결 중..."
+                    : connected
+                      ? "대화 연결됨"
+                      : "연결 끊김"}
+                </span>
+              </div>
             )}
           </div>
 
-          {/* 음성 상태 표시: 활성 상태에서만 노출 (idle 시 숨김) */}
+          {/* 음성 상태 표시: 활성 상태에서만 노출 */}
           {voiceEnabled && isRecording && (isListening || isResponding) && (
             <div
               className={`flex items-center justify-center space-x-2 text-sm mt-3 ${
@@ -888,38 +1029,14 @@ export default function ExamChat() {
         </div>
       </div>
 
-      {isDailyExamRoute && dailyScenario && (
-        <div className="px-4 pt-4">
-          <div className="rounded-xl border border-border bg-blue-50/40 p-4 shadow-sm">
-            <div className="flex items-center gap-3">
-              <span className="text-2xl">{selectedExamCharacter.emoji}</span>
-              <div>
-                <p className="text-xs font-medium text-blue-600 uppercase tracking-wider">
-                  오늘의 시나리오
-                </p>
-                <h2 className="text-base font-semibold text-foreground">
-                  {dailyScenario.title}
-                </h2>
-              </div>
-            </div>
-            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-              {dailyScenario.description}
-            </p>
-            <p className="mt-2 text-xs text-blue-500">
-              이 상황에 맞게 역할극 형태로 대화를 이어가며 영어로 답변해 주세요.
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* 시험 채팅 영역 */}
+      {/* 대화 채팅 영역 */}
       <div
-        className="h-[calc(100vh-200px)] overflow-y-scroll overscroll-contain p-4 space-y-3"
+        className="h-[calc(100vh-280px)] overflow-y-scroll overscroll-contain p-4 space-y-3"
         style={{ WebkitOverflowScrolling: "touch" }}
       >
         {messages.length === 0 ? (
           <div className="text-center text-gray-400 mt-8">
-            <p className="mb-2">🎓 영어 회화 시험을 시작해 보세요!</p>
+            <p className="mb-2">🎯 일일 영어 대화가 곧 시작됩니다!</p>
             <p className="text-sm">
               음성으로 답변하거나 아래 입력창을 사용하세요.
             </p>
@@ -931,8 +1048,8 @@ export default function ExamChat() {
                 key={message.id}
                 message={message}
                 isUser={message.sender === "user"}
-                isExamMode={true}
-                examCharacterId={selectedExamCharacterId}
+                isExamMode={false}
+                examCharacterId={dailyExamCharacter.id}
                 relatedMessages={messages}
               />
             ))}
@@ -971,7 +1088,7 @@ export default function ExamChat() {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* 테스트 입력 영역 */}
+      {/* 입력 영역 */}
       {connected && (
         <div className="bg-card border-t border-border p-4 flex-shrink-0">
           <div className="flex items-center space-x-2">
@@ -1082,17 +1199,13 @@ export default function ExamChat() {
         </div>
       )}
 
-      {/* 설정 드롭다운 */}
+      {/* 설정 다이얼로그 */}
       <MobileSettingsDropdown
         isOpen={settingsOpen}
         onClose={() => setSettingsOpen(false)}
-        characterOptions={EXAM_CHARACTERS.map((c) => ({
-          id: c.id,
-          name: c.name,
-          emoji: c.emoji,
-        }))}
-        selectedCharacterId={selectedExamCharacterId}
-        onSelectCharacter={(id: string) => setSelectedExamCharacterId(id)}
+        characterOptions={characterOptions}
+        selectedCharacterId={selectedCharacterId}
+        onSelectCharacter={setSelectedCharacterId}
         voiceOptions={[...VOICE_OPTIONS]}
         selectedVoice={selectedVoice}
         onSelectVoice={setSelectedVoice}
@@ -1119,55 +1232,55 @@ export default function ExamChat() {
         onClearChat={clearChat}
       />
 
-      {/* Exam Character Dialog */}
-      <ExamCharacterDialog
-        open={examCharacterDialogOpen}
-        onClose={() => setExamCharacterDialogOpen(false)}
-        selectedCharacterId={selectedExamCharacterId}
-        onConfirm={(characterId) => {
-          setSelectedExamCharacterId(characterId);
-
-          // 음성 연결이 활성화되어 있으면 재시작 (새 캐릭터 설정 적용)
-          if (voiceConn && isRecording) {
-            stopVoice();
-            setTimeout(async () => {
-              setVoiceEnabled(true);
-              await startVoice();
-            }, 500);
-          }
+      {/* 번역 다이얼로그 */}
+      <MobileTranslationDialog
+        open={translationOpen}
+        onClose={() => {
+          console.log("🔵 번역 다이얼로그 닫기 요청");
+          setTranslationOpen(false);
+        }}
+        text={translationText}
+        onInsertText={(translatedText: string) => {
+          setNewMessage(translatedText);
+          setTranslationOpen(false);
         }}
       />
 
-      {/* Translation Dialog (mobile) */}
-      <MobileTranslationDialog
-        open={translationOpen}
-        onClose={() => setTranslationOpen(false)}
-        text={translationText}
-        onInsertText={(text: string) => setNewMessage(text)}
-      />
-
-      {/* My Conversation Archive Dialog */}
-      <MyConversationArchive
-        open={conversationArchiveDialogOpen}
-        onClose={() => setConversationArchiveDialogOpen(false)}
-        onInsertConversation={(text: string) => setNewMessage(text)}
-      />
-
-      {/* Korean Input Dialog */}
+      {/* 한국어 입력 다이얼로그 */}
       <KoreanInputDialog
         isOpen={koreanInputDialogOpen}
         onClose={() => setKoreanInputDialogOpen(false)}
-        onInsertText={(text: string) => setNewMessage(text)}
+        onInsertText={(translatedText: string) => {
+          setNewMessage(translatedText);
+          setKoreanInputDialogOpen(false);
+        }}
       />
 
-      {/* Exam Results Slide Down */}
+      {/* 나의 대화 아카이브 */}
+      <MyConversationArchive
+        open={conversationArchiveDialogOpen}
+        onClose={() => setConversationArchiveDialogOpen(false)}
+      />
+
+      {/* 시험 결과 슬라이드 다운 (옵션) */}
       <ExamResultsSlideDown
-        examResultText={examResultsText}
         isVisible={examResultsVisible}
         onClose={() => setExamResultsVisible(false)}
+        examResultText={examResultsText}
       />
 
-      {/* Toast Container */}
+      {/* 회화 평가 다이얼로그 */}
+      <ConversationEvaluationDialog
+        open={evaluationOpen}
+        onClose={() => {
+          setEvaluationOpen(false);
+          setEvaluationData(null);
+        }}
+        loading={evaluationLoading}
+        evaluationData={evaluationData}
+      />
+
+      {/* 토스트 컨테이너 */}
       <ToastContainer />
     </div>
   );

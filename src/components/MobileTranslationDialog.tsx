@@ -27,6 +27,9 @@ export default function MobileTranslationDialog({
   text,
   onInsertText,
 }: MobileTranslationDialogProps) {
+  console.log("🟡 MobileTranslationDialog 렌더링됨");
+  console.log("🟡 open:", open);
+  console.log("🟡 onClose 함수:", onClose);
   const [loading, setLoading] = useState(false);
   const [translation, setTranslation] = useState<TranslationResponse | null>(
     null,
@@ -299,7 +302,12 @@ Please respond in this exact JSON format:
   return (
     <FullScreenSlideDialog
       isOpen={open}
-      onClose={onClose}
+      onClose={() => {
+        console.log(
+          "🟢 MobileTranslationDialog FullScreenSlideDialog onClose 호출됨",
+        );
+        onClose();
+      }}
       title="번역"
       className="h-[100vh]"
     >
@@ -320,17 +328,18 @@ Please respond in this exact JSON format:
             </button>
           </div>
         ) : translation ? (
-          <div className="space-y-6 h-full flex flex-col">
-            {/* 원문 - 라벨 제거하고 공간 확대 */}
+          <div className="space-y-3 h-full flex flex-col">
+            {/* 원문 */}
             <div className="bg-gray-50 rounded-xl p-4 relative overflow-hidden flex-1">
+              <div className="text-xs font-medium text-gray-600 mb-2">원문</div>
               <textarea
                 value={editableText}
                 onChange={(e) => handleTextChange(e.target.value)}
-                className="w-full text-gray-900 leading-relaxed bg-transparent border-none resize-none focus:outline-none pr-20 h-full text-xl"
+                className="w-full text-gray-900 leading-relaxed bg-transparent border-none resize-none focus:outline-none pr-20 h-full text-lg"
                 placeholder="원문을 입력하세요..."
                 style={{
                   fontFamily: "inherit",
-                  minHeight: "200px",
+                  minHeight: "120px",
                 }}
               />
               {hasTextChanged && (
@@ -396,15 +405,15 @@ Please respond in this exact JSON format:
             </div>
 
             {/* 번역 */}
-            <div className="bg-blue-50 rounded-lg p-3 relative overflow-hidden">
-              <h3 className="text-sm font-medium text-blue-700 mb-2">번역</h3>
-              <p className="text-blue-900 leading-relaxed pr-20">
+            <div className="bg-blue-50 rounded-xl p-4 relative overflow-hidden flex-1">
+              <div className="text-xs font-medium text-blue-700 mb-2">번역</div>
+              <div className="text-blue-900 leading-relaxed pr-20 text-lg overflow-y-auto h-full">
                 {translation.translation}
-              </p>
+              </div>
 
               {/* 우측 상단 미니 버튼들 */}
               <div
-                className="absolute top-2 right-3 flex space-x-1"
+                className="absolute top-3 right-3 flex space-x-1"
                 style={{
                   zIndex: 9999,
                   pointerEvents: "auto",
@@ -423,9 +432,6 @@ Please respond in this exact JSON format:
                         // 오디오 권한 먼저 확인
                         const hasPermission = await checkAudioPermission();
                         if (!hasPermission) {
-                          // alert(
-                          //   "오디오 재생 권한이 필요합니다. 브라우저 설정에서 오디오를 허용해주세요.",
-                          // );
                           return;
                         }
 
@@ -433,7 +439,6 @@ Please respond in this exact JSON format:
                       }
                     } catch (error) {
                       console.error("번역문 재생 중 에러:", error);
-                      // alert("재생 에러: " + error);
                     }
                   }}
                   onTouchStart={() => {}} // 터치 이벤트 활성화

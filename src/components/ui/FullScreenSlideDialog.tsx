@@ -100,7 +100,14 @@ export default function FullScreenSlideDialog({
                 {/* 닫기 버튼 */}
                 {showCloseButton && (
                   <button
-                    onClick={onClose}
+                    onClick={(e) => {
+                      console.log("🔴 FullScreenSlideDialog 닫기 버튼 클릭됨");
+                      console.log("🔴 onClose 함수:", onClose);
+                      console.log("🔴 이벤트:", e);
+                      e.preventDefault();
+                      e.stopPropagation();
+                      onClose();
+                    }}
                     className="p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
                     aria-label="닫기"
                   >
