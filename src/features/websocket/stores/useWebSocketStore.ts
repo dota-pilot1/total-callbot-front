@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import SockJS from "sockjs-client";
 import { Stomp } from "@stomp/stompjs";
+import { useAuthStore } from "../../auth";
 
 export interface ChatMessage {
   id: number;
@@ -120,7 +121,9 @@ export const useWebSocketStore = create<WebSocketState>((set, get) => ({
       return;
     }
 
-    console.log("WebSocket: 새 연결 시작");
+    console.log("🟡 WebSocket: 새 연결 시작");
+    console.log("🟡 사용자:", userName, userEmail);
+    console.log("🟡 룸:", roomId, roomName);
     set({ connecting: true });
 
     // API 클라이언트와 동일한 베이스 URL 로직 사용
@@ -132,14 +135,32 @@ export const useWebSocketStore = create<WebSocketState>((set, get) => ({
 
       const host = window.location.hostname;
       const isLocal = host === "localhost" || host === "127.0.0.1";
-      if (isLocal) return "http://localhost:8080/websocket-stomp";
+      if (isLocal) return "http://localhost:8080/ws-stomp";
 
       // EC2 환경에서는 API와 같은 도메인 사용
-      return "https://api.total-callbot.cloud/websocket-stomp";
+      return "https://api.total-callbot.cloud/ws-stomp";
     };
 
     const wsUrl = resolveWebSocketUrl();
     console.log("WebSocket: 연결 URL:", wsUrl);
+
+    // JWT 토큰 가져오기 (auth store 우선, fallback은 localStorage)
+    const getAuthToken = () => {
+      try {
+        // 1순위: auth store에서 가져오기
+        const authToken = useAuthStore.getState().getAccessToken();
+        if (authToken) return authToken;
+
+        // 2순위: localStorage에서 직접 가져오기
+        return localStorage.getItem("accessToken");
+      } catch (error) {
+        console.log("토큰 가져오기 실패:", error);
+        return null;
+      }
+    };
+
+    const authToken = getAuthToken();
+    console.log("🔑 인증 토큰:", authToken ? "존재함" : "없음");
 
     // SockJS 먼저 시도
     let client;
@@ -150,16 +171,40 @@ export const useWebSocketStore = create<WebSocketState>((set, get) => ({
       console.log("SockJS 실패, 순수 WebSocket으로 폴백:", sockjsError);
       // 순수 WebSocket으로 폴백
       const wsOnlyUrl = wsUrl
-        .replace("/websocket-stomp", "/websocket")
+        .replace("/ws-stomp", "/websocket")
         .replace("http://", "ws://")
         .replace("https://", "wss://");
       client = Stomp.over(() => new WebSocket(wsOnlyUrl));
     }
 
+    // 연결 타임아웃 설정 (15초)
+    const connectionTimeout = setTimeout(() => {
+      console.log("🔴 WebSocket 연결 타임아웃 (15초)");
+      set({ connecting: false, connected: false });
+
+      if (client) {
+        try {
+          client.disconnect();
+        } catch (e) {
+          console.log("타임아웃 시 연결 해제 오류 (무시됨):", e);
+        }
+      }
+    }, 15000);
+
+    // 연결 헤더 준비 (JWT 토큰 포함)
+    const connectHeaders: any = {};
+    if (authToken) {
+      connectHeaders.Authorization = `Bearer ${authToken}`;
+    }
+
+    console.log("🔑 연결 헤더:", connectHeaders);
+
     client.connect(
-      {},
+      connectHeaders,
       (frame: any) => {
-        console.log("WebSocket Connected: " + frame);
+        console.log("✅ WebSocket Connected: " + frame);
+        clearTimeout(connectionTimeout); // 타임아웃 클리어
+
         set({
           connected: true,
           connecting: false,
@@ -260,7 +305,16 @@ export const useWebSocketStore = create<WebSocketState>((set, get) => ({
         });
       },
       (error: any) => {
-        console.log("WebSocket 연결 오류 (로그만 출력):", error);
+        console.log("🔴 WebSocket 연결 오류:", error);
+        clearTimeout(connectionTimeout); // 타임아웃 클리어
+
+        // 상세한 오류 정보 로깅
+        if (error) {
+          console.log("🔴 오류 타입:", typeof error);
+          console.log("🔴 오류 메시지:", error.message || error);
+          console.log("🔴 오류 전체:", JSON.stringify(error, null, 2));
+        }
+
         set({
           connected: false,
           connecting: false,
