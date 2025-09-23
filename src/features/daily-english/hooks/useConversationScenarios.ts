@@ -156,8 +156,8 @@ export const useCreateDefaultScenarios = () => {
 
   return useMutation({
     mutationFn: () => {
-      // 백엔드의 초기화 API 호출
-      return fetch("/api/scenario-init/initialize", {
+      // 백엔드의 초기화 API 호출 (올바른 경로 사용)
+      return fetch("/api/daily-english/init/test-data", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -166,7 +166,7 @@ export const useCreateDefaultScenarios = () => {
         if (!response.ok) {
           throw new Error("기본 시나리오 생성 실패");
         }
-        return response.json();
+        return response.text(); // JSON이 아닌 텍스트 응답
       });
     },
     onSuccess: () => {
