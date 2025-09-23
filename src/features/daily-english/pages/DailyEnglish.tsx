@@ -1,10 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  Cog6ToothIcon,
-  ArrowLeftIcon,
-  PlayIcon,
-} from "@heroicons/react/24/outline";
+import { Cog6ToothIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
 import FullScreenSlideDialog from "../../../components/ui/FullScreenSlideDialog";
 import { Button } from "../../../components/ui";
 import {
