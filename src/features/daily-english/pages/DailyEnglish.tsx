@@ -1,6 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Cog6ToothIcon } from "@heroicons/react/24/outline";
+import {
+  Cog6ToothIcon,
+  ArrowLeftIcon,
+  PlayIcon,
+} from "@heroicons/react/24/outline";
 import FullScreenSlideDialog from "../../../components/ui/FullScreenSlideDialog";
 import { Button } from "../../../components/ui";
 import {
@@ -9,6 +13,7 @@ import {
   CardHeader,
   CardTitle,
 } from "../../../components/ui/Card";
+import { HeaderAuthControls } from "../../../components/layout/HeaderAuthControls";
 
 interface ScenarioItem {
   id: string;
@@ -370,7 +375,6 @@ const BASIC_SCENARIOS: ScenarioItem[] = [
   },
 ];
 
-type PracticeMode = "basic" | "youtube" | "news";
 const CATEGORY_ORDER = [
   "일상생활 (Everyday Life)",
   "사회생활 및 관계 (Social Life & Relationships)",
@@ -384,8 +388,7 @@ const CATEGORY_LABELS: Record<string, string> = {
 
 export default function DailyEnglish() {
   const navigate = useNavigate();
-  const [selectedMode, setSelectedMode] = useState<PracticeMode | null>(null);
-  const [isBasicDialogOpen, setIsBasicDialogOpen] = useState(false);
+  const [isBasicDialogOpen, setIsBasicDialogOpen] = useState(true); // 처음부터 바로 열기
   const [activeCategory, setActiveCategory] = useState<string>(
     CATEGORY_ORDER[0],
   );
@@ -424,22 +427,6 @@ export default function DailyEnglish() {
     [groupedScenarios, activeCategory],
   );
 
-  const handleModeSelect = (mode: PracticeMode) => {
-    setSelectedMode(mode);
-
-    if (mode === "basic") {
-      const defaultCategory =
-        generatedScenarios[0]?.category ??
-        (focusedScenarioId
-          ? scenarioLookup.get(focusedScenarioId)?.category
-          : undefined) ??
-        availableCategories[0] ??
-        CATEGORY_ORDER[0];
-      setActiveCategory(defaultCategory);
-      setIsBasicDialogOpen(true);
-    }
-  };
-
   const handleScenarioSelect = (scenario: ScenarioItem) => {
     setFocusedScenarioId(scenario.id);
   };
@@ -464,7 +451,6 @@ export default function DailyEnglish() {
     const selection = shuffled.slice(0, Math.min(3, shuffled.length));
     setGeneratedScenarios(selection);
     setFocusedScenarioId(selection[0]?.id ?? null);
-    setSelectedMode("basic");
     setIsBasicDialogOpen(false);
   };
 
@@ -495,158 +481,93 @@ export default function DailyEnglish() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="h-12 bg-card border-b border-border flex items-center justify-between px-4">
-        <div className="flex items-center gap-3">
-          <div className="h-6 w-6 rounded-md bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center">
-            <span className="text-sm">🇺🇸</span>
+      <header className="bg-card border-b border-border">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-between h-16">
+            {/* 왼쪽: 뒤로가기 + 타이틀 */}
+            <div className="flex items-center gap-3">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate("/")}
+                className="flex items-center gap-2"
+              >
+                <ArrowLeftIcon className="h-4 w-4" />
+                <span className="hidden sm:inline">홈</span>
+              </Button>
+              <div className="h-6 w-6 rounded-md bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center">
+                <span className="text-sm">🇺🇸</span>
+              </div>
+              <h1 className="text-lg font-semibold text-foreground">
+                일일 영어
+              </h1>
+            </div>
+
+            {/* 오른쪽: 인증 컨트롤 */}
+            <HeaderAuthControls />
           </div>
-          <span className="text-sm font-medium text-foreground">일일 영어</span>
         </div>
-        <Button variant="ghost" size="sm" onClick={() => window.history.back()}>
-          뒤로
-        </Button>
       </header>
 
       <div className="container mx-auto px-4 py-6 max-w-5xl">
-        <div className="grid gap-4 md:grid-cols-3">
-          {[
-            {
-              mode: "basic" as PracticeMode,
-              title: "베이직",
-              description: "상황별 회화 훈련을 위한 기본 연습 세트",
-              icon: "🗣️",
-            },
-            {
-              mode: "youtube" as PracticeMode,
-              title: "유튜브",
-              description: "유튜브 영상 기반 리스닝 & 쉐도잉 연습 (준비 중)",
-              icon: "📺",
-            },
-            {
-              mode: "news" as PracticeMode,
-              title: "뉴스",
-              description: "뉴스 기사로 학습하는 고급 독해/리스닝 (준비 중)",
-              icon: "📰",
-            },
-          ].map((option) => {
-            const isActive = selectedMode === option.mode;
-
-            return (
-              <button
-                key={option.mode}
-                type="button"
-                onClick={() => handleModeSelect(option.mode)}
-                className={`relative flex flex-col gap-3 rounded-xl border p-5 text-left transition-all ${
-                  isActive
-                    ? "border-blue-500 shadow-lg ring-2 ring-blue-200 bg-blue-50/60"
-                    : "border-border hover:border-blue-200 hover:bg-blue-50/30"
-                }`}
-              >
-                <span className="text-3xl" aria-hidden>
-                  {option.icon}
-                </span>
-                <div>
-                  <div className="text-base font-semibold text-foreground">
-                    {option.title}
-                  </div>
-                  <p className="mt-2 text-sm text-muted-foreground">
-                    {option.description}
-                  </p>
-                </div>
-              </button>
-            );
-          })}
-        </div>
-
-        {selectedMode === "basic" && (
-          <div className="mt-8 space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-foreground">
-                베이직 회화 연습
-              </h2>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsBasicDialogOpen(true)}
-              >
-                상황 다시 선택하기
-              </Button>
-            </div>
-
-            {generatedScenarios.length > 0 ? (
-              <div className="grid gap-4 md:grid-cols-3">
-                {generatedScenarios.map((scenario, index) => (
-                  <Card key={scenario.id}>
-                    <CardHeader>
-                      <div className="flex items-center justify-between">
-                        <CardTitle>주제 {index + 1}</CardTitle>
-                        <span className="text-xs font-medium text-blue-600">
-                          {CATEGORY_LABELS[scenario.category] ??
-                            scenario.category}
-                        </span>
-                      </div>
-                      <p className="text-sm font-semibold text-foreground mt-2">
-                        {scenario.title}
-                      </p>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <p className="text-sm text-muted-foreground leading-relaxed">
-                        {scenario.description}
-                      </p>
-                      <Button
-                        className="w-full"
-                        size="sm"
-                        onClick={() => handleStartScenario(scenario)}
-                      >
-                        🎤 대화 시작
-                      </Button>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            ) : (
-              <Card>
-                <CardContent className="py-10 text-center space-y-4">
-                  <p className="text-sm text-muted-foreground">
-                    위의 베이직 카드에서 상황 선택을 눌러 주제를 생성하면 연습
-                    카드가 보여집니다.
-                  </p>
-                  <Button onClick={() => setIsBasicDialogOpen(true)}>
-                    상황 선택하기
-                  </Button>
-                </CardContent>
-              </Card>
-            )}
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-foreground">
+              베이직 회화 연습
+            </h2>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsBasicDialogOpen(true)}
+            >
+              상황 다시 선택하기
+            </Button>
           </div>
-        )}
 
-        {selectedMode === "youtube" && (
-          <Card className="mt-8">
-            <CardHeader>
-              <CardTitle>유튜브 기반 학습</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                유튜브 영상과 함께하는 리스닝·쉐도잉 연습을 준비 중입니다. 곧
-                다양한 콘텐츠로 찾아올게요!
-              </p>
-            </CardContent>
-          </Card>
-        )}
-
-        {selectedMode === "news" && (
-          <Card className="mt-8">
-            <CardHeader>
-              <CardTitle>뉴스 학습</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                최신 뉴스 기사로 독해와 리스닝을 동시에 연습할 수 있는 모듈을
-                개발 중입니다.
-              </p>
-            </CardContent>
-          </Card>
-        )}
+          {generatedScenarios.length > 0 ? (
+            <div className="grid gap-4 md:grid-cols-3">
+              {generatedScenarios.map((scenario, index) => (
+                <Card key={scenario.id}>
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <CardTitle>주제 {index + 1}</CardTitle>
+                      <span className="text-xs font-medium text-blue-600">
+                        {CATEGORY_LABELS[scenario.category] ??
+                          scenario.category}
+                      </span>
+                    </div>
+                    <p className="text-sm font-semibold text-foreground mt-2">
+                      {scenario.title}
+                    </p>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      {scenario.description}
+                    </p>
+                    <Button
+                      className="w-full"
+                      size="sm"
+                      onClick={() => handleStartScenario(scenario)}
+                    >
+                      🎤 대화 시작
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <Card>
+              <CardContent className="py-10 text-center space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  베이직 회화 연습을 시작하려면 상황을 선택해주세요.
+                </p>
+                <Button onClick={() => setIsBasicDialogOpen(true)}>
+                  상황 선택하기
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+        </div>
       </div>
 
       <FullScreenSlideDialog
@@ -708,28 +629,44 @@ export default function DailyEnglish() {
                 <h3 className="text-sm font-semibold text-foreground">
                   {CATEGORY_LABELS[activeCategory] ?? activeCategory}
                 </h3>
-                <div className="space-y-3">
+                <div className="space-y-2">
                   {filteredScenarios.map((item) => {
                     const isSelected = focusedScenarioId === item.id;
 
                     return (
-                      <button
+                      <div
                         key={item.id}
-                        type="button"
-                        onClick={() => handleScenarioSelect(item)}
-                        className={`w-full rounded-xl border p-4 text-left transition ${
+                        className={`group relative rounded-md transition-all duration-200 ${
                           isSelected
-                            ? "border-blue-500 bg-blue-50/80 shadow-sm ring-2 ring-blue-200"
-                            : "border-border bg-card/60 hover:border-blue-300 hover:bg-blue-50"
+                            ? "bg-primary/8 ring-1 ring-primary/20"
+                            : "bg-background hover:bg-muted/50"
                         }`}
                       >
-                        <div className="text-sm font-medium text-foreground">
-                          {item.title}
-                        </div>
-                        <p className="mt-2 text-xs text-muted-foreground leading-relaxed">
-                          {item.description}
-                        </p>
-                      </button>
+                        <button
+                          type="button"
+                          onClick={() => handleScenarioSelect(item)}
+                          className="w-full p-4 text-left pr-16"
+                        >
+                          <div className="text-sm font-medium text-foreground mb-2">
+                            {item.title}
+                          </div>
+                          <p className="text-xs text-muted-foreground leading-relaxed">
+                            {item.description}
+                          </p>
+                        </button>
+
+                        <Button
+                          size="sm"
+                          variant={isSelected ? "default" : "outline"}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleStartScenario(item);
+                          }}
+                          className="absolute top-3 right-3 h-6 px-2 text-xs opacity-80 group-hover:opacity-100 transition-opacity"
+                        >
+                          선택
+                        </Button>
+                      </div>
                     );
                   })}
                 </div>
