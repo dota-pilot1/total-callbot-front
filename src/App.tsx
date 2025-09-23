@@ -38,6 +38,7 @@ import { DailyMath } from "./features/daily-math";
 import { BoardList, BoardDetail, BoardWrite } from "./features/board";
 import { TestCenter } from "./features/test-center";
 import TestRoomDetail from "./features/test-center/pages/TestRoomDetail";
+import { MyStudyDashboard } from "./features/my-study";
 
 import ErrorBoundary from "./components/ErrorBoundary";
 
@@ -69,6 +70,7 @@ function ProtectedApp() {
     "/daily-english-exam",
     "/daily-english-conversation",
     "/test-center",
+    "/my-study",
   ];
   const usesDedicatedHeader = dedicatedHeaderPrefixes.some((p) =>
     location.pathname.startsWith(p),
@@ -126,6 +128,7 @@ function ProtectedApp() {
         <Route path="/chat/:chatRoomId" element={<CallbotChat />} />
         <Route path="/test-center" element={<TestCenter />} />
         <Route path="/test-center/room/:roomId" element={<TestRoomDetail />} />
+        <Route path="/my-study" element={<MyStudyDashboard />} />
       </Routes>
     </>
   );

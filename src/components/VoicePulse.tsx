@@ -2,12 +2,15 @@
 interface VoicePulseProps {
   active: boolean;
   size?: number; // px
+  className?: string;
 }
 
 // Simple concentric pulse animation ("태양 파동")
-export default function VoicePulse({ active, size = 56 }: VoicePulseProps) {
+export default function VoicePulse({ active, size = 56, className }: VoicePulseProps) {
+  const containerClass = ['relative', className].filter(Boolean).join(' ');
+
   return (
-    <div className="relative" style={{ width: size, height: size }}>
+    <div className={containerClass} style={{ width: size, height: size }}>
       {/* Base circle */}
       <div
         className={`absolute inset-0 rounded-full ${active ? 'bg-red-500' : 'bg-gray-300'}`}
@@ -38,4 +41,3 @@ export default function VoicePulse({ active, size = 56 }: VoicePulseProps) {
     </div>
   );
 }
-

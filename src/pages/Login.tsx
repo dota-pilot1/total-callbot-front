@@ -20,7 +20,8 @@ type ServiceType =
   | "question_bank"
   | "daily_english"
   | "daily_math"
-  | "board";
+  | "board"
+  | "my_study";
 
 export default function Login() {
   // 테스트 계정 목록
@@ -69,6 +70,7 @@ export default function Login() {
       "daily_english",
       "daily_math",
       "board",
+      "my_study",
     ];
 
     if (
@@ -157,6 +159,10 @@ export default function Login() {
           console.log("로그인: 일일 수학 페이지로 이동");
           navigate("/daily-math");
           break;
+        case "my_study":
+          console.log("로그인: my-study 대시보드로 이동");
+          navigate("/my-study");
+          break;
         default:
           navigate(isMobile ? "/mobile" : "/chatbots");
       }
@@ -170,24 +176,30 @@ export default function Login() {
       {/* Thin Header */}
       <header className="h-12 bg-card border-b border-border flex items-center justify-between px-4">
         <div className="flex items-center gap-3">
-          <img
-            src="/simple-chatbot.png"
-            alt="콜봇"
-            className="h-6 w-6 rounded-md object-cover"
-          />
-          <span className="text-sm font-medium text-foreground">
-            Total Callbot
-          </span>
+          <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-md flex items-center justify-center">
+            <span className="text-white font-bold text-xs">MS</span>
+          </div>
+          <span className="text-sm font-medium text-foreground">my-study</span>
         </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => navigate("/exam-management")}
-          className="flex items-center gap-2"
-        >
-          <CogIcon className="h-4 w-4" />
-          <span className="text-sm">관리</span>
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate("/board")}
+            className="flex items-center gap-2"
+          >
+            <span className="text-sm">게시판</span>
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate("/exam-management")}
+            className="flex items-center gap-2"
+          >
+            <CogIcon className="h-4 w-4" />
+            <span className="text-sm">관리</span>
+          </Button>
+        </div>
       </header>
 
       <div className="flex items-center justify-center min-h-[calc(100vh-3rem)] px-4 py-8">
@@ -339,7 +351,9 @@ export default function Login() {
                 <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-sky-100 to-indigo-200 flex items-center justify-center mb-2">
                   <span className="text-2xl">🇺🇸</span>
                 </div>
-                <span className="text-xs font-medium text-gray-700">일일 영어</span>
+                <span className="text-xs font-medium text-gray-700">
+                  일일 영어
+                </span>
               </button>
 
               {/* 일일 수학 */}
@@ -358,27 +372,29 @@ export default function Login() {
                 <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-cyan-100 to-cyan-200 flex items-center justify-center mb-2">
                   <span className="text-2xl">🔢</span>
                 </div>
-                <span className="text-xs font-medium text-gray-700">일일 수학</span>
+                <span className="text-xs font-medium text-gray-700">
+                  일일 수학
+                </span>
               </button>
 
-              {/* 게시판 */}
+              {/* my-study */}
               <button
-                onClick={() => handleServiceSelect("board")}
-                aria-pressed={selectedService === "board"}
+                onClick={() => handleServiceSelect("my_study")}
+                aria-pressed={selectedService === "my_study"}
                 className={`relative flex flex-col items-center p-4 rounded-xl border-2 transition-all duration-200 ${
-                  selectedService === "board"
+                  selectedService === "my_study"
                     ? "border-blue-500 bg-blue-50 shadow-lg ring-2 ring-blue-200"
                     : "border-gray-200 hover:bg-gray-50 hover:border-gray-300"
                 }`}
               >
-                {selectedService === "board" && (
+                {selectedService === "my_study" && (
                   <CheckCircleIcon className="absolute top-2 right-2 h-5 w-5 text-blue-500" />
                 )}
-                <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center mb-2">
-                  <span className="text-2xl">📋</span>
+                <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center mb-2">
+                  <span className="text-white font-bold text-sm">MS</span>
                 </div>
                 <span className="text-xs font-medium text-gray-700">
-                  게시판
+                  my-study
                 </span>
               </button>
             </div>
@@ -458,7 +474,6 @@ export default function Login() {
                 회원가입 →
               </Link>
             </div>
-
           </div>
         </div>
       </div>
