@@ -34,11 +34,20 @@ import {
   DailyEnglishExam,
   DailyEnglishConversation,
 } from "./features/daily-english";
+import {
+  PersonalDailyEnglish,
+  CreateScenario,
+  EditScenario,
+} from "./features/personal-daily-english";
 import { DailyMath } from "./features/daily-math";
 import { BoardList, BoardDetail, BoardWrite } from "./features/board";
 import { TestCenter } from "./features/test-center";
 import TestRoomDetail from "./features/test-center/pages/TestRoomDetail";
-import { MyStudyDashboard } from "./features/my-study";
+import {
+  MyStudyRedirect,
+  MyStudyWebDashboard,
+  MyStudyMobileDashboard,
+} from "./features/my-study";
 
 import ErrorBoundary from "./components/ErrorBoundary";
 
@@ -66,11 +75,14 @@ function ProtectedApp() {
     "/study",
     "/practice",
     "/daily-english",
+    "/personal-daily-english",
     "/daily-math",
     "/daily-english-exam",
     "/daily-english-conversation",
     "/test-center",
     "/my-study",
+    "/my-study-web",
+    "/my-study-mobile",
   ];
   const usesDedicatedHeader = dedicatedHeaderPrefixes.some((p) =>
     location.pathname.startsWith(p),
@@ -112,6 +124,18 @@ function ProtectedApp() {
         <Route path="/quiz" element={<ListeningTest />} />
         <Route path="/math" element={<MathPage />} />
         <Route path="/daily-english" element={<DailyEnglish />} />
+        <Route
+          path="/personal-daily-english"
+          element={<PersonalDailyEnglish />}
+        />
+        <Route
+          path="/personal-daily-english/create"
+          element={<CreateScenario />}
+        />
+        <Route
+          path="/personal-daily-english/edit/:id"
+          element={<EditScenario />}
+        />
         <Route path="/daily-math" element={<DailyMath />} />
         <Route path="/daily-english-exam" element={<DailyEnglishExam />} />
         <Route
@@ -128,7 +152,9 @@ function ProtectedApp() {
         <Route path="/chat/:chatRoomId" element={<CallbotChat />} />
         <Route path="/test-center" element={<TestCenter />} />
         <Route path="/test-center/room/:roomId" element={<TestRoomDetail />} />
-        <Route path="/my-study" element={<MyStudyDashboard />} />
+        <Route path="/my-study" element={<MyStudyRedirect />} />
+        <Route path="/my-study-web" element={<MyStudyWebDashboard />} />
+        <Route path="/my-study-mobile" element={<MyStudyMobileDashboard />} />
       </Routes>
     </>
   );

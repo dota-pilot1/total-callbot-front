@@ -1,15 +1,16 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { MyStudyHeader } from '../components/MyStudyHeader';
-import { StudyCard } from '../components/StudyCard';
-import { StudyProgress } from '../components/StudyProgress';
-import type { StudySession, StudyStats } from '../types';
-import { Button } from '../../../components/ui';
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { MyStudyHeader } from "../components/MyStudyHeader";
+import { StudyCard } from "../components/StudyCard";
+import { StudyProgress } from "../components/StudyProgress";
+import type { StudySession, StudyStats } from "../../shared/types";
+import { Button } from "../../../../components/ui";
 import {
   PlusIcon,
   AcademicCapIcon,
-  CalendarDaysIcon
-} from '@heroicons/react/24/outline';
+  CalendarDaysIcon,
+} from "@heroicons/react/24/outline";
+import { useMyScenarios } from "../../../personal-daily-english";
 
 export default function MyStudyDashboard() {
   const navigate = useNavigate();
@@ -22,49 +23,52 @@ export default function MyStudyDashboard() {
     completedToday: 0,
   });
 
+  // 개인 시나리오 데이터 가져오기
+  const { data: personalScenarios = [] } = useMyScenarios();
+
   // 더미 데이터 로드
   useEffect(() => {
     const dummySessions: StudySession[] = [
       {
-        id: '1',
-        title: '카페에서 주문하기',
-        category: 'conversation',
-        description: '카페에서 음료를 주문하는 기본적인 대화를 연습합니다.',
+        id: "1",
+        title: "카페에서 주문하기",
+        category: "conversation",
+        description: "카페에서 음료를 주문하는 기본적인 대화를 연습합니다.",
         progress: 75,
         totalTime: 30,
         createdAt: new Date(),
-        tags: ['기초', '실생활'],
+        tags: ["기초", "실생활"],
       },
       {
-        id: '2',
-        title: '영어 듣기 연습 - Level 1',
-        category: 'listening',
-        description: 'TOEIC 기초 수준의 듣기 문제를 풀어봅니다.',
+        id: "2",
+        title: "영어 듣기 연습 - Level 1",
+        category: "listening",
+        description: "TOEIC 기초 수준의 듣기 문제를 풀어봅니다.",
         progress: 100,
         totalTime: 45,
         completedAt: new Date(),
         createdAt: new Date(),
-        tags: ['TOEIC', '초급'],
+        tags: ["TOEIC", "초급"],
       },
       {
-        id: '3',
-        title: '기본 문법 - 현재시제',
-        category: 'grammar',
-        description: '영어 현재시제의 기본 개념과 활용법을 학습합니다.',
+        id: "3",
+        title: "기본 문법 - 현재시제",
+        category: "grammar",
+        description: "영어 현재시제의 기본 개념과 활용법을 학습합니다.",
         progress: 40,
         totalTime: 25,
         createdAt: new Date(),
-        tags: ['문법', '기초'],
+        tags: ["문법", "기초"],
       },
       {
-        id: '4',
-        title: '일상 어휘 100개',
-        category: 'vocabulary',
-        description: '일상생활에서 자주 사용되는 영어 단어 100개를 학습합니다.',
+        id: "4",
+        title: "일상 어휘 100개",
+        category: "vocabulary",
+        description: "일상생활에서 자주 사용되는 영어 단어 100개를 학습합니다.",
         progress: 0,
         totalTime: 60,
         createdAt: new Date(),
-        tags: ['어휘', '일상'],
+        tags: ["어휘", "일상"],
       },
     ];
 
@@ -81,22 +85,22 @@ export default function MyStudyDashboard() {
   }, []);
 
   const handleStartStudy = (sessionId: string) => {
-    const session = studySessions.find(s => s.id === sessionId);
+    const session = studySessions.find((s) => s.id === sessionId);
     if (!session) return;
 
     // 카테고리별 페이지로 이동
     switch (session.category) {
-      case 'conversation':
-        navigate('/daily-english-conversation');
+      case "conversation":
+        navigate("/daily-english-conversation");
         break;
-      case 'listening':
-        navigate('/quiz-list');
+      case "listening":
+        navigate("/quiz-list");
         break;
-      case 'english':
-        navigate('/daily-english');
+      case "english":
+        navigate("/daily-english");
         break;
-      case 'math':
-        navigate('/daily-math');
+      case "math":
+        navigate("/daily-math");
         break;
       default:
         console.log(`${session.category} 학습 시작:`, session.title);
@@ -109,25 +113,32 @@ export default function MyStudyDashboard() {
 
   const quickActions = [
     {
-      title: '일일 영어',
-      description: '오늘의 영어 학습',
-      icon: '🇺🇸',
-      color: 'bg-blue-100 text-blue-700',
-      action: () => navigate('/daily-english'),
+      title: "내 시나리오",
+      description: `개인 맞춤 시나리오 ${personalScenarios.length}개`,
+      icon: "📝",
+      color: "bg-orange-100 text-orange-700",
+      action: () => navigate("/personal-daily-english"),
     },
     {
-      title: '영어 회화',
-      description: '실시간 대화 연습',
-      icon: '💬',
-      color: 'bg-purple-100 text-purple-700',
-      action: () => navigate('/daily-english-conversation'),
+      title: "일일 영어",
+      description: "오늘의 영어 학습",
+      icon: "🇺🇸",
+      color: "bg-blue-100 text-blue-700",
+      action: () => navigate("/daily-english"),
     },
     {
-      title: '듣기 시험',
-      description: '영어 듣기 능력 테스트',
-      icon: '🎧',
-      color: 'bg-green-100 text-green-700',
-      action: () => navigate('/quiz-list'),
+      title: "영어 회화",
+      description: "실시간 대화 연습",
+      icon: "💬",
+      color: "bg-purple-100 text-purple-700",
+      action: () => navigate("/daily-english-conversation"),
+    },
+    {
+      title: "듣기 시험",
+      description: "영어 듣기 능력 테스트",
+      icon: "🎧",
+      color: "bg-green-100 text-green-700",
+      action: () => navigate("/quiz-list"),
     },
   ];
 
@@ -168,8 +179,12 @@ export default function MyStudyDashboard() {
                 <div className="flex items-center gap-3">
                   <div className="text-2xl">{action.icon}</div>
                   <div className="flex-1">
-                    <h3 className="font-medium text-gray-900">{action.title}</h3>
-                    <p className="text-sm text-gray-600">{action.description}</p>
+                    <h3 className="font-medium text-gray-900">
+                      {action.title}
+                    </h3>
+                    <p className="text-sm text-gray-600">
+                      {action.description}
+                    </p>
                   </div>
                 </div>
               </button>
@@ -184,7 +199,7 @@ export default function MyStudyDashboard() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => navigate('/my-study/library')}
+              onClick={() => navigate("/my-study/library")}
             >
               <PlusIcon className="w-4 h-4 mr-1" />
               더보기
@@ -205,13 +220,17 @@ export default function MyStudyDashboard() {
 
         {/* 오늘의 목표 */}
         <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">오늘의 목표</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">
+            오늘의 목표
+          </h2>
 
           <div className="space-y-4">
             <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
               <AcademicCapIcon className="w-5 h-5 text-blue-600" />
               <div className="flex-1">
-                <p className="text-sm font-medium text-gray-900">영어 회화 30분 연습</p>
+                <p className="text-sm font-medium text-gray-900">
+                  영어 회화 30분 연습
+                </p>
                 <p className="text-xs text-gray-600">진행률: 20/30분</p>
               </div>
               <div className="text-sm text-blue-600 font-medium">67%</div>
@@ -220,7 +239,9 @@ export default function MyStudyDashboard() {
             <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
               <CalendarDaysIcon className="w-5 h-5 text-green-600" />
               <div className="flex-1">
-                <p className="text-sm font-medium text-gray-900">듣기 문제 10개 풀기</p>
+                <p className="text-sm font-medium text-gray-900">
+                  듣기 문제 10개 풀기
+                </p>
                 <p className="text-xs text-gray-600">진행률: 10/10개</p>
               </div>
               <div className="text-sm text-green-600 font-medium">완료!</div>
