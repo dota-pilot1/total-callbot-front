@@ -813,22 +813,24 @@ Start speaking now!`;
 
       {/* 고정 헤더 */}
       <div className="bg-white border-b border-gray-200 flex-shrink-0 sticky top-0 z-50">
-        <div className="p-4">
+        <div className="px-3 py-2 md:p-4">
           <div className="flex justify-between items-center">
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-2 md:space-x-3">
               {/* 뒤로가기 버튼 */}
               <Button
                 variant="outline"
                 size="sm"
-                className="w-8 h-8 p-0"
+                className="w-7 h-7 p-0 md:w-8 md:h-8"
                 onClick={() => navigate("/daily-english")}
               >
-                <ArrowLeftIcon className="h-4 w-4" />
+                <ArrowLeftIcon className="h-3 w-3 md:h-4 md:w-4" />
               </Button>
-              {/* 일일 영어 로고 */}
-              <div className="flex items-center gap-2">
-                <span className="text-lg">🎯</span>
-                <span className="font-semibold text-sm">일일 영어 대화</span>
+              {/* 일일 영어 로고 - 모바일에서 간소화 */}
+              <div className="flex items-center gap-1 md:gap-2">
+                <span className="text-base md:text-lg">🎯</span>
+                <span className="font-semibold text-xs md:text-sm">
+                  일일 영어
+                </span>
               </div>
             </div>
             <div className="flex items-center space-x-1">
@@ -900,63 +902,56 @@ Start speaking now!`;
       </div>
 
       {/* 시나리오 정보 및 연결 상태 */}
-      <div className="bg-card border-b border-border p-4 flex-shrink-0">
-        <div className="rounded-xl border border-border bg-blue-50/40 p-4 shadow-sm mb-4">
-          <div className="flex items-center gap-3">
-            <span className="text-2xl">{dailyExamCharacter.emoji}</span>
-            <div>
-              <p className="text-xs font-medium text-blue-600 uppercase tracking-wider">
-                오늘의 시나리오
-              </p>
-              <h2 className="text-base font-semibold text-foreground">
-                {dailyScenario.title}
-              </h2>
+      <div className="bg-card border-b border-border p-3 flex-shrink-0">
+        <div className="rounded-lg border border-border bg-blue-50/40 p-3 shadow-sm mb-3">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              <span className="text-xl">{dailyExamCharacter.emoji}</span>
+              <div className="flex-1 min-w-0">
+                <h2 className="text-sm font-semibold text-foreground">
+                  {dailyScenario.title}
+                </h2>
+                <p className="text-xs text-blue-500 mt-0.5">
+                  영어로 자연스럽게 대화해 주세요
+                </p>
+              </div>
             </div>
-          </div>
-          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-            {dailyScenario.description}
-          </p>
-          <p className="mt-2 text-xs text-blue-500">
-            이 상황에 맞게 자연스럽게 대화를 이어가며 영어로 답변해 주세요.
-          </p>
 
-          {/* 상황극 시작 버튼 */}
-          {connected && !rolePlayStarted && (
-            <div className="mt-4 flex justify-center">
+            {/* 상황극 시작 버튼 - 오른쪽 배치 */}
+            {connected && !rolePlayStarted && (
               <Button
                 onClick={startRolePlay}
-                size="lg"
-                className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold px-8 py-3 rounded-xl shadow-lg"
+                size="sm"
+                className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold px-4 py-1.5 rounded-lg shadow-lg text-xs flex-shrink-0"
               >
-                🎭 상황극 시작하기
+                🎭 시작
               </Button>
-            </div>
-          )}
+            )}
 
-          {rolePlayStarted && (
-            <div className="mt-4 text-center">
-              <p className="text-xs text-green-600 font-medium">
-                ✅ 상황극이 진행 중입니다. AI의 응답을 기다려주세요!
-              </p>
-            </div>
-          )}
+            {rolePlayStarted && (
+              <div className="flex-shrink-0">
+                <p className="text-xs text-green-600 font-medium">✅ 진행 중</p>
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="text-center">
           {/* 음성 시작 버튼 또는 파동 표시 */}
-          <div className="flex justify-center items-center space-x-3">
+          <div className="flex justify-center items-center space-x-2 md:space-x-3">
             {voiceEnabled && isRecording ? (
               <>
                 {/* 음성 파동 + 상태 점 오버레이 (compact) */}
                 <div className="relative">
-                  <div className="bg-card rounded-lg p-3 shadow-lg border border-border">
+                  <div className="bg-card rounded-lg p-2 md:p-3 shadow-lg border border-border">
                     <VoicePulse
                       active={isListening || isResponding}
-                      size={36}
+                      size={28}
+                      className="md:w-9 md:h-9"
                     />
                   </div>
                   <span
-                    className={`absolute -top-1 -right-1 w-3 h-3 rounded-full ring-2 ring-card ${
+                    className={`absolute -top-1 -right-1 w-2 h-2 md:w-3 md:h-3 rounded-full ring-2 ring-card ${
                       connecting
                         ? "bg-amber-500 animate-pulse"
                         : isListening
@@ -981,10 +976,10 @@ Start speaking now!`;
                   }}
                   variant="destructive"
                   size="sm"
-                  className="w-12 h-12 p-0"
+                  className="w-10 h-10 md:w-12 md:h-12 p-0"
                   title="대화 종료"
                 >
-                  <XMarkIcon className="h-4 w-4" />
+                  <XMarkIcon className="h-3 w-3 md:h-4 md:w-4" />
                 </Button>
 
                 {/* 대화 내용 클리어 버튼 (연결된 상태에서만) */}
@@ -996,10 +991,10 @@ Start speaking now!`;
                     }}
                     variant="outline"
                     size="sm"
-                    className="w-12 h-12 p-0"
+                    className="w-10 h-10 md:w-12 md:h-12 p-0"
                     title="대화 내용 지우기"
                   >
-                    <TrashIcon className="h-4 w-4" />
+                    <TrashIcon className="h-3 w-3 md:h-4 md:w-4" />
                   </Button>
                 )}
 
@@ -1009,11 +1004,11 @@ Start speaking now!`;
                     onClick={evaluateConversation}
                     variant="outline"
                     size="sm"
-                    className="w-12 h-12 p-0 bg-blue-50 hover:bg-blue-100"
+                    className="w-10 h-10 md:w-12 md:h-12 p-0 bg-blue-50 hover:bg-blue-100"
                     title="회화 평가"
                     disabled={evaluationLoading}
                   >
-                    <ChartBarIcon className="h-4 w-4 text-blue-600" />
+                    <ChartBarIcon className="h-3 w-3 md:h-4 md:w-4 text-blue-600" />
                   </Button>
                 )}
               </>
