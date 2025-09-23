@@ -23,6 +23,7 @@ import { useAuthStore } from "./features/auth";
 
 import { ExamManagement, QuestionManagement } from "./features/exam-management";
 import { MemberManagement } from "./features/admin";
+import AdminScenarios from "./pages/AdminScenarios";
 import {
   ListeningTest,
   ListeningTestList,
@@ -58,6 +59,7 @@ function ProtectedApp() {
     "/quiz-list",
     "/exam-management",
     "/admin",
+    "/admin-scenarios",
     "/study",
     "/practice",
     "/daily-english",
@@ -101,6 +103,7 @@ function ProtectedApp() {
           element={<QuestionManagement />}
         />
         <Route path="/admin/members" element={<MemberManagement />} />
+        <Route path="/admin/scenarios" element={<AdminScenarios />} />
         <Route path="/quiz-list" element={<ListeningTestList />} />
         <Route path="/quiz" element={<ListeningTest />} />
         <Route path="/math" element={<MathPage />} />

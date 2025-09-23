@@ -6,7 +6,8 @@ export function UserManagementPage() {
   // 디버깅: 토큰 상태 확인
   const isAuthed = useAuthStore((s) => s.isAuthenticated());
 
-  const { data: users, isLoading, isError, error } = useUsersQuery();
+  const { data: users, isLoading, isError, error } = useUsersQue;
+  ry();
   const { isConnected } = useRealtimeUserStatus();
 
   // 프론트엔드 데이터 로깅

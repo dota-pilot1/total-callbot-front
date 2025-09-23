@@ -97,6 +97,11 @@ export const useVoiceConnection = (
       ? `${personaCharacter.personality}\n${personaCharacter.background}`
       : "";
 
+    // 첫 번째 메시지 지시사항 추가
+    const firstMessageNote = personaCharacter?.firstMessage
+      ? `IMPORTANT: When you first start speaking or when prompted to begin a conversation, your FIRST message should be: "${personaCharacter.firstMessage}". Use this exact greeting or a close variation. `
+      : "";
+
     // 영어 학습용 - 모든 캐릭터가 영어로 대답하되 캐릭터 특성은 유지
     const languageNote =
       "ALWAYS respond in English only for English learning purposes. Never use Korean. Keep responses conversational and natural to help with English practice. Be direct and straightforward. Keep replies to 1-2 sentences maximum. ";
@@ -162,6 +167,7 @@ export const useVoiceConnection = (
 
     return (
       `I am ${personaCharacter.name} (${personaCharacter.emoji}). ${genderNote}${voiceNote}` +
+      firstMessageNote +
       characterEmphasis +
       characterSpecificNote +
       languageNote +

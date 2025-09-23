@@ -91,6 +91,11 @@ export default function DailyEnglishConversation() {
     return null;
   }, [location.state]);
 
+  // DB에서 온 전체 시나리오 데이터 가져오기
+  const fullScenario = useMemo(() => {
+    return (location.state as { fullScenario?: any })?.fullScenario || null;
+  }, [location.state]);
+
   // 시나리오가 없으면 메인으로 리다이렉트
   useEffect(() => {
     if (!dailyScenario) {
@@ -120,6 +125,18 @@ export default function DailyEnglishConversation() {
 
   // 일일 영어를 위한 ExamCharacter 생성
   const dailyExamCharacter = useMemo<ExamCharacter>(() => {
+    // DB 데이터 우선 사용
+    if (fullScenario) {
+      return {
+        id: `scenario-${fullScenario.id}`,
+        name: fullScenario.aiRole || fullScenario.title,
+        emoji: "🎯",
+        description: fullScenario.description,
+        questionStyle: fullScenario.conversationStyle?.toLowerCase() || "mixed",
+        prompt: fullScenario.systemInstructions,
+      };
+    }
+
     if (!dailyScenario) {
       return {
         id: "daily-default",
@@ -176,7 +193,7 @@ REALISTIC DIALOGUE EXAMPLES:
 
 REMEMBER: Always start the conversation immediately when prompted, don't wait for the user to speak first. Begin with a natural greeting or comment that fits this exact situation.`,
     };
-  }, [dailyScenario]);
+  }, [dailyScenario, fullScenario]);
 
   const [selectedVoice, setSelectedVoice] = useState<string>("alloy");
 
@@ -300,10 +317,17 @@ REMEMBER: Always start the conversation immediately when prompted, don't wait fo
     name: dailyExamCharacter.name,
     emoji: dailyExamCharacter.emoji,
     persona: dailyExamCharacter.prompt,
-    scenario: `${dailyExamCharacter.description} 상황에서 영어 대화를 진행합니다.`,
-    firstMessage: `안녕하세요! ${dailyExamCharacter.description} 상황으로 영어 회화를 연습해보겠습니다.`,
-    personality: dailyExamCharacter.description,
-    background: `${dailyExamCharacter.name} 역할을 맡아 ${dailyExamCharacter.description} 상황에서 대화를 진행합니다.`,
+    scenario:
+      fullScenario?.scenarioBackground ||
+      `${dailyExamCharacter.description} 상황에서 영어 대화를 진행합니다.`,
+    firstMessage:
+      fullScenario?.aiStarts && fullScenario?.openingMessage
+        ? fullScenario.openingMessage
+        : `안녕하세요! ${dailyExamCharacter.description} 상황으로 영어 회화를 연습해보겠습니다.`,
+    personality: fullScenario?.learningGoals || dailyExamCharacter.description,
+    background:
+      fullScenario?.aiKnowledge ||
+      `${dailyExamCharacter.name} 역할을 맡아 ${dailyExamCharacter.description} 상황에서 대화를 진행합니다.`,
     defaultGender: "female" as const,
   };
 
