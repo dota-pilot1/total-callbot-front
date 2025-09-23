@@ -7,6 +7,7 @@ import {
   EyeIcon,
   EyeSlashIcon,
   ArrowLeftIcon,
+  RectangleStackIcon,
 } from "@heroicons/react/24/outline";
 import FullScreenSlideDialog from "../../../components/ui/FullScreenSlideDialog";
 import { Button } from "../../../components/ui";
@@ -142,7 +143,19 @@ export default function PersonalDailyEnglish() {
                 내 시나리오
               </h1>
             </div>
-            <HeaderAuthControls />
+
+            <div className="flex items-center gap-3">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate("/conversation-scenario-templates")}
+                className="flex items-center gap-2"
+              >
+                <RectangleStackIcon className="h-4 w-4" />
+                <span className="hidden sm:inline">시나리오 템플릿</span>
+              </Button>
+              <HeaderAuthControls />
+            </div>
           </div>
         </div>
       </header>

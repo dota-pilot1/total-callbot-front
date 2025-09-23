@@ -1,6 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Cog6ToothIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
+import {
+  Cog6ToothIcon,
+  ArrowLeftIcon,
+  RectangleStackIcon,
+} from "@heroicons/react/24/outline";
 import FullScreenSlideDialog from "../../../components/ui/FullScreenSlideDialog";
 import { Button } from "../../../components/ui";
 import {
@@ -138,7 +142,18 @@ export default function DailyEnglish() {
                 일일 영어
               </h1>
             </div>
-            <HeaderAuthControls />
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate("/conversation-scenario-templates")}
+                className="flex items-center gap-2"
+              >
+                <RectangleStackIcon className="h-4 w-4" />
+                <span className="hidden sm:inline">시나리오 템플릿</span>
+              </Button>
+              <HeaderAuthControls />
+            </div>
           </div>
         </div>
       </header>

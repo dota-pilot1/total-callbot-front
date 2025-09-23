@@ -39,6 +39,7 @@ import {
   CreateScenario,
   EditScenario,
 } from "./features/personal-daily-english";
+import { ConversationScenarioTemplateList } from "./features/english-conversation-senario-template";
 import { DailyMath } from "./features/daily-math";
 import { BoardList, BoardDetail, BoardWrite } from "./features/board";
 import { TestCenter } from "./features/test-center";
@@ -72,10 +73,12 @@ function ProtectedApp() {
     "/exam-management",
     "/admin",
     "/admin-scenarios",
+    "/user-admin",
     "/study",
     "/practice",
     "/daily-english",
     "/personal-daily-english",
+    "/conversation-scenario-templates",
     "/daily-math",
     "/daily-english-exam",
     "/daily-english-conversation",
@@ -135,6 +138,10 @@ function ProtectedApp() {
         <Route
           path="/personal-daily-english/edit/:id"
           element={<EditScenario />}
+        />
+        <Route
+          path="/conversation-scenario-templates"
+          element={<ConversationScenarioTemplateList />}
         />
         <Route path="/daily-math" element={<DailyMath />} />
         <Route path="/daily-english-exam" element={<DailyEnglishExam />} />

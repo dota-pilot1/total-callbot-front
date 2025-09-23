@@ -14,7 +14,7 @@ import {
 type ServiceType =
   | "chatbot"
   | "chat"
-  | "admin"
+  | "scenario_template"
   | "conversation"
   | "quiz"
   | "question_bank"
@@ -63,7 +63,7 @@ export default function Login() {
     const validServices: ServiceType[] = [
       "chatbot",
       "chat",
-      "admin",
+      "scenario_template",
       "conversation",
       "quiz",
       "question_bank",
@@ -140,8 +140,8 @@ export default function Login() {
         case "chat":
           navigate("/chat"); // 전체 채팅방
           break;
-        case "admin":
-          navigate("/admin/members"); // 새로운 멤버 관리 페이지
+        case "scenario_template":
+          navigate("/conversation-scenario-templates"); // 시나리오 템플릿 페이지
           break;
         case "board":
           console.log("로그인: 게시판 페이지로 이동");
@@ -193,11 +193,11 @@ export default function Login() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => navigate("/exam-management")}
+            onClick={() => navigate("/admin/members")}
             className="flex items-center gap-2"
           >
             <CogIcon className="h-4 w-4" />
-            <span className="text-sm">관리</span>
+            <span className="text-sm">회원 관리</span>
           </Button>
         </div>
       </header>
@@ -251,24 +251,24 @@ export default function Login() {
                 </span>
               </button>
 
-              {/* 회원관리 */}
+              {/* 시나리오 템플릿 */}
               <button
-                onClick={() => handleServiceSelect("admin")}
-                aria-pressed={selectedService === "admin"}
+                onClick={() => handleServiceSelect("scenario_template")}
+                aria-pressed={selectedService === "scenario_template"}
                 className={`relative flex flex-col items-center p-4 rounded-xl border-2 transition-all duration-200 ${
-                  selectedService === "admin"
+                  selectedService === "scenario_template"
                     ? "border-blue-500 bg-blue-50 shadow-lg ring-2 ring-blue-200"
                     : "border-gray-200 hover:bg-gray-50 hover:border-gray-300"
                 }`}
               >
-                {selectedService === "admin" && (
+                {selectedService === "scenario_template" && (
                   <CheckCircleIcon className="absolute top-2 right-2 h-5 w-5 text-blue-500" />
                 )}
-                <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-purple-100 to-purple-200 flex items-center justify-center mb-2">
-                  <span className="text-2xl">👥</span>
+                <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center mb-2">
+                  <span className="text-2xl">📋</span>
                 </div>
                 <span className="text-xs font-medium text-gray-700">
-                  회원관리
+                  시나리오 템플릿
                 </span>
               </button>
 
