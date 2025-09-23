@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { conversationScenariosApi } from "../api/conversationScenariosApi";
+import { apiClient } from "../../../shared/api/client";
 import type { ConversationScenario, RandomScenarioRequest } from "../types";
 
 // Query Keys
@@ -114,6 +115,25 @@ export const useCreateScenario = () => {
   });
 };
 
+// 모든 시나리오 삭제 (관리자용)
+export const useDeleteAllScenarios = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      // apiClient 사용 (인증 토큰 자동 포함)
+      const response = await apiClient.delete("/daily-english/init/all-data");
+      return response.data; // axios는 자동으로 response.data 반환
+    },
+    onSuccess: () => {
+      // 모든 시나리오 관련 쿼리 무효화하여 새로 불러오기
+      queryClient.invalidateQueries({
+        queryKey: conversationScenariosKeys.all,
+      });
+    },
+  });
+};
+
 // 시나리오 수정 (관리자용)
 export const useUpdateScenario = () => {
   const queryClient = useQueryClient();
@@ -155,19 +175,10 @@ export const useCreateDefaultScenarios = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: () => {
-      // 백엔드의 초기화 API 호출 (올바른 경로 사용)
-      return fetch("/api/daily-english/init/test-data", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }).then((response) => {
-        if (!response.ok) {
-          throw new Error("기본 시나리오 생성 실패");
-        }
-        return response.text(); // JSON이 아닌 텍스트 응답
-      });
+    mutationFn: async () => {
+      // apiClient 사용 (인증 토큰 자동 포함)
+      const response = await apiClient.post("/daily-english/init/test-data");
+      return response.data; // axios는 자동으로 response.data 반환
     },
     onSuccess: () => {
       // 모든 시나리오 관련 쿼리 무효화하여 새로 불러오기

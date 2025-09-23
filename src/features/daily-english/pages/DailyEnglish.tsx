@@ -18,6 +18,7 @@ import {
 } from "../hooks/useConversationScenarios";
 import type { ConversationScenario } from "../types";
 import CreateDefaultScenariosButton from "../components/CreateDefaultScenariosButton";
+import DeleteAllScenariosButton from "../components/DeleteAllScenariosButton";
 
 const CATEGORY_LABELS: Record<string, string> = {
   "일상생활 (Everyday Life)": "일상생활",
@@ -149,14 +150,17 @@ export default function DailyEnglish() {
               <h2 className="text-lg font-semibold text-foreground">
                 베이직 회화 연습
               </h2>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsBasicDialogOpen(true)}
-                disabled={isLoading}
-              >
-                상황 다시 선택하기
-              </Button>
+              <div className="flex items-center gap-2">
+                <DeleteAllScenariosButton onSuccess={() => {}} />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsBasicDialogOpen(true)}
+                  disabled={isLoading}
+                >
+                  상황 다시 선택하기
+                </Button>
+              </div>
             </div>
           )}
 
