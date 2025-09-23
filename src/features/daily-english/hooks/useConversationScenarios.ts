@@ -1,18 +1,22 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { conversationScenariosApi } from '../api/conversationScenariosApi';
-import type { ConversationScenario, RandomScenarioRequest } from '../types';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { conversationScenariosApi } from "../api/conversationScenariosApi";
+import type { ConversationScenario, RandomScenarioRequest } from "../types";
 
 // Query Keys
 export const conversationScenariosKeys = {
-  all: ['conversationScenarios'] as const,
-  lists: () => [...conversationScenariosKeys.all, 'list'] as const,
-  list: (filters: Record<string, any>) => [...conversationScenariosKeys.lists(), filters] as const,
-  details: () => [...conversationScenariosKeys.all, 'detail'] as const,
+  all: ["conversationScenarios"] as const,
+  lists: () => [...conversationScenariosKeys.all, "list"] as const,
+  list: (filters: Record<string, any>) =>
+    [...conversationScenariosKeys.lists(), filters] as const,
+  details: () => [...conversationScenariosKeys.all, "detail"] as const,
   detail: (id: number) => [...conversationScenariosKeys.details(), id] as const,
-  categories: () => [...conversationScenariosKeys.all, 'categories'] as const,
-  random: (params: RandomScenarioRequest) => [...conversationScenariosKeys.all, 'random', params] as const,
-  search: (keyword: string) => [...conversationScenariosKeys.all, 'search', keyword] as const,
-  audioEnabled: () => [...conversationScenariosKeys.all, 'audioEnabled'] as const,
+  categories: () => [...conversationScenariosKeys.all, "categories"] as const,
+  random: (params: RandomScenarioRequest) =>
+    [...conversationScenariosKeys.all, "random", params] as const,
+  search: (keyword: string) =>
+    [...conversationScenariosKeys.all, "search", keyword] as const,
+  audioEnabled: () =>
+    [...conversationScenariosKeys.all, "audioEnabled"] as const,
 };
 
 // 모든 시나리오 조회
@@ -45,10 +49,13 @@ export const useScenariosByCategory = (category: string) => {
 };
 
 // 난이도별 시나리오 조회
-export const useScenariosByDifficulty = (difficulty: ConversationScenario['difficulty']) => {
+export const useScenariosByDifficulty = (
+  difficulty: ConversationScenario["difficulty"],
+) => {
   return useQuery({
     queryKey: conversationScenariosKeys.list({ difficulty }),
-    queryFn: () => conversationScenariosApi.getScenariosByDifficulty(difficulty),
+    queryFn: () =>
+      conversationScenariosApi.getScenariosByDifficulty(difficulty),
     enabled: !!difficulty,
     staleTime: 5 * 60 * 1000,
   });
@@ -112,7 +119,10 @@ export const useUpdateScenario = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, ...scenario }: { id: number } & Partial<ConversationScenario>) =>
+    mutationFn: ({
+      id,
+      ...scenario
+    }: { id: number } & Partial<ConversationScenario>) =>
       conversationScenariosApi.updateScenario(id, scenario),
     onSuccess: (data) => {
       // 해당 시나리오 캐시 업데이트
@@ -133,6 +143,34 @@ export const useDeleteScenario = () => {
     mutationFn: conversationScenariosApi.deleteScenario,
     onSuccess: () => {
       // 모든 시나리오 관련 쿼리 무효화
+      queryClient.invalidateQueries({
+        queryKey: conversationScenariosKeys.all,
+      });
+    },
+  });
+};
+
+// 기본 시나리오 생성 (데이터가 없을 때 사용)
+export const useCreateDefaultScenarios = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () => {
+      // 백엔드의 초기화 API 호출
+      return fetch("/api/scenario-init/initialize", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }).then((response) => {
+        if (!response.ok) {
+          throw new Error("기본 시나리오 생성 실패");
+        }
+        return response.json();
+      });
+    },
+    onSuccess: () => {
+      // 모든 시나리오 관련 쿼리 무효화하여 새로 불러오기
       queryClient.invalidateQueries({
         queryKey: conversationScenariosKeys.all,
       });
