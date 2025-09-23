@@ -239,63 +239,71 @@ export default function ConversationScenarioTemplateList() {
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             {scenarios.map((template) => (
               <Card
                 key={template.id}
-                className="group hover:shadow-md transition-shadow h-full flex flex-col"
+                className="group hover:shadow-md transition-shadow h-full overflow-hidden"
               >
-                <CardContent className="p-4 flex flex-col h-full">
-                  <div className="flex items-center gap-2 mb-2">
-                    <h3 className="text-base font-semibold text-foreground line-clamp-2">
-                      {template.title}
-                    </h3>
-                    <EyeIcon
-                      className="h-4 w-4 text-green-600 flex-shrink-0"
-                      title="공개 시나리오"
-                    />
-                  </div>
+                <CardContent className="p-0 h-full">
+                  <div className="grid grid-cols-[1fr_80px] h-full">
+                    {/* 콘텐츠 영역 */}
+                    <div className="p-4 flex flex-col min-w-0">
+                      <div className="flex items-center gap-2 mb-3">
+                        <h3 className="text-base font-semibold text-foreground line-clamp-2 flex-1">
+                          {template.title}
+                        </h3>
+                        <EyeIcon
+                          className="h-4 w-4 text-green-600 flex-shrink-0"
+                          title="공개 시나리오"
+                        />
+                      </div>
 
-                  <div className="flex items-center gap-3 mb-2 text-sm flex-wrap">
-                    <span className="text-blue-600 font-medium">
-                      {template.category}
-                    </span>
-                    <span
-                      className={`font-medium ${DIFFICULTY_COLORS[template.difficulty]}`}
-                    >
-                      {DIFFICULTY_LABELS[template.difficulty]}
-                    </span>
-                    <span className="text-muted-foreground">
-                      {template.expectedTurns}턴 예상
-                    </span>
-                  </div>
+                      <div className="flex items-center gap-3 mb-3 text-sm flex-wrap">
+                        <span className="text-blue-600 font-medium">
+                          {template.category}
+                        </span>
+                        <span
+                          className={`font-medium ${DIFFICULTY_COLORS[template.difficulty]}`}
+                        >
+                          {DIFFICULTY_LABELS[template.difficulty]}
+                        </span>
+                        <span className="text-muted-foreground">
+                          {template.expectedTurns}턴 예상
+                        </span>
+                      </div>
 
-                  {template.description && (
-                    <p className="text-sm text-muted-foreground leading-relaxed mb-3 flex-1 line-clamp-3">
-                      {template.description}
-                    </p>
-                  )}
+                      {template.description && (
+                        <p className="text-sm text-muted-foreground leading-relaxed mb-4 flex-1 line-clamp-3">
+                          {template.description}
+                        </p>
+                      )}
 
-                  <div className="flex items-center justify-between gap-4 mt-auto">
-                    <div className="flex flex-col gap-1 text-xs text-muted-foreground min-w-0">
-                      <span className="truncate">
-                        작성자: {template.createdBy}
-                      </span>
-                      <span>
-                        {new Date(template.createdAt).toLocaleDateString()}
-                      </span>
+                      <div className="mt-auto">
+                        <div className="flex flex-col gap-1 text-xs text-muted-foreground">
+                          <span className="truncate">
+                            작성자: {template.createdBy}
+                          </span>
+                          <span>
+                            {new Date(template.createdAt).toLocaleDateString()}
+                          </span>
+                        </div>
+                      </div>
                     </div>
 
-                    <Button
-                      size="sm"
-                      onClick={() => handleCopyRequest(template)}
-                      className="flex items-center gap-2 flex-shrink-0"
-                      disabled={copyMutation.isPending}
-                    >
-                      <DocumentDuplicateIcon className="h-4 w-4" />
-                      <span className="hidden sm:inline">복사하기</span>
-                      <span className="sm:hidden">복사</span>
-                    </Button>
+                    {/* 버튼 영역 */}
+                    <div className="bg-muted/30 flex items-center justify-center border-l border-border">
+                      <Button
+                        size="sm"
+                        onClick={() => handleCopyRequest(template)}
+                        className="flex flex-col items-center gap-1 h-auto py-4 px-3 w-full"
+                        disabled={copyMutation.isPending}
+                        variant="ghost"
+                      >
+                        <DocumentDuplicateIcon className="h-5 w-5" />
+                        <span className="text-xs font-medium">복사</span>
+                      </Button>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
