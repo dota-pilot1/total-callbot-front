@@ -15,6 +15,7 @@ export interface UseChatMessagesOptions {
   selectedCharacterId?: string; // AI 제안 시 캐릭터 컨텍스트
   maxSentenceCount?: number; // 최대 응답 문장 수 (기본값: 3)
   englishLevel?: "beginner" | "intermediate" | "advanced"; // 영어 수준 (기본값: beginner)
+  onTranslationReceived?: (translation: string) => void; // 번역 수신 시 콜백
 }
 
 export interface UseChatMessagesReturn {
@@ -49,6 +50,7 @@ export const useChatMessages = (
     responseDelayMs = 3000,
     maxSentenceCount = 3,
     englishLevel = "beginner",
+    onTranslationReceived,
   } = options;
 
   // 채팅 메시지 상태들
@@ -250,23 +252,145 @@ Emergency/Serious (calm, direct):
 
 USE VARIED, NATURAL EXPRESSIONS: Prioritize how native speakers actually talk in real situations, not textbook English.
 
-FORMAT: Provide ONLY the natural response the user should give, without explanations or meta-commentary.`;
+FORMAT: You MUST provide BOTH English and Korean responses in this exact format:
+
+1. First line: Natural English response only
+2. Second line: "Korean: [Korean translation]"
+
+MANDATORY EXAMPLE FORMAT:
+I'll have a coffee, please.
+Korean: 커피 주문할게요.
+
+DO NOT provide explanations, meta-commentary, or any other text. ONLY these two lines.`;
 
       const resp = await examApi.getSampleAnswers({
-        question: lastBot,
+        question: `${lastBot}
+
+RESPONSE FORMAT REQUIREMENT:
+You must respond in exactly this format:
+[English response]
+Korean: [Korean translation]
+
+Example:
+Sure, I'd love some coffee.
+Korean: 네, 커피 마시고 싶어요.`,
         topic: "conversation",
         level: englishLevel,
         count: 1,
-        englishOnly: true,
+        englishOnly: false, // 한글 번역도 포함
         context: enhancedContext,
       });
 
-      const text = (resp.samples?.[0]?.text || "").trim();
-      if (text) {
-        setNewMessage(text);
+      console.log("📡 API 응답:", resp);
+      const fullText = (resp.samples?.[0]?.text || "").trim();
+      console.log("📄 원본 텍스트:", fullText);
+      if (fullText) {
+        // 영어와 한글 분리 - 더 강화된 파싱 로직
+        const lines = fullText
+          .split("\n")
+          .map((line) => line.trim())
+          .filter((line) => line);
+        let englishText = "";
+        let koreanText = "";
+
+        // 1단계: "Korean:" 키워드로 분리 시도
+        const koreanLine = lines.find(
+          (line) =>
+            line.startsWith("Korean:") ||
+            line.startsWith("한국어:") ||
+            line.startsWith("번역:"),
+        );
+
+        if (koreanLine) {
+          // Korean: 이전의 모든 라인을 영어로 간주
+          const koreanIndex = lines.indexOf(koreanLine);
+          englishText = lines.slice(0, koreanIndex).join(" ").trim();
+          koreanText = koreanLine
+            .replace(/^(Korean:|한국어:|번역:)\s*/, "")
+            .trim();
+        } else {
+          // 2단계: 한글이 포함된 라인과 영어 라인 자동 분리
+          const englishLines = [];
+          const koreanLines = [];
+
+          for (const line of lines) {
+            // 한글이 포함되어 있으면 한국어로 분류
+            if (/[가-힣]/.test(line)) {
+              koreanLines.push(line);
+            } else {
+              englishLines.push(line);
+            }
+          }
+
+          englishText = englishLines.join(" ").trim();
+          koreanText = koreanLines.join(" ").trim();
+        }
+
+        // 3단계: 폴백 - 영어만 있는 경우 간단한 번역 시도
+        if (!koreanText && englishText) {
+          // 간단한 번역 매핑 시도
+          const simpleTranslations: { [key: string]: string } = {
+            "I'll have": "주문할게요",
+            "I'd like": "원해요",
+            Please: "부탁드려요",
+            "Thank you": "감사합니다",
+            "Excuse me": "실례합니다",
+            Sure: "네",
+            Yes: "네",
+            No: "아니요",
+            coffee: "커피",
+            tea: "차",
+            water: "물",
+            help: "도움",
+            bill: "계산서",
+            check: "확인",
+          };
+
+          let translatedText = englishText.toLowerCase();
+          for (const [eng, kor] of Object.entries(simpleTranslations)) {
+            if (translatedText.includes(eng.toLowerCase())) {
+              koreanText = `${kor}(${englishText})`;
+              break;
+            }
+          }
+
+          // 여전히 없으면 기본 메시지
+          if (!koreanText) {
+            koreanText = `AI 제안: ${englishText}`;
+          }
+        }
+
+        // 최종 검증 및 설정
+        const finalEnglish = englishText || fullText;
+        setNewMessage(finalEnglish);
+
+        // 번역이 있으면 콜백으로 전달
+        console.log("🌐 번역 데이터:", {
+          englishText: finalEnglish,
+          koreanText,
+          hasCallback: !!onTranslationReceived,
+        });
+        if (koreanText && onTranslationReceived) {
+          onTranslationReceived(koreanText);
+          console.log("✅ 번역 콜백 호출됨:", koreanText);
+        } else {
+          console.log("❌ 번역 콜백 호출 안됨:", {
+            koreanText,
+            hasCallback: !!onTranslationReceived,
+          });
+        }
       }
     } catch (e) {
       console.error("AI 제안 실패:", e);
+
+      // 에러 시 폴백 메시지와 번역 제공
+      const fallbackMessage = "I understand. Let me think about that.";
+      const fallbackTranslation = "알겠습니다. 그것에 대해 생각해보겠습니다.";
+
+      setNewMessage(fallbackMessage);
+      if (onTranslationReceived) {
+        onTranslationReceived(fallbackTranslation);
+      }
     } finally {
       setSuggestLoading(false);
     }

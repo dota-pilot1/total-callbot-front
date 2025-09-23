@@ -29,10 +29,12 @@ import {
   ListeningTestList,
 } from "./features/english-listening-test";
 import { MathPage } from "./features/math";
-import { DailyEnglish } from "./features/daily-english";
+import {
+  DailyEnglish,
+  DailyEnglishExam,
+  DailyEnglishConversation,
+} from "./features/daily-english";
 import { DailyMath } from "./features/daily-math";
-import { DailyEnglishExam } from "./features/daily-english-exam";
-import DailyEnglishConversation from "./features/daily-english-exam/pages/DailyEnglishConversation";
 import { BoardList, BoardDetail, BoardWrite } from "./features/board";
 import { TestCenter } from "./features/test-center";
 import TestRoomDetail from "./features/test-center/pages/TestRoomDetail";

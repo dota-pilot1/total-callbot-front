@@ -4,17 +4,12 @@ import { useAuthStore } from "../../auth";
 import { Button } from "../../../components/ui";
 
 import {
-  PaperAirplaneIcon,
   TrashIcon,
   XMarkIcon,
-  SparklesIcon,
   Cog6ToothIcon,
-  LanguageIcon,
   ArchiveBoxIcon,
   ArrowRightOnRectangleIcon,
   ChatBubbleLeftRightIcon,
-  SpeakerWaveIcon,
-  PauseIcon,
   ArrowLeftIcon,
   ChartBarIcon,
 } from "@heroicons/react/24/outline";
@@ -26,7 +21,6 @@ import MobileSettingsDropdown from "../../../components/MobileSettingsDropdown";
 
 import { VOICE_OPTIONS } from "../../chatbot/character";
 import { useWebSocketStore } from "../../websocket/stores/useWebSocketStore";
-import MobileTranslationDialog from "../../../components/MobileTranslationDialog";
 import KoreanInputDialog from "../../../components/KoreanInputDialog";
 import CardForChattingMessageWithTranslation from "../../../components/CardForChattingMessageWithTranslation";
 import { MyConversationArchive } from "../../conversation-archive";
@@ -35,6 +29,7 @@ import { useAudioSettings } from "../../chatbot/settings";
 import ExamResultsSlideDown from "../../../components/ExamResultsSlideDown";
 import { useToast } from "../../../components/ui/Toast";
 import ConversationEvaluationDialog from "../../../components/ConversationEvaluationDialog";
+import ConversationInputArea from "../components/ConversationInputArea";
 
 interface DailyScenario {
   id: string;
@@ -241,10 +236,6 @@ REMEMBER: Always start the conversation immediately when prompted, don't wait fo
   } = useAudioSettings();
   const [settingsOpen, setSettingsOpen] = useState(false);
 
-  // Translation dialog state (mobile)
-  const [translationOpen, setTranslationOpen] = useState(false);
-  const [translationText, setTranslationText] = useState<string>("");
-
   // 나의 대화 아카이브 다이얼로그 상태
   const [conversationArchiveDialogOpen, setConversationArchiveDialogOpen] =
     useState(false);
@@ -265,6 +256,9 @@ REMEMBER: Always start the conversation immediately when prompted, don't wait fo
   const [evaluationLoading, setEvaluationLoading] = useState(false);
   const [evaluationData, setEvaluationData] = useState<any>(null);
 
+  // 번역 상태
+  const [currentTranslation, setCurrentTranslation] = useState<string>("");
+
   // 채팅 메시지 훅
   const {
     messages,
@@ -284,6 +278,7 @@ REMEMBER: Always start the conversation immediately when prompted, don't wait fo
     selectedCharacterId,
     maxSentenceCount,
     englishLevel,
+    onTranslationReceived: setCurrentTranslation,
     onSendMessage: (text: string) => {
       // 음성 연결이 있으면 음성으로 전송
       try {
@@ -697,11 +692,6 @@ Start speaking now!`;
     startVoice,
     sendVoiceMessage,
   ]);
-
-  const openTranslation = (text: string) => {
-    setTranslationText(text);
-    setTranslationOpen(true);
-  };
 
   // 인풋 텍스트 TTS 재생
   const playInputText = async (text: string) => {
@@ -1136,113 +1126,20 @@ Start speaking now!`;
 
       {/* 입력 영역 */}
       {connected && (
-        <div className="bg-card border-t border-border p-4 flex-shrink-0">
-          <div className="flex items-center space-x-2">
-            {/* 왼쪽 미니 버튼들 */}
-            <div className="flex flex-col space-y-1">
-              <Button
-                onClick={suggestReply}
-                variant="outline"
-                size="sm"
-                className={`w-8 h-8 p-0 ${suggestLoading ? "animate-pulse" : ""}`}
-                title="답변 도움말"
-                disabled={suggestLoading}
-              >
-                <SparklesIcon className="h-3 w-3" />
-              </Button>
-
-              <Button
-                onClick={async () => {
-                  if (playingInputText) {
-                    stopInputSpeech();
-                  } else {
-                    await playInputText(newMessage);
-                  }
-                }}
-                variant="outline"
-                size="sm"
-                className={`w-8 h-8 p-0 ${playingInputText ? "animate-pulse" : ""}`}
-                title={playingInputText ? "읽기 중지" : "내 답변 듣기"}
-                disabled={!newMessage.trim()}
-              >
-                {playingInputText ? (
-                  <PauseIcon className="h-3 w-3 text-red-500" />
-                ) : (
-                  <SpeakerWaveIcon className="h-3 w-3 text-blue-500" />
-                )}
-              </Button>
-            </div>
-
-            {/* 텍스트 입력 */}
-            <textarea
-              rows={3}
-              value={newMessage}
-              onChange={(e) => {
-                setNewMessage(e.target.value);
-                // 자동 높이 조절 (최대 5줄)
-                const target = e.target as HTMLTextAreaElement;
-                target.style.height = "auto";
-                const lineHeight = parseInt(
-                  getComputedStyle(target).lineHeight,
-                );
-                const maxHeight = lineHeight * 5; // 5줄 최대
-                const newHeight = Math.min(target.scrollHeight, maxHeight);
-                target.style.height = `${newHeight}px`;
-              }}
-              onCompositionStart={() => setIsIMEComposing(true)}
-              onCompositionEnd={() => setIsIMEComposing(false)}
-              onKeyDown={(e) => {
-                const anyEvt = e.nativeEvent as any;
-                const composing =
-                  isIMEComposing ||
-                  anyEvt?.isComposing ||
-                  anyEvt?.keyCode === 229;
-                if (
-                  e.key === "Enter" &&
-                  !e.shiftKey &&
-                  !composing &&
-                  !suggestLoading
-                ) {
-                  e.preventDefault();
-                  sendMessage();
-                }
-              }}
-              placeholder={
-                suggestLoading ? "AI 응답 생성 중…" : "답변을 입력하세요..."
-              }
-              className="flex-1 px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring resize-none text-[13px] md:text-sm placeholder:text-muted-foreground overflow-y-auto"
-              style={{
-                minHeight: "4.5rem",
-                maxHeight: "7.5rem", // 5줄 정도의 최대 높이
-              }}
-            />
-
-            {/* 오른쪽 미니 버튼들 */}
-            <div className="flex flex-col space-y-1">
-              <Button
-                onClick={() => openTranslation(newMessage)}
-                disabled={!newMessage.trim()}
-                variant="outline"
-                size="sm"
-                className="w-8 h-8 p-0"
-                title="번역"
-              >
-                <LanguageIcon className="h-3 w-3" />
-              </Button>
-
-              <Button
-                onClick={sendMessage}
-                disabled={!newMessage.trim() || suggestLoading}
-                variant="outline"
-                size="sm"
-                className="w-8 h-8 p-0"
-                title="전송"
-              >
-                <PaperAirplaneIcon className="h-3 w-3" />
-              </Button>
-            </div>
-          </div>
-        </div>
+        <ConversationInputArea
+          newMessage={newMessage}
+          isIMEComposing={isIMEComposing}
+          suggestLoading={suggestLoading}
+          onMessageChange={setNewMessage}
+          onIMEComposingChange={setIsIMEComposing}
+          onSendMessage={sendMessage}
+          onSuggestReply={suggestReply}
+          onPlayText={playInputText}
+          onStopText={stopInputSpeech}
+          isPlaying={playingInputText}
+          disabled={false}
+          translation={currentTranslation}
+        />
       )}
 
       {/* 설정 다이얼로그 */}
@@ -1277,21 +1174,6 @@ Start speaking now!`;
         onEnglishLevelChange={setEnglishLevel}
         onClearChat={clearChat}
       />
-
-      {/* 번역 다이얼로그 */}
-      <MobileTranslationDialog
-        open={translationOpen}
-        onClose={() => {
-          console.log("🔵 번역 다이얼로그 닫기 요청");
-          setTranslationOpen(false);
-        }}
-        text={translationText}
-        onInsertText={(translatedText: string) => {
-          setNewMessage(translatedText);
-          setTranslationOpen(false);
-        }}
-      />
-
       {/* 한국어 입력 다이얼로그 */}
       <KoreanInputDialog
         isOpen={koreanInputDialogOpen}
