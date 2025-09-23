@@ -1042,7 +1042,7 @@ Start speaking now!`;
                   {connecting
                     ? "연결 중..."
                     : connected
-                      ? "대화 연결됨"
+                      ? "대화 연결중"
                       : "연결 끊김"}
                 </span>
               </div>

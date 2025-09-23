@@ -1,8 +1,5 @@
 import { apiClient } from "../../../shared/api/client";
-import type {
-  ConversationScenario,
-  RandomScenarioRequest,
-} from "../types";
+import type { ConversationScenario, RandomScenarioRequest } from "../types";
 
 const BASE_URL = "/daily-english/scenarios";
 

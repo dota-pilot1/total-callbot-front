@@ -13,7 +13,7 @@ const resolveApiBaseUrl = () => {
 
   const host = typeof window !== "undefined" ? window.location.hostname : "";
   const isLocal = host === "localhost" || host === "127.0.0.1";
-  if (isLocal) return "http://localhost:8080/api";
+  if (isLocal) return "/api"; // Vite 프록시 사용
 
   // Default prod mapping
   return "https://api.total-callbot.cloud/api";
