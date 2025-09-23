@@ -6,7 +6,7 @@ import {
   useAllScenarios,
   useCreateScenario,
   useDeleteScenario,
-  useAllCategories
+  useAllCategories,
 } from "../hooks/useConversationScenarios";
 import type { ConversationScenario } from "../types";
 import { PlusIcon, TrashIcon, PencilIcon } from "@heroicons/react/24/outline";
@@ -55,6 +55,14 @@ export default function ScenarioManagement() {
   const { data: categories = [] } = useAllCategories();
   const createMutation = useCreateScenario();
   const deleteMutation = useDeleteScenario();
+
+  const fallbackCategories = [
+    "일상생활 (Everyday Life)",
+    "사회생활 및 관계 (Social Life & Relationships)",
+    "비즈니스 및 학업 (Business & Academic)",
+  ];
+
+  const categoryOptions = categories.length > 0 ? categories : fallbackCategories;
 
   const handleInputChange = (field: keyof ScenarioFormData, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -190,13 +198,15 @@ export default function ScenarioManagement() {
                 <label className="block text-sm font-medium mb-2">카테고리</label>
                 <select
                   value={formData.category}
-                  onChange={(e) => handleInputChange('category', e.target.value)}
+                  onChange={(e) => handleInputChange("category", e.target.value)}
                   className="w-full p-2 border border-border rounded-md bg-background"
                   required
                 >
-                  <option value="일상생활 (Everyday Life)">일상생활</option>
-                  <option value="사회생활 및 관계 (Social Life & Relationships)">사회생활 · 관계</option>
-                  <option value="비즈니스 및 학업 (Business & Academic)">비즈니스 · 학업</option>
+                  {categoryOptions.map((category) => (
+                    <option key={category} value={category}>
+                      {category}
+                    </option>
+                  ))}
                 </select>
               </div>
 

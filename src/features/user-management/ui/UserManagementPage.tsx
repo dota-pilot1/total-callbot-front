@@ -1,13 +1,18 @@
 import { useUsersQuery } from "../lib/useUsersQuery";
 import { useRealtimeUserStatus } from "../lib/useRealtimeUserStatus";
 import { useAuthStore } from "../../auth";
+import type { UserStatus } from "../api/userApi";
 
 export function UserManagementPage() {
   // 디버깅: 토큰 상태 확인
   const isAuthed = useAuthStore((s) => s.isAuthenticated());
 
-  const { data: users, isLoading, isError, error } = useUsersQue;
-  ry();
+  const {
+    data: users = [],
+    isLoading,
+    isError,
+    error,
+  } = useUsersQuery();
   const { isConnected } = useRealtimeUserStatus();
 
   // 프론트엔드 데이터 로깅
@@ -19,13 +24,11 @@ export function UserManagementPage() {
     error: error?.message,
   });
 
-  if (users) {
-    users.forEach((user, index) => {
-      console.log(
-        `프론트 사용자 ${index + 1}: ID ${user.id} (${user.name}) - online: ${user.online} (타입: ${typeof user.online})`,
-      );
-    });
-  }
+  users.forEach((user, index) => {
+    console.log(
+      `프론트 사용자 ${index + 1}: ID ${user.id} (${user.name}) - online: ${user.online} (타입: ${typeof user.online})`,
+    );
+  });
   console.log("UserManagementPage 렌더링 시 토큰 상태:", {
     hasToken: isAuthed,
   });
@@ -84,7 +87,7 @@ export function UserManagementPage() {
             </tr>
           </thead>
           <tbody>
-            {users?.map((user) => {
+            {users.map((user: UserStatus) => {
               console.log(
                 `렌더링 중 사용자 ${user.id} (${user.name}): online=${user.online}, 타입=${typeof user.online}, 조건결과=${user.online ? "온라인" : "오프라인"}`,
               );

@@ -11,6 +11,7 @@ export type Persona = {
   scenario?: string;
   newsType?: "international" | "development" | "youtube";
   autoStart?: boolean; // 자동 시작 기능 (퀴즈/뉴스)
+  firstMessage?: string;
 };
 
 // 일반 대화 캐릭터들 (10명)

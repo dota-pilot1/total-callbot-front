@@ -1,7 +1,6 @@
 import { apiClient } from "../../../shared/api/client";
 import type {
   ConversationScenario,
-  ScenarioFilters,
   RandomScenarioRequest,
 } from "../types";
 
