@@ -12,6 +12,7 @@ import {
   ChatBubbleLeftRightIcon,
   ArrowLeftIcon,
   ChartBarIcon,
+  LanguageIcon,
 } from "@heroicons/react/24/outline";
 import { useVoiceConnection } from "../../chatbot/voice";
 import { useChatMessages } from "../../chatbot/messaging";
@@ -30,6 +31,8 @@ import ExamResultsSlideDown from "../../../components/ExamResultsSlideDown";
 import { useToast } from "../../../components/ui/Toast";
 import ConversationEvaluationDialog from "../../../components/ConversationEvaluationDialog";
 import ConversationInputArea from "../components/ConversationInputArea";
+import { useTranslationStore } from "../stores/useTranslationStore";
+import { translateToKorean } from "../utils/translationApi";
 
 interface DailyScenario {
   id: string;
@@ -256,9 +259,6 @@ REMEMBER: Always start the conversation immediately when prompted, don't wait fo
   const [evaluationLoading, setEvaluationLoading] = useState(false);
   const [evaluationData, setEvaluationData] = useState<any>(null);
 
-  // 번역 상태
-  const [currentTranslation, setCurrentTranslation] = useState<string>("");
-
   // 채팅 메시지 훅
   const {
     messages,
@@ -278,7 +278,6 @@ REMEMBER: Always start the conversation immediately when prompted, don't wait fo
     selectedCharacterId,
     maxSentenceCount,
     englishLevel,
-    onTranslationReceived: setCurrentTranslation,
     onSendMessage: (text: string) => {
       // 음성 연결이 있으면 음성으로 전송
       try {
@@ -291,11 +290,80 @@ REMEMBER: Always start the conversation immediately when prompted, don't wait fo
     },
   });
 
+  // 번역 처리 함수
+  const handleTranslation = async (message: string) => {
+    const currentVisible = useTranslationStore.getState().isVisible;
+    console.log("🔍 번역 처리 시도:", {
+      currentVisible,
+      message: message.substring(0, 50) + "...",
+    });
+
+    if (currentVisible) {
+      console.log("🌐 번역 시작:", message);
+      setTranslationLoading(true);
+      setTranslation(message, ""); // 원문 설정
+
+      try {
+        const translation = await translateToKorean(message);
+        console.log("✅ 번역 결과:", translation);
+
+        if (translation) {
+          setTranslation(message, translation); // 번역 결과 업데이트
+        } else {
+          console.warn("⚠️ 번역 결과가 비어있음");
+          setTranslation(message, "번역에 실패했습니다");
+        }
+      } catch (error) {
+        console.error("❌ 번역 에러:", error);
+        setTranslation(message, "번역 중 오류가 발생했습니다");
+      } finally {
+        setTranslationLoading(false);
+      }
+    }
+  };
+
+  // 가장 최근 AI 응답 추적
+  const [latestAIResponse, setLatestAIResponse] = useState<string>("");
+
+  // 번역 관련 상태 (Zustand store 사용) - useEffect보다 먼저 선언
+  const {
+    isVisible: translationVisible,
+    isLoading: translationLoading,
+    originalText: translationOriginal,
+    translatedText: translationText,
+    toggleVisible: toggleTranslation,
+    setTranslation,
+    setLoading: setTranslationLoading,
+  } = useTranslationStore();
+
+  // 번역 상태가 변경될 때마다 가장 최근 메시지 번역
+  useEffect(() => {
+    if (translationVisible && latestAIResponse) {
+      console.log(
+        "🔄 useEffect 번역 상태 변경됨, 최근 응답 번역:",
+        latestAIResponse.substring(0, 50) + "...",
+      );
+      handleTranslation(latestAIResponse);
+    } else if (!translationVisible) {
+      // 번역 모드가 꺼지면 번역 정보 초기화
+      console.log("🔄 번역 모드 꺼짐, 번역 정보 초기화");
+      setTranslation("", "");
+    }
+  }, [translationVisible, latestAIResponse]);
+
   // 어시스턴트 메시지 핸들러
-  const handleAssistantMessage = (message: string) => {
+  const handleAssistantMessage = async (message: string) => {
+    console.log(
+      "📨 handleAssistantMessage 호출됨:",
+      message.substring(0, 50) + "...",
+    );
+
     addAssistantMessage(message);
     // Zustand store에도 저장
     addMessage({ sender: "callbot", text: message, type: "text" });
+
+    // 가장 최근 AI 응답 저장
+    setLatestAIResponse(message);
 
     // 시험 완료 감지 (옵션)
     if (detectExamCompletion(message)) {
@@ -871,6 +939,17 @@ Start speaking now!`;
                 <ArchiveBoxIcon className="h-3 w-3" />
               </Button>
 
+              {/* 번역 토글 버튼 */}
+              <Button
+                variant={translationVisible ? "default" : "outline"}
+                size="sm"
+                onClick={toggleTranslation}
+                title="실시간 번역"
+                className="h-7 w-7 p-0"
+              >
+                <LanguageIcon className="h-3 w-3" />
+              </Button>
+
               {/* 설정 버튼 */}
               <Button
                 variant="outline"
@@ -903,39 +982,170 @@ Start speaking now!`;
         </div>
       </div>
 
-      {/* 시나리오 정보 및 연결 상태 */}
+      {/* 시나리오 정보 및 번역 정보 */}
       <div className="bg-card border-b border-border p-3 flex-shrink-0">
         <div className="rounded-lg border border-border bg-blue-50/40 p-3 shadow-sm mb-3">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2 flex-1 min-w-0">
-              <span className="text-xl">{dailyExamCharacter.emoji}</span>
-              <div className="flex-1 min-w-0">
-                <h2 className="text-sm font-semibold text-foreground">
-                  {dailyScenario.title}
-                </h2>
-                <p className="text-xs text-blue-500 mt-0.5">
-                  영어로 자연스럽게 대화해 주세요
+          {!rolePlayStarted ? (
+            /* 시작 전 레이아웃 */
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                <span className="text-xl">{dailyExamCharacter.emoji}</span>
+                <div className="flex-1 min-w-0">
+                  {translationVisible ? (
+                    /* 번역 모드일 때 */
+                    <div className="space-y-2">
+                      {translationLoading ? (
+                        <div className="flex items-center gap-2">
+                          <div className="animate-spin rounded-full h-3 w-3 border-2 border-blue-600 border-t-transparent"></div>
+                          <span className="text-xs text-blue-700 font-medium">
+                            번역 중...
+                          </span>
+                        </div>
+                      ) : translationOriginal ? (
+                        <>
+                          <div className="flex items-start gap-2">
+                            <span className="text-[10px] font-medium text-blue-600 bg-blue-100 px-1.5 py-0.5 rounded flex-shrink-0">
+                              영어
+                            </span>
+                            <p className="text-xs text-gray-800 leading-relaxed">
+                              {translationOriginal}
+                            </p>
+                          </div>
+                          {translationText && (
+                            <div className="flex items-start gap-2">
+                              <span className="text-[10px] font-medium text-green-600 bg-green-100 px-1.5 py-0.5 rounded flex-shrink-0">
+                                한글
+                              </span>
+                              <p className="text-xs text-gray-800 leading-relaxed font-medium">
+                                {translationText}
+                              </p>
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        <div className="text-center py-2">
+                          <div className="flex items-center justify-center gap-2">
+                            <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                            <p className="text-xs text-blue-600 font-medium">
+                              번역 모드 활성화됨 - AI 응답을 기다리는 중...
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    /* 기본 시나리오 정보 */
+                    <>
+                      <h2 className="text-sm font-semibold text-foreground">
+                        {dailyScenario.title}
+                      </h2>
+                      <p className="text-xs text-blue-500 mt-0.5">
+                        영어로 자연스럽게 대화해 주세요
+                      </p>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* 상황극 시작 버튼 - 오른쪽 배치 */}
+              {connected && (
+                <Button
+                  onClick={startRolePlay}
+                  size="sm"
+                  className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold px-4 py-1.5 rounded-lg shadow-lg text-xs flex-shrink-0"
+                >
+                  🎭 시작
+                </Button>
+              )}
+            </div>
+          ) : (
+            /* 진행 중 레이아웃 - 5:1 비율 분할 */
+            <div className="grid grid-cols-[5fr_1fr] items-center gap-4 w-full">
+              {/* 좌측 영역: 번역 정보 또는 시나리오 정보 */}
+              <div className="flex justify-start">
+                <div className="text-left">
+                  {translationVisible ? (
+                    /* 번역 모드일 때 */
+                    <div className="space-y-2">
+                      {translationLoading ? (
+                        <div className="flex items-center gap-2">
+                          <div className="animate-spin rounded-full h-3 w-3 border-2 border-blue-600 border-t-transparent"></div>
+                          <span className="text-xs text-blue-700 font-medium">
+                            번역 중...
+                          </span>
+                        </div>
+                      ) : translationOriginal ? (
+                        /* 영어/한글 수직 정렬 */
+                        <div className="space-y-2">
+                          <div>
+                            <span className="text-[10px] font-medium text-blue-600 bg-blue-100 px-1.5 py-0.5 rounded">
+                              영어
+                            </span>
+                            <p className="text-xs text-gray-800 leading-relaxed mt-1">
+                              {translationOriginal}
+                            </p>
+                          </div>
+                          {translationText && (
+                            <div>
+                              <span className="text-[10px] font-medium text-green-600 bg-green-100 px-1.5 py-0.5 rounded">
+                                한글
+                              </span>
+                              <p className="text-xs text-gray-800 leading-relaxed font-medium mt-1">
+                                {translationText}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="py-2">
+                          <p className="text-xs text-gray-500">
+                            번역 대기 중...
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    /* 기본 시나리오 정보 */
+                    <>
+                      <h2 className="text-sm font-semibold text-foreground">
+                        {dailyScenario.title}
+                      </h2>
+                      <p className="text-xs text-blue-500 mt-0.5">
+                        영어로 자연스럽게 대화해 주세요
+                      </p>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* 우측 영역: 진행 중 상태와 번역 토글 버튼 */}
+              <div className="flex flex-col items-center gap-2">
+                <p className="text-xs text-green-600 font-medium text-center">
+                  진행 중
                 </p>
+                <Button
+                  variant={translationVisible ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => {
+                    console.log(
+                      "🔘 번역 버튼 클릭, 현재 상태:",
+                      translationVisible,
+                    );
+                    toggleTranslation();
+                    console.log("🔘 번역 버튼 클릭 후:", !translationVisible);
+                  }}
+                  title="실시간 번역"
+                  className={`h-6 w-8 px-1 text-[10px] ${
+                    translationVisible
+                      ? "bg-blue-600 text-white border-blue-600 hover:bg-blue-700"
+                      : "hover:bg-blue-50 hover:border-blue-300"
+                  }`}
+                >
+                  번역
+                </Button>
               </div>
             </div>
-
-            {/* 상황극 시작 버튼 - 오른쪽 배치 */}
-            {connected && !rolePlayStarted && (
-              <Button
-                onClick={startRolePlay}
-                size="sm"
-                className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold px-4 py-1.5 rounded-lg shadow-lg text-xs flex-shrink-0"
-              >
-                🎭 시작
-              </Button>
-            )}
-
-            {rolePlayStarted && (
-              <div className="flex-shrink-0">
-                <p className="text-xs text-green-600 font-medium">✅ 진행 중</p>
-              </div>
-            )}
-          </div>
+          )}
         </div>
 
         <div className="text-center">
@@ -1135,7 +1345,6 @@ Start speaking now!`;
           onStopText={stopInputSpeech}
           isPlaying={playingInputText}
           disabled={false}
-          translation={currentTranslation}
         />
       )}
 

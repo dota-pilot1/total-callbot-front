@@ -142,9 +142,6 @@ export default function CreateScenario() {
               <div className="h-6 w-6 rounded-md bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center">
                 <span className="text-sm">✨</span>
               </div>
-              <h1 className="text-lg font-semibold text-foreground">
-                새 시나리오 만들기
-              </h1>
             </div>
             <HeaderAuthControls />
           </div>

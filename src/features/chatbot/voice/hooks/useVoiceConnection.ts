@@ -102,9 +102,9 @@ export const useVoiceConnection = (
       ? `IMPORTANT: When you first start speaking or when prompted to begin a conversation, your FIRST message should be: "${personaCharacter.firstMessage}". Use this exact greeting or a close variation. `
       : "";
 
-    // 영어 학습용 - 모든 캐릭터가 영어로 대답하되 캐릭터 특성은 유지
+    // 자연스러운 언어 매칭 - 사용자 언어에 맞춰 응답하되 영어 학습 촉진
     const languageNote =
-      "ALWAYS respond in English only for English learning purposes. Never use Korean. Keep responses conversational and natural to help with English practice. Be direct and straightforward. Keep replies to 1-2 sentences maximum. ";
+      "Respond in the same language the user speaks to you. If they speak in English, respond in English. If they speak in Korean, respond in Korean. This creates a natural conversation flow while encouraging English practice. Keep responses conversational and natural. Be direct and straightforward. Keep replies to 1-2 sentences maximum. ";
 
     const characterEmphasis = personaCharacter
       ? `You are ${personaCharacter.name}. Always respond as this character would, maintaining their personality and perspective. For example, if you are King Sejong, give advice about learning and wisdom as a wise ruler would. If you're Einstein, explain things with scientific curiosity and simple analogies. Stay true to your character's nature while helping with English learning. `

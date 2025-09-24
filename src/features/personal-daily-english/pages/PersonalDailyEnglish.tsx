@@ -136,12 +136,9 @@ export default function PersonalDailyEnglish() {
                 <ArrowLeftIcon className="h-4 w-4" />
                 <span className="hidden sm:inline">내 학습</span>
               </Button>
-              <div className="h-6 w-6 rounded-md bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center">
+              {/*<div className="h-6 w-6 rounded-md bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center">
                 <span className="text-sm">📝</span>
-              </div>
-              <h1 className="text-lg font-semibold text-foreground">
-                내 시나리오
-              </h1>
+              </div>*/}
             </div>
 
             <div className="flex items-center gap-3">
