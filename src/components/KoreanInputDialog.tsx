@@ -1,6 +1,11 @@
 import { useState } from "react";
-import { MicrophoneIcon, PlayIcon, PaperAirplaneIcon } from "@heroicons/react/24/outline";
+import {
+  MicrophoneIcon,
+  PlayIcon,
+  PaperAirplaneIcon,
+} from "@heroicons/react/24/outline";
 import FullScreenSlideDialog from "./ui/FullScreenSlideDialog";
+import { translateToEnglish } from "../features/daily-english/utils/translationApi";
 
 interface KoreanInputDialogProps {
   isOpen: boolean;
@@ -27,15 +32,21 @@ export default function KoreanInputDialog({
     setIsListening(false);
   };
 
-  const translateToEnglish = async () => {
+  const handleTranslateToEnglish = async () => {
     if (!koreanText.trim()) return;
 
     setIsTranslating(true);
     try {
-      // TODO: 번역 API 호출
-      setEnglishText(`Translated: ${koreanText}`);
+      const translatedText = await translateToEnglish(koreanText);
+      if (translatedText) {
+        setEnglishText(translatedText);
+      } else {
+        console.warn("번역 결과가 없습니다");
+        setEnglishText("번역에 실패했습니다");
+      }
     } catch (error) {
       console.error("Translation failed:", error);
+      setEnglishText("번역 중 오류가 발생했습니다");
     } finally {
       setIsTranslating(false);
     }
@@ -89,9 +100,9 @@ export default function KoreanInputDialog({
                 <PlayIcon className="h-3 w-3" />
               </button>
               <button
-                onClick={translateToEnglish}
+                onClick={handleTranslateToEnglish}
                 disabled={!koreanText.trim() || isTranslating}
-                className="px-3 py-1 bg-purple-500 text-white rounded text-sm hover:bg-purple-600 disabled:opacity-50"
+                className="px-3 py-1 bg-blue-500 text-white rounded text-sm hover:bg-blue-600 disabled:opacity-50"
               >
                 {isTranslating ? "번역중..." : "번역"}
               </button>

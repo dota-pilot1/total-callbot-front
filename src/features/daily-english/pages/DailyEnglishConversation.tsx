@@ -288,6 +288,10 @@ REMEMBER: Always start the conversation immediately when prompted, don't wait fo
         console.error("Realtime 텍스트 전송 실패:", e);
       }
     },
+    onTranslationReceived: (translation: string) => {
+      console.log("✅ 자동완성 번역 받음:", translation);
+      setAutoCompleteTranslation(translation);
+    },
   });
 
   // 번역 처리 함수
@@ -324,6 +328,10 @@ REMEMBER: Always start the conversation immediately when prompted, don't wait fo
 
   // 가장 최근 AI 응답 추적
   const [latestAIResponse, setLatestAIResponse] = useState<string>("");
+
+  // 자동완성 번역 상태
+  const [autoCompleteTranslation, setAutoCompleteTranslation] =
+    useState<string>("");
 
   // 번역 관련 상태 (Zustand store 사용) - useEffect보다 먼저 선언
   const {
@@ -1340,11 +1348,15 @@ Start speaking now!`;
           onMessageChange={setNewMessage}
           onIMEComposingChange={setIsIMEComposing}
           onSendMessage={sendMessage}
-          onSuggestReply={suggestReply}
+          onSuggestReply={() => {
+            setAutoCompleteTranslation(""); // 기존 번역 초기화
+            suggestReply();
+          }}
           onPlayText={playInputText}
           onStopText={stopInputSpeech}
           isPlaying={playingInputText}
           disabled={false}
+          translation={autoCompleteTranslation}
         />
       )}
 
