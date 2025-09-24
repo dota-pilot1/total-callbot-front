@@ -148,9 +148,7 @@ export default function Login() {
         case "chat":
           navigate("/chat"); // 전체 채팅방
           break;
-        case "chat_list":
-          navigate("/chat/rooms"); // 채팅방 목록
-          break;
+
         case "scenario_template":
           navigate("/conversation-scenario-templates"); // 시나리오 템플릿 페이지
           break;
@@ -190,6 +188,15 @@ export default function Login() {
           <span className="text-sm font-medium text-foreground">my-study</span>
         </div>
         <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate("/chat/rooms")}
+            className="flex items-center gap-2"
+          >
+            <ChatBubbleLeftRightIcon className="h-4 w-4" />
+            <span className="text-sm">채팅방 목록</span>
+          </Button>
           <Button
             variant="ghost"
             size="sm"
@@ -259,24 +266,24 @@ export default function Login() {
                 </span>
               </button>
 
-              {/* 채팅방 목록 */}
+              {/* 일일 회화 */}
               <button
-                onClick={() => handleServiceSelect("chat_list")}
-                aria-pressed={selectedService === "chat_list"}
+                onClick={() => handleServiceSelect("daily_english")}
+                aria-pressed={selectedService === "daily_english"}
                 className={`relative flex flex-col items-center p-4 rounded-xl border-2 transition-all duration-200 ${
-                  selectedService === "chat_list"
+                  selectedService === "daily_english"
                     ? "border-blue-500 bg-blue-50 shadow-lg ring-2 ring-blue-200"
                     : "border-gray-200 hover:bg-gray-50 hover:border-gray-300"
                 }`}
               >
-                {selectedService === "chat_list" && (
+                {selectedService === "daily_english" && (
                   <CheckCircleIcon className="absolute top-2 right-2 h-5 w-5 text-blue-500" />
                 )}
-                <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center mb-2">
-                  <ChatBubbleLeftRightIcon className="h-6 w-6 text-blue-600" />
+                <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-green-100 to-green-200 flex items-center justify-center mb-2">
+                  <span className="text-2xl">📅</span>
                 </div>
                 <span className="text-xs font-medium text-gray-700">
-                  채팅방 목록
+                  일일 회화
                 </span>
               </button>
 
