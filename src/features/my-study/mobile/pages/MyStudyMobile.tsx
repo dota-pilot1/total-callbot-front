@@ -135,6 +135,7 @@ export default function MyStudyMobile() {
         modalities: ["TEXT"],
         voice: "",
         isPrivate: true,
+        isCopy: false,
       };
 
       const createdScenario =

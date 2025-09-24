@@ -35,6 +35,7 @@ interface ScenarioFormData {
   modalities: PersonalConversationScenario["modalities"];
   voice: string;
   isPrivate: boolean;
+  isCopy: boolean;
 }
 
 const defaultFormData: ScenarioFormData = {
@@ -56,6 +57,7 @@ const defaultFormData: ScenarioFormData = {
   modalities: ["TEXT"],
   voice: "",
   isPrivate: true,
+  isCopy: false,
 };
 
 export default function CreateScenario() {
