@@ -41,6 +41,7 @@ import {
 } from "./features/personal-daily-english";
 import { ConversationScenarioTemplateList } from "./features/english-conversation-senario-template";
 import { DailyMath } from "./features/daily-math";
+import { GroupQuiz } from "./features/group-quiz";
 import { BoardList, BoardDetail, BoardWrite } from "./features/board";
 import { TestCenter } from "./features/test-center";
 import TestRoomDetail from "./features/test-center/pages/TestRoomDetail";
@@ -80,6 +81,7 @@ function ProtectedApp() {
     "/personal-daily-english",
     "/conversation-scenario-templates",
     "/daily-math",
+    "/group-quiz",
     "/daily-english-exam",
     "/daily-english-conversation",
     "/test-center",
@@ -144,6 +146,7 @@ function ProtectedApp() {
           element={<ConversationScenarioTemplateList />}
         />
         <Route path="/daily-math" element={<DailyMath />} />
+        <Route path="/group-quiz" element={<GroupQuiz />} />
         <Route path="/daily-english-exam" element={<DailyEnglishExam />} />
         <Route
           path="/daily-english-conversation"

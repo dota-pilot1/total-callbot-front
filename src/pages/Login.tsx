@@ -9,17 +9,19 @@ import {
   CheckCircleIcon,
   ArrowRightIcon,
   CogIcon,
+  ChatBubbleLeftRightIcon,
 } from "@heroicons/react/24/outline";
 
 type ServiceType =
   | "chatbot"
   | "chat"
+  | "chat_list"
   | "scenario_template"
   | "conversation"
-  | "quiz"
+  | "group_quiz"
   | "question_bank"
   | "daily_english"
-  | "daily_math"
+  | "quiz"
   | "board"
   | "my_study";
 
@@ -56,19 +58,20 @@ export default function Login() {
     const normalizedService =
       savedService === "history"
         ? "daily_english"
-        : savedService === "math"
-          ? "daily_math"
+        : savedService === "math" || savedService === "daily_math"
+          ? "group_quiz"
           : savedService;
 
     const validServices: ServiceType[] = [
       "chatbot",
       "chat",
+      "chat_list",
       "scenario_template",
       "conversation",
-      "quiz",
+      "group_quiz",
       "question_bank",
       "daily_english",
-      "daily_math",
+      "quiz",
       "board",
       "my_study",
     ];
@@ -132,6 +135,11 @@ export default function Login() {
           // 바로 시험 페이지로 이동 (연결은 ExamChat에서 처리)
           navigate("/exam");
           break;
+        case "group_quiz":
+          // 단체 퀴즈 페이지로 이동
+          console.log("로그인: 단체 퀴즈 페이지로 이동");
+          navigate("/group-quiz");
+          break;
         case "quiz":
           // 영어 듣기 시험 목록 페이지로 이동
           console.log("로그인: 영어 듣기 시험 목록 페이지로 이동");
@@ -139,6 +147,9 @@ export default function Login() {
           break;
         case "chat":
           navigate("/chat"); // 전체 채팅방
+          break;
+        case "chat_list":
+          navigate("/chat/rooms"); // 채팅방 목록
           break;
         case "scenario_template":
           navigate("/conversation-scenario-templates"); // 시나리오 템플릿 페이지
@@ -155,10 +166,7 @@ export default function Login() {
           console.log("로그인: 일일 영어 페이지로 이동");
           navigate("/daily-english");
           break;
-        case "daily_math":
-          console.log("로그인: 일일 수학 페이지로 이동");
-          navigate("/daily-math");
-          break;
+
         case "my_study":
           console.log("로그인: my-study 대시보드로 이동");
           navigate("/my-study");
@@ -251,24 +259,24 @@ export default function Login() {
                 </span>
               </button>
 
-              {/* 시나리오 템플릿 */}
+              {/* 채팅방 목록 */}
               <button
-                onClick={() => handleServiceSelect("scenario_template")}
-                aria-pressed={selectedService === "scenario_template"}
+                onClick={() => handleServiceSelect("chat_list")}
+                aria-pressed={selectedService === "chat_list"}
                 className={`relative flex flex-col items-center p-4 rounded-xl border-2 transition-all duration-200 ${
-                  selectedService === "scenario_template"
+                  selectedService === "chat_list"
                     ? "border-blue-500 bg-blue-50 shadow-lg ring-2 ring-blue-200"
                     : "border-gray-200 hover:bg-gray-50 hover:border-gray-300"
                 }`}
               >
-                {selectedService === "scenario_template" && (
+                {selectedService === "chat_list" && (
                   <CheckCircleIcon className="absolute top-2 right-2 h-5 w-5 text-blue-500" />
                 )}
                 <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center mb-2">
-                  <span className="text-2xl">📋</span>
+                  <ChatBubbleLeftRightIcon className="h-6 w-6 text-blue-600" />
                 </div>
                 <span className="text-xs font-medium text-gray-700">
-                  시나리오 템플릿
+                  채팅방 목록
                 </span>
               </button>
 
@@ -293,24 +301,24 @@ export default function Login() {
                 </span>
               </button>
 
-              {/* 영어 듣기 */}
+              {/* 단체 퀴즈 */}
               <button
-                onClick={() => handleServiceSelect("quiz")}
-                aria-pressed={selectedService === "quiz"}
+                onClick={() => handleServiceSelect("group_quiz")}
+                aria-pressed={selectedService === "group_quiz"}
                 className={`relative flex flex-col items-center p-3 rounded-xl border-2 transition-all duration-200 ${
-                  selectedService === "quiz"
+                  selectedService === "group_quiz"
                     ? "border-blue-500 bg-blue-50 shadow-lg ring-2 ring-blue-200"
                     : "border-gray-200 hover:bg-gray-50 hover:border-gray-300"
                 }`}
               >
-                {selectedService === "quiz" && (
+                {selectedService === "group_quiz" && (
                   <CheckCircleIcon className="absolute top-1 right-1 h-4 w-4 text-blue-500" />
                 )}
-                <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center mb-1">
-                  <span className="text-lg">🎧</span>
+                <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-purple-100 to-purple-200 flex items-center justify-center mb-1">
+                  <span className="text-lg">👥</span>
                 </div>
                 <span className="text-xs font-medium text-gray-700">
-                  영어 듣기
+                  단체 퀴즈
                 </span>
               </button>
 
@@ -331,49 +339,28 @@ export default function Login() {
                   <span className="text-2xl">🏛️</span>
                 </div>
                 <span className="text-xs font-medium text-gray-700">
-                  테스트 센터
+                  문제 은행
                 </span>
               </button>
 
-              {/* 일일 영어 */}
+              {/* 영어 듣기 */}
               <button
-                onClick={() => handleServiceSelect("daily_english")}
-                aria-pressed={selectedService === "daily_english"}
+                onClick={() => handleServiceSelect("quiz")}
+                aria-pressed={selectedService === "quiz"}
                 className={`relative flex flex-col items-center p-4 rounded-xl border-2 transition-all duration-200 ${
-                  selectedService === "daily_english"
+                  selectedService === "quiz"
                     ? "border-blue-500 bg-blue-50 shadow-lg ring-2 ring-blue-200"
                     : "border-gray-200 hover:bg-gray-50 hover:border-gray-300"
                 }`}
               >
-                {selectedService === "daily_english" && (
+                {selectedService === "quiz" && (
                   <CheckCircleIcon className="absolute top-2 right-2 h-5 w-5 text-blue-500" />
                 )}
-                <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-sky-100 to-indigo-200 flex items-center justify-center mb-2">
-                  <span className="text-2xl">🇺🇸</span>
+                <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center mb-2">
+                  <span className="text-2xl">🎧</span>
                 </div>
                 <span className="text-xs font-medium text-gray-700">
-                  일일 영어
-                </span>
-              </button>
-
-              {/* 일일 수학 */}
-              <button
-                onClick={() => handleServiceSelect("daily_math")}
-                aria-pressed={selectedService === "daily_math"}
-                className={`relative flex flex-col items-center p-4 rounded-xl border-2 transition-all duration-200 ${
-                  selectedService === "daily_math"
-                    ? "border-blue-500 bg-blue-50 shadow-lg ring-2 ring-blue-200"
-                    : "border-gray-200 hover:bg-gray-50 hover:border-gray-300"
-                }`}
-              >
-                {selectedService === "daily_math" && (
-                  <CheckCircleIcon className="absolute top-2 right-2 h-5 w-5 text-blue-500" />
-                )}
-                <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-cyan-100 to-cyan-200 flex items-center justify-center mb-2">
-                  <span className="text-2xl">🔢</span>
-                </div>
-                <span className="text-xs font-medium text-gray-700">
-                  일일 수학
+                  영어 듣기
                 </span>
               </button>
 
@@ -395,6 +382,27 @@ export default function Login() {
                 </div>
                 <span className="text-xs font-medium text-gray-700">
                   my-study
+                </span>
+              </button>
+
+              {/* 시나리오 템플릿 */}
+              <button
+                onClick={() => handleServiceSelect("scenario_template")}
+                aria-pressed={selectedService === "scenario_template"}
+                className={`relative flex flex-col items-center p-4 rounded-xl border-2 transition-all duration-200 ${
+                  selectedService === "scenario_template"
+                    ? "border-blue-500 bg-blue-50 shadow-lg ring-2 ring-blue-200"
+                    : "border-gray-200 hover:bg-gray-50 hover:border-gray-300"
+                }`}
+              >
+                {selectedService === "scenario_template" && (
+                  <CheckCircleIcon className="absolute top-2 right-2 h-5 w-5 text-blue-500" />
+                )}
+                <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-green-100 to-green-200 flex items-center justify-center mb-2">
+                  <span className="text-2xl">📝</span>
+                </div>
+                <span className="text-xs font-medium text-gray-700">
+                  시나리오 템플릿
                 </span>
               </button>
             </div>

@@ -24,7 +24,7 @@ import {
 import type { ConversationScenario } from "../shared/types";
 import CreateDefaultScenariosButton from "../shared/components/CreateDefaultScenariosButton";
 import DeleteAllScenariosButton from "../shared/components/DeleteAllScenariosButton";
-import { MyStudyHeader } from "../web/components/MyStudyHeader";
+import { MyStudyHeader } from "../web";
 
 const CATEGORY_LABELS: Record<string, string> = {
   "일상생활 (Everyday Life)": "일상생활",
@@ -44,12 +44,18 @@ export default function MyStudyDashboard() {
   >([]);
 
   // API 훅들
-  const { data: allScenarios = [], isLoading: allScenariosLoading } =
-    useAllScenarios();
-  const { data: categories = [], isLoading: categoriesLoading } =
-    useAllCategories();
-  const { data: categoryScenarios = [], isLoading: scenariosLoading } =
-    useScenariosByCategory(activeCategory);
+  const {
+    data: allScenarios = [] as ConversationScenario[],
+    isLoading: allScenariosLoading,
+  } = useAllScenarios();
+  const {
+    data: categories = [] as string[],
+    isLoading: categoriesLoading,
+  } = useAllCategories();
+  const {
+    data: categoryScenarios = [] as ConversationScenario[],
+    isLoading: scenariosLoading,
+  } = useScenariosByCategory(activeCategory);
   const {
     data: randomScenarios,
     refetch: generateRandomScenarios,
@@ -248,7 +254,7 @@ export default function MyStudyDashboard() {
           {!hasNoData && (
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold text-foreground">
-                시나리오
+                시나리오personal-daily-english
               </h2>
               <div className="flex items-center gap-2">
                 <DeleteAllScenariosButton onSuccess={() => {}} />
@@ -343,7 +349,7 @@ export default function MyStudyDashboard() {
                 <div className="mt-6 space-y-5">
                   <div className="flex items-center gap-2">
                     <div className="flex flex-1 flex-nowrap gap-2 overflow-x-auto pb-1">
-                      {categories.map((category: string) => {
+                      {categories.map((category) => {
                         const isActiveCategory = activeCategory === category;
 
                         return (
@@ -399,7 +405,7 @@ export default function MyStudyDashboard() {
                       </div>
                     ) : (
                       <div className="space-y-2">
-                        {filteredScenarios.map((item: ConversationScenario) => {
+                        {filteredScenarios.map((item) => {
                           const isSelected = focusedScenarioId === item.id;
 
                           return (
