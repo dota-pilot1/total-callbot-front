@@ -113,7 +113,7 @@ export default function MyStudyDashboard() {
 
   const quickActions = [
     {
-      title: "내 시나리오",
+      title: "",
       description: `개인 맞춤 시나리오 ${personalScenarios.length}개`,
       icon: "📝",
       color: "bg-orange-100 text-orange-700",

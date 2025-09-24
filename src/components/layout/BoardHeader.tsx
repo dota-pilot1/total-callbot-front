@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "../ui";
 import {
+  ArrowRightOnRectangleIcon,
   Cog6ToothIcon,
   PlusIcon,
   Bars3Icon,
@@ -185,13 +186,17 @@ export default function BoardHeader({
 
                   <Button
                     variant="outline"
-                    className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
+                    size="icon"
+                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
                     onClick={() => {
                       logout();
                       setShowMobileMenu(false);
                     }}
+                    title="로그아웃"
+                    aria-label="로그아웃"
                   >
-                    로그아웃
+                    <ArrowRightOnRectangleIcon className="h-4 w-4" />
+                    <span className="sr-only">로그아웃</span>
                   </Button>
                 </div>
               </div>

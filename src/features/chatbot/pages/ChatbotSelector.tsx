@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../../auth";
 import { Button } from "../../../components/ui";
+import { ArrowRightOnRectangleIcon } from "@heroicons/react/24/outline";
 import Sidebar from "../../../components/Sidebar";
 
 export default function ChatbotSelector() {
@@ -54,12 +55,17 @@ export default function ChatbotSelector() {
               </span>
               <Button
                 variant="outline"
+                size="icon"
                 onClick={() => {
                   console.log("Logout button clicked");
                   logout();
                 }}
+                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                title="로그아웃"
+                aria-label="로그아웃"
               >
-                로그아웃
+                <ArrowRightOnRectangleIcon className="h-4 w-4" />
+                <span className="sr-only">로그아웃</span>
               </Button>
             </div>
           </div>

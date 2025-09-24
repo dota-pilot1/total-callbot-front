@@ -18,6 +18,7 @@ export interface PersonalConversationScenario {
   voice?: string;
   createdBy: number;
   isPrivate: boolean;
+  isCopy: boolean;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;

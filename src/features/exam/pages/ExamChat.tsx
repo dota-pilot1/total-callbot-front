@@ -631,9 +631,11 @@ export default function ExamChat() {
                   logout();
                 }}
                 title="로그아웃"
-                className="h-7 w-7 p-0"
+                aria-label="로그아웃"
+                className="h-7 w-7 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
               >
                 <ArrowRightOnRectangleIcon className="h-3 w-3" />
+                <span className="sr-only">로그아웃</span>
               </Button>
             </div>
           </div>

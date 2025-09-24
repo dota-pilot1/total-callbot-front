@@ -40,12 +40,14 @@ export function AdminHeader({ title = "Admin" }: AdminHeaderProps) {
             <UserInfoBadge />
             <Button
               variant="outline"
-              size="sm"
+              size="icon"
               onClick={handleLogout}
-              className="text-red-600 hover:text-red-700 hover:bg-red-50 flex items-center gap-2"
+              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+              title="로그아웃"
+              aria-label="로그아웃"
             >
               <PowerIcon className="h-4 w-4" />
-              <span className="hidden sm:inline">로그아웃</span>
+              <span className="sr-only">로그아웃</span>
             </Button>
           </div>
         </div>

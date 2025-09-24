@@ -9,6 +9,7 @@ import {
   PencilIcon,
   TrashIcon,
   ClipboardDocumentListIcon,
+  ArrowRightOnRectangleIcon,
 } from "@heroicons/react/24/outline";
 
 export default function ExamManagement() {
@@ -192,8 +193,16 @@ export default function ExamManagement() {
                 <PlusIcon className="h-4 w-4" />
                 <span>시험 추가</span>
               </Button>
-              <Button variant="ghost" size="sm" onClick={logout}>
-                로그아웃
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={logout}
+                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                title="로그아웃"
+                aria-label="로그아웃"
+              >
+                <ArrowRightOnRectangleIcon className="h-4 w-4" />
+                <span className="sr-only">로그아웃</span>
               </Button>
             </div>
           </div>

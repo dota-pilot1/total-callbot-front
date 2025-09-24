@@ -1,5 +1,9 @@
 import { Button } from "../ui";
-import { UserIcon, Cog6ToothIcon } from "@heroicons/react/24/outline";
+import {
+  UserIcon,
+  Cog6ToothIcon,
+  ArrowRightOnRectangleIcon,
+} from "@heroicons/react/24/outline";
 import { UserInfoBadge } from "../common/UserInfoBadge";
 import { useAuthStore } from "../../features/auth";
 
@@ -79,11 +83,14 @@ export default function AppHeader({ title = "Total CallBot" }: AppHeaderProps) {
 
             <Button
               variant="outline"
-              size="sm"
+              size="icon"
               onClick={handleLogout}
               className="text-red-600 hover:text-red-700 hover:bg-red-50"
+              title="로그아웃"
+              aria-label="로그아웃"
             >
-              로그아웃
+              <ArrowRightOnRectangleIcon className="h-4 w-4" />
+              <span className="sr-only">로그아웃</span>
             </Button>
           </div>
         </div>

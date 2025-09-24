@@ -163,9 +163,7 @@ export default function PersonalDailyEnglish() {
       <div className="container mx-auto px-4 py-6 max-w-5xl">
         <div className="space-y-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-foreground">
-              개인 회화 시나리오
-            </h2>
+            <h5 className="text-lg font-semibold text-foreground">개인</h5>
             <div className="flex items-center gap-2">
               <Button
                 variant="outline"
@@ -218,6 +216,11 @@ export default function PersonalDailyEnglish() {
                           <span className="text-xs text-muted-foreground">
                             {scenario.difficulty}
                           </span>
+                          {scenario.isCopy && (
+                            <span className="inline-flex items-center px-2 py-0.5 text-xs font-medium bg-orange-100 text-orange-700 rounded-full">
+                              COPY
+                            </span>
+                          )}
                         </div>
                       </div>
                       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -285,7 +288,7 @@ export default function PersonalDailyEnglish() {
       <FullScreenSlideDialog
         isOpen={isDialogOpen}
         onClose={() => setIsDialogOpen(false)}
-        title="내 시나리오 목록"
+        title="개인 시나리오"
       >
         <div className="h-full overflow-y-auto bg-background">
           <div className="px-4 py-6 sm:px-6">
@@ -398,6 +401,11 @@ export default function PersonalDailyEnglish() {
                               <span className="text-xs text-blue-600 font-medium">
                                 {scenario.category}
                               </span>
+                              {scenario.isCopy && (
+                                <span className="inline-flex items-center px-2 py-0.5 text-xs font-medium bg-orange-100 text-orange-700 rounded-full">
+                                  COPY
+                                </span>
+                              )}
                               <span className="text-xs text-muted-foreground">
                                 {scenario.difficulty}
                               </span>

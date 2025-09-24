@@ -34,6 +34,7 @@ import {
   SwatchIcon,
   ChatBubbleLeftRightIcon,
   BookmarkIcon,
+  ArrowRightOnRectangleIcon,
 } from "@heroicons/react/24/outline";
 import { MicrophoneIcon as MicrophoneIconSolid } from "@heroicons/react/24/solid";
 import { voiceApi } from "../features/chatbot/voice/api/voice";
@@ -1056,12 +1057,17 @@ export default function CallbotChat() {
               </span>
               <Button
                 variant="outline"
+                size="icon"
                 onClick={() => {
                   console.log("Logout button clicked in CallbotChat");
                   logout();
                 }}
+                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                title="로그아웃"
+                aria-label="로그아웃"
               >
-                로그아웃
+                <ArrowRightOnRectangleIcon className="h-4 w-4" />
+                <span className="sr-only">로그아웃</span>
               </Button>
             </div>
           </div>

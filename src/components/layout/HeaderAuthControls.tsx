@@ -1,6 +1,10 @@
 import { Button } from "../ui";
 import { UserInfoBadge } from "../common/UserInfoBadge";
-import { Cog6ToothIcon, UserIcon } from "@heroicons/react/24/outline";
+import {
+  ArrowRightOnRectangleIcon,
+  Cog6ToothIcon,
+  UserIcon,
+} from "@heroicons/react/24/outline";
 import { useAuthStore } from "../../features/auth";
 
 interface HeaderAuthControlsProps {
@@ -51,11 +55,14 @@ export function HeaderAuthControls({
       )}
       <Button
         variant="outline"
-        size={size}
+        size="icon"
         onClick={logout}
         className="text-red-600 hover:text-red-700 hover:bg-red-50"
+        title="로그아웃"
+        aria-label="로그아웃"
       >
-        로그아웃
+        <ArrowRightOnRectangleIcon className="h-4 w-4" />
+        <span className="sr-only">로그아웃</span>
       </Button>
     </div>
   );

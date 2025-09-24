@@ -106,12 +106,14 @@ export function MyStudyHeader({ currentPage }: MyStudyHeaderProps) {
 
             <Button
               variant="ghost"
-              size="sm"
+              size="icon"
               onClick={logout}
-              className="text-gray-500 hover:text-gray-700"
+              className="text-red-600 hover:text-red-700 hover:bg-red-50"
               title="로그아웃"
+              aria-label="로그아웃"
             >
               <ArrowRightOnRectangleIcon className="w-4 h-4" />
+              <span className="sr-only">로그아웃</span>
             </Button>
           </div>
         </div>

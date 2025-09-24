@@ -112,9 +112,11 @@ export default function MobileExam() {
                   size="sm"
                   onClick={logout}
                   title="로그아웃"
-                  className="h-8 w-8 p-0"
+                  aria-label="로그아웃"
+                  className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
                 >
                   <ArrowRightOnRectangleIcon className="h-4 w-4" />
+                  <span className="sr-only">로그아웃</span>
                 </Button>
               </div>
             </div>
