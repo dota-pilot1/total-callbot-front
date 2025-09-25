@@ -11,7 +11,7 @@ import Signup from "./pages/Signup";
 import { ChatbotSelector } from "./features/chatbot";
 import CallbotChat from "./pages/CallbotChat";
 import MobileChat from "./pages/MobileChat";
-import { ExamChat } from "./features/exam";
+import { RolePlayChat } from "./features/role-play";
 import Practice from "./pages/Practice";
 import Chat from "./pages/Chat";
 import ChatRoomList from "./pages/ChatRoomList";
@@ -41,7 +41,8 @@ import {
 } from "./features/personal-daily-english";
 import { ConversationScenarioTemplateList } from "./features/english-conversation-senario-template";
 import { DailyMath } from "./features/daily-math";
-import { GroupQuiz } from "./features/group-quiz";
+import { GroupQuiz } from "./features/group-quiz/web";
+import { GroupQuizMobile } from "./features/group-quiz/mobile";
 import { BoardList, BoardDetail, BoardWrite } from "./features/board";
 import { TestCenter } from "./features/test-center";
 import TestRoomDetail from "./features/test-center/pages/TestRoomDetail";
@@ -66,7 +67,7 @@ function ProtectedApp() {
   const dedicatedHeaderPrefixes = [
     "/board",
     "/mobile",
-    "/exam",
+    "/role-play",
     "/chat",
     "/chatbots",
     "/quiz",
@@ -107,7 +108,7 @@ function ProtectedApp() {
         <Route path="/welcome" element={<Welcome />} />
         <Route path="/chatbots" element={<ChatbotSelector />} />
         <Route path="/mobile" element={<MobileChat />} />
-        <Route path="/exam" element={<ExamChat />} />
+        <Route path="/role-play" element={<RolePlayChat />} />
         <Route path="/practice" element={<Practice />} />
         <Route path="/study" element={<Study />} />
         <Route
@@ -146,7 +147,8 @@ function ProtectedApp() {
           element={<ConversationScenarioTemplateList />}
         />
         <Route path="/daily-math" element={<DailyMath />} />
-        <Route path="/group-quiz" element={<GroupQuiz />} />
+        <Route path="/group-quiz-web" element={<GroupQuiz />} />
+        <Route path="/group-quiz-mobile" element={<GroupQuizMobile />} />
         <Route path="/daily-english-exam" element={<DailyEnglishExam />} />
         <Route
           path="/daily-english-conversation"

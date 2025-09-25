@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import { useAuthStore } from "../features/auth";
 import { examApi } from "../features/chatbot/exam/api/exam";
-import { examArchiveApi } from "../features/exam/api/examArchive";
+import { examArchiveApi } from "../features/role-play/api/examArchive";
 import {
   LanguageIcon,
   PlayIcon,
@@ -358,11 +358,11 @@ export default function CardForChattingMessageWithTranslation({
             >
               {/* 영어 부분 */}
               <div
-                className={`px-3 py-2 pb-6 ${koreanPart ? "pb-2" : "pb-6"} ${
+                className={`px-3 py-2 ${
                   isUser ? "text-blue-900" : "text-gray-900"
                 }`}
               >
-                <p className="text-sm leading-relaxed whitespace-pre-wrap pr-24">
+                <p className="text-sm leading-relaxed whitespace-pre-wrap">
                   {englishPart}
                 </p>
               </div>
@@ -370,22 +370,20 @@ export default function CardForChattingMessageWithTranslation({
               {/* 한국어 해석 부분 (있는 경우에만) */}
               {koreanPart && (
                 <div
-                  className={`px-3 py-2 pb-6 border-t ${
+                  className={`px-3 py-2 border-t ${
                     isUser
                       ? "bg-blue-100 border-blue-300 text-blue-800"
                       : "bg-gray-100 border-gray-300 text-gray-700"
                   }`}
                 >
-                  <p className="text-xs leading-relaxed whitespace-pre-wrap pr-24 font-medium">
+                  <p className="text-xs leading-relaxed whitespace-pre-wrap font-medium">
                     해석: {koreanPart}
                   </p>
                 </div>
               )}
 
-              {/* 타임스탬프 */}
-              <div
-                className={`px-3 pb-2 ${koreanPart ? "absolute bottom-0 right-0" : "mt-1"}`}
-              >
+              {/* 하단 정보 영역 - 타임스탬프와 버튼을 한 줄에 배치 */}
+              <div className="flex items-center justify-between px-3 py-2 mt-1">
                 <p
                   className={`text-xs ${
                     isUser ? "text-blue-600" : "text-gray-500"
@@ -393,57 +391,53 @@ export default function CardForChattingMessageWithTranslation({
                 >
                   {message.timestamp}
                 </p>
-              </div>
 
-              {/* 버튼 영역 - 우측 중앙 2x2 그리드 */}
-              <div
-                className={`absolute right-2 grid grid-cols-2 gap-1 ${
-                  koreanPart ? "top-6" : "top-1/2 -translate-y-1/2"
-                }`}
-              >
-                <SentenceSplitterDialogButtonWithTranslate
-                  message={message.message}
-                  isUser={isUser}
-                />
-                <button
-                  onClick={handleTranslateClick}
-                  disabled={isTranslating}
-                  className={`p-1.5 rounded border transition-colors ${
-                    isUser
-                      ? "text-gray-700 hover:bg-blue-200 border-gray-400 bg-white"
-                      : "text-gray-700 hover:bg-gray-200 border-gray-400 bg-white"
-                  } ${isTranslating ? "opacity-50" : ""}`}
-                  title="번역"
-                >
-                  <LanguageIcon className="h-4 w-4" />
-                </button>
-                <button
-                  onClick={handlePlayClick}
-                  disabled={isPlaying}
-                  className={`p-1.5 rounded border transition-colors ${
-                    isUser
-                      ? "text-gray-700 hover:bg-blue-200 border-gray-400 bg-white"
-                      : "text-gray-700 hover:bg-gray-200 border-gray-400 bg-white"
-                  }`}
-                  title="음성 재생"
-                >
-                  {isPlaying ? (
-                    <PauseIcon className="h-4 w-4" />
-                  ) : (
-                    <PlayIcon className="h-4 w-4" />
-                  )}
-                </button>
-                <button
-                  onClick={handleSaveClick}
-                  className={`p-1.5 rounded border transition-colors ${
-                    isUser
-                      ? "text-gray-700 hover:bg-blue-200 border-gray-400 bg-white"
-                      : "text-gray-700 hover:bg-gray-200 border-gray-400 bg-white"
-                  }`}
-                  title="저장"
-                >
-                  <ArrowDownTrayIcon className="h-4 w-4" />
-                </button>
+                {/* 버튼 영역 - 우측 하단에 안정적으로 배치 */}
+                <div className="flex items-center gap-1 ml-2">
+                  <SentenceSplitterDialogButtonWithTranslate
+                    message={message.message}
+                    isUser={isUser}
+                  />
+                  <button
+                    onClick={handleTranslateClick}
+                    disabled={isTranslating}
+                    className={`p-1.5 rounded border transition-colors ${
+                      isUser
+                        ? "text-gray-700 hover:bg-blue-200 border-gray-400 bg-white"
+                        : "text-gray-700 hover:bg-gray-200 border-gray-400 bg-white"
+                    } ${isTranslating ? "opacity-50" : ""}`}
+                    title="번역"
+                  >
+                    <LanguageIcon className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={handlePlayClick}
+                    disabled={isPlaying}
+                    className={`p-1.5 rounded border transition-colors ${
+                      isUser
+                        ? "text-gray-700 hover:bg-blue-200 border-gray-400 bg-white"
+                        : "text-gray-700 hover:bg-gray-200 border-gray-400 bg-white"
+                    }`}
+                    title="음성 재생"
+                  >
+                    {isPlaying ? (
+                      <PauseIcon className="h-4 w-4" />
+                    ) : (
+                      <PlayIcon className="h-4 w-4" />
+                    )}
+                  </button>
+                  <button
+                    onClick={handleSaveClick}
+                    className={`p-1.5 rounded border transition-colors ${
+                      isUser
+                        ? "text-gray-700 hover:bg-blue-200 border-gray-400 bg-white"
+                        : "text-gray-700 hover:bg-gray-200 border-gray-400 bg-white"
+                    }`}
+                    title="저장"
+                  >
+                    <ArrowDownTrayIcon className="h-4 w-4" />
+                  </button>
+                </div>
               </div>
             </div>
           )}
@@ -451,18 +445,22 @@ export default function CardForChattingMessageWithTranslation({
           {/* 뒤면 (번역된 메시지) */}
           {isFlipped && (
             <div
-              className={`px-3 py-2 pb-6 rounded-lg shadow-sm relative ${
+              className={`rounded-lg shadow-sm ${
                 isUser
                   ? "bg-emerald-500 text-white"
                   : "bg-emerald-50 text-gray-900 border border-emerald-200"
               }`}
             >
-              <p className="text-sm leading-relaxed whitespace-pre-wrap pr-24">
-                {isTranslating
-                  ? "번역 중..."
-                  : translation || "번역을 준비하고 있습니다..."}
-              </p>
-              <div className="mt-1">
+              <div className="px-3 py-2">
+                <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                  {isTranslating
+                    ? "번역 중..."
+                    : translation || "번역을 준비하고 있습니다..."}
+                </p>
+              </div>
+
+              {/* 하단 정보 영역 - 번역 라벨과 버튼을 한 줄에 배치 */}
+              <div className="flex items-center justify-between px-3 py-2 mt-1">
                 <p
                   className={`text-xs ${
                     isUser ? "text-emerald-100" : "text-emerald-600"
@@ -470,52 +468,52 @@ export default function CardForChattingMessageWithTranslation({
                 >
                   번역 결과
                 </p>
-              </div>
 
-              {/* 버튼 영역 - 우측 중앙 2x2 그리드 */}
-              <div className="absolute top-1/2 right-2 -translate-y-1/2 grid grid-cols-2 gap-1">
-                <SentenceSplitterDialogButtonWithTranslate
-                  message={message.message}
-                  isUser={isUser}
-                />
-                <button
-                  onClick={handleTranslateClick}
-                  className={`p-1.5 rounded border transition-colors ${
-                    isUser
-                      ? "text-gray-700 hover:bg-emerald-200 border-gray-400 bg-white"
-                      : "text-gray-700 hover:bg-emerald-200 border-gray-400 bg-white"
-                  }`}
-                  title="원본"
-                >
-                  <LanguageIcon className="h-4 w-4" />
-                </button>
-                <button
-                  onClick={handlePlayClick}
-                  disabled={isPlaying}
-                  className={`p-1.5 rounded border transition-colors ${
-                    isUser
-                      ? "text-gray-700 hover:bg-emerald-200 border-gray-400 bg-white"
-                      : "text-gray-700 hover:bg-emerald-200 border-gray-400 bg-white"
-                  }`}
-                  title="음성 재생"
-                >
-                  {isPlaying ? (
-                    <PauseIcon className="h-4 w-4" />
-                  ) : (
-                    <PlayIcon className="h-4 w-4" />
-                  )}
-                </button>
-                <button
-                  onClick={handleSaveClick}
-                  className={`p-1.5 rounded border transition-colors ${
-                    isUser
-                      ? "text-gray-700 hover:bg-emerald-200 border-gray-400 bg-white"
-                      : "text-gray-700 hover:bg-emerald-200 border-gray-400 bg-white"
-                  }`}
-                  title="저장"
-                >
-                  <ArrowDownTrayIcon className="h-4 w-4" />
-                </button>
+                {/* 버튼 영역 - 우측 하단에 안정적으로 배치 */}
+                <div className="flex items-center gap-1 ml-2">
+                  <SentenceSplitterDialogButtonWithTranslate
+                    message={message.message}
+                    isUser={isUser}
+                  />
+                  <button
+                    onClick={handleTranslateClick}
+                    className={`p-1.5 rounded border transition-colors ${
+                      isUser
+                        ? "text-gray-700 hover:bg-emerald-200 border-gray-400 bg-white"
+                        : "text-gray-700 hover:bg-emerald-200 border-gray-400 bg-white"
+                    }`}
+                    title="원본"
+                  >
+                    <LanguageIcon className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={handlePlayClick}
+                    disabled={isPlaying}
+                    className={`p-1.5 rounded border transition-colors ${
+                      isUser
+                        ? "text-gray-700 hover:bg-emerald-200 border-gray-400 bg-white"
+                        : "text-gray-700 hover:bg-emerald-200 border-gray-400 bg-white"
+                    }`}
+                    title="음성 재생"
+                  >
+                    {isPlaying ? (
+                      <PauseIcon className="h-4 w-4" />
+                    ) : (
+                      <PlayIcon className="h-4 w-4" />
+                    )}
+                  </button>
+                  <button
+                    onClick={handleSaveClick}
+                    className={`p-1.5 rounded border transition-colors ${
+                      isUser
+                        ? "text-gray-700 hover:bg-emerald-200 border-gray-400 bg-white"
+                        : "text-gray-700 hover:bg-emerald-200 border-gray-400 bg-white"
+                    }`}
+                    title="저장"
+                  >
+                    <ArrowDownTrayIcon className="h-4 w-4" />
+                  </button>
+                </div>
               </div>
             </div>
           )}

@@ -21,24 +21,31 @@ import { useChatMessages } from "../../chatbot/messaging";
 import VoicePulse from "../../../components/VoicePulse";
 import MobileSettingsDropdown from "../../../components/MobileSettingsDropdown";
 
-import ExamCharacterDialog from "../../../components/ExamCharacterDialog";
-import {
-  EXAM_CHARACTERS,
-  getExamCharacterById,
-  getDefaultExamCharacter,
-  type ExamCharacter,
-} from "../../chatbot/exam/examCharacters";
 import { VOICE_OPTIONS } from "../../chatbot/character";
 import { useWebSocketStore } from "../../websocket/stores/useWebSocketStore";
 import MobileTranslationDialog from "../../../components/MobileTranslationDialog";
 import KoreanInputDialog from "../../../components/KoreanInputDialog";
-import CardForChattingMessageWithTranslation from "../../../components/CardForChattingMessageWithTranslation";
 import { MyConversationArchive } from "../../conversation-archive";
 
 import { useAudioSettings } from "../../chatbot/settings";
 import ExamResultsSlideDown from "../../../components/ExamResultsSlideDown";
 import { useExamMode } from "../../chatbot/exam";
 import { useToast } from "../../../components/ui/Toast";
+import CardForChattingMessageWithTranslation from "@/components/CardForChattingMessageWithTranslation";
+import ExamCharacterDialog from "../../../components/ExamCharacterDialog";
+import {
+  EXAM_CHARACTERS,
+  type ExamCharacter,
+} from "../../chatbot/exam/examCharacters";
+
+const FALLBACK_EXAM_CHARACTER: ExamCharacter = {
+  id: "airline-reservation-customer",
+  name: "고객1",
+  emoji: "",
+  description: "항공권 예약 문의",
+  questionStyle: "reservation_call",
+  prompt: "",
+};
 
 type DailyScenario = {
   id: string;
@@ -117,58 +124,48 @@ export default function ExamChat() {
     };
   }, [connected, disconnect, clearExamMode]);
 
-  // 시험 캐릭터 상태 관리 (로그인에서 미리 선택된 캐릭터 확인)
-  const [selectedExamCharacterId, setSelectedExamCharacterId] = useState(() => {
-    if (initialDailyScenarioRef.current) {
-      return initialDailyScenarioRef.current.id;
-    }
+  const defaultExamCharacter: ExamCharacter =
+    EXAM_CHARACTERS[0] ?? FALLBACK_EXAM_CHARACTER;
 
-    const preSelectedCharacterId = localStorage.getItem(
-      "selectedExamCharacter",
-    );
-    if (preSelectedCharacterId) {
-      // 로그인에서 선택된 캐릭터가 있으면 사용 후 localStorage 정리
-      localStorage.removeItem("selectedExamCharacter");
-      console.log(
-        "ExamChat: 로그인에서 미리 선택된 캐릭터 사용:",
-        preSelectedCharacterId,
-      );
-      return preSelectedCharacterId;
-    }
-    return getDefaultExamCharacter().id;
-  });
   const [examCharacterDialogOpen, setExamCharacterDialogOpen] = useState(false);
+  const [selectedExamCharacterId, setSelectedExamCharacterId] =
+    useState<string>(() => {
+      if (typeof window === "undefined") {
+        return defaultExamCharacter.id;
+      }
+
+      const storedId = localStorage.getItem("selectedExamCharacter");
+      return storedId ?? defaultExamCharacter.id;
+    });
+
+  const selectedExamCharacter: ExamCharacter = useMemo(() => {
+    return (
+      EXAM_CHARACTERS.find(
+        (character) => character.id === selectedExamCharacterId,
+      ) ?? defaultExamCharacter
+    );
+  }, [selectedExamCharacterId, defaultExamCharacter]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!selectedExamCharacterId) return;
+
+    localStorage.setItem("selectedExamCharacter", selectedExamCharacterId);
+  }, [selectedExamCharacterId]);
+
   const [selectedVoice, setSelectedVoice] = useState<string>("alloy");
 
-  useEffect(() => {
-    if (isDailyExamRoute && dailyScenario) {
-      setSelectedExamCharacterId(dailyScenario.id);
-    }
-  }, [isDailyExamRoute, dailyScenario]);
+  // 현재 선택된 캐릭터 (기본값 처리) - EXAM_CHARACTERS 사용
+  const currentCharacter = selectedExamCharacter;
 
-  const dailyExamCharacter = useMemo<ExamCharacter | null>(() => {
-    if (!dailyScenario) return null;
-    return {
-      id: dailyScenario.id,
-      name: dailyScenario.title,
-      emoji: "🎯",
-      description: dailyScenario.description,
-      questionStyle: "daily_scenario",
-      prompt: `You are an English conversation evaluator helping the learner practice the situation: "${dailyScenario.title}". Use realistic dialogue based on this context: ${dailyScenario.description}. Guide the user through a short role-play, ask follow-up questions, and provide feedback at the end.`,
-    };
-  }, [dailyScenario]);
+  const getCharacterSymbol = (character: ExamCharacter) => {
+    return character.emoji && character.emoji.trim().length > 0
+      ? character.emoji
+      : character.name;
+  };
 
-  const selectedExamCharacter =
-    isDailyExamRoute && dailyExamCharacter
-      ? dailyExamCharacter
-      : getExamCharacterById(selectedExamCharacterId) ||
-        getDefaultExamCharacter();
-
-  useEffect(() => {
-    if (isDailyExamRoute) {
-      setExamCharacterDialogOpen(false);
-    }
-  }, [isDailyExamRoute]);
+  const selectedCharacterSymbol = getCharacterSymbol(selectedExamCharacter);
+  const currentCharacterSymbol = getCharacterSymbol(currentCharacter);
 
   // 오디오 설정 훅 (responseDelayMs: 2초로 설정하여 사용자 메시지 등록 후 적절한 대기시간 제공)
   const {
@@ -197,9 +194,7 @@ export default function ExamChat() {
 
   // Translation dialog state (mobile)
   const [translationOpen, setTranslationOpen] = useState(false);
-  const [translationText, setTranslationText] = useState<string>("");
-
-  // 나의 대화 아카이브 다이얼로그 상태
+  const [translationText, setTranslationText] = useState<string>(""); // 나의 대화 아카이브 다이얼로그 상태
   const [conversationArchiveDialogOpen, setConversationArchiveDialogOpen] =
     useState(false);
 
@@ -226,7 +221,7 @@ export default function ExamChat() {
     suggestReply,
   } = useChatMessages({
     responseDelayMs,
-    selectedCharacterId: selectedExamCharacterId,
+    selectedCharacterId: currentCharacter.id,
     maxSentenceCount,
     englishLevel,
     onSendMessage: (text: string) => {
@@ -241,53 +236,26 @@ export default function ExamChat() {
     },
   });
 
-  // 시험 완료 감지를 위한 어시스턴트 메시지 핸들러
+  // 어시스턴트 메시지 핸들러 (자동 평가 제거)
   const handleAssistantMessage = (message: string) => {
     addAssistantMessage(message);
-
-    // 시험 완료 감지
-    if (detectExamCompletion(message)) {
-      setExamResultsText(message);
-      // 약간의 지연 후 슬라이드 다운 표시 (자연스러운 UX)
-      setTimeout(() => {
-        setExamResultsVisible(true);
-      }, 1000);
-    }
+    // 자동 평가 로직 제거 - 사용자 요청 시에만 평가
   };
 
-  // 시험 캐릭터를 일반 캐릭터 형식으로 변환
+  // 간단한 페르소나 캐릭터 변환
   const actualPersonaCharacter = {
-    id: selectedExamCharacter.id,
-    name: selectedExamCharacter.name,
-    emoji: selectedExamCharacter.emoji,
-    persona: selectedExamCharacter.prompt,
-    scenario: `${selectedExamCharacter.description} 상황에서 영어 대화를 진행합니다.`,
-    firstMessage: `안녕하세요! 저는 ${selectedExamCharacter.name}입니다. ${selectedExamCharacter.description} 상황으로 영어 회화를 연습해보겠습니다.`,
-    personality: selectedExamCharacter.description,
-    background: `${selectedExamCharacter.name} 역할을 맡아 ${selectedExamCharacter.description} 상황에서 시험을 진행합니다.`,
+    id: currentCharacter.id,
+    name: currentCharacter.name,
+    emoji: currentCharacterSymbol,
+    persona: "", // 복잡한 지침 없음
+    scenario: "", // 시나리오 없음
+    firstMessage: "", // 첫 메시지 없음
+    personality: currentCharacter.description,
+    background: `Role-playing as ${currentCharacter.name}: ${currentCharacter.description}`,
     defaultGender: "female" as const,
   };
 
-  /**
-   * 시험 완료 여부를 감지하는 함수
-   * 빠른 테스트 결과 메시지 감지
-   */
-  const detectExamCompletion = (message: string): boolean => {
-    const examCompletionIndicators = [
-      "점수:",
-      "한줄평:",
-      "테스트 완료",
-      /\d+\/10/, // 점수 패턴 (예: 7/10)
-    ];
-
-    return examCompletionIndicators.some((indicator) => {
-      if (typeof indicator === "string") {
-        return message.includes(indicator);
-      } else {
-        return indicator.test(message);
-      }
-    });
-  };
+  // 자동 평가 함수 제거됨 - 사용자 요청 시에만 평가
 
   // 임시 음성 메시지 상태 (optimistic UI용)
   const [tempVoiceMessage, setTempVoiceMessage] = useState<string | null>(null);
@@ -332,7 +300,7 @@ export default function ExamChat() {
 
       // 테스트 시작 토스트 (첫 번째 음성 시작 시에만)
       if (messages.length === 0) {
-        setToastMessage("⚡ 빠른 테스트가 시작되었습니다!");
+        setToastMessage("🎭 역할극이 시작되었습니다!");
         setTimeout(() => setToastMessage(null), 2000);
       }
     },
@@ -448,9 +416,7 @@ export default function ExamChat() {
   const openTranslation = (text: string) => {
     setTranslationText(text);
     setTranslationOpen(true);
-  };
-
-  // 인풋 텍스트 TTS 재생
+  }; // 인풋 텍스트 TTS 재생
   const playInputText = async (text: string) => {
     if (!text.trim()) return;
 
@@ -554,7 +520,6 @@ export default function ExamChat() {
     <div className="h-screen bg-white flex flex-col">
       {/* Hidden audio sink for AI voice */}
       <audio ref={audioRef} autoPlay style={{ display: "none" }} />
-
       {/* 토스트 메시지 */}
       {toastMessage && (
         <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 animate-pulse">
@@ -563,17 +528,11 @@ export default function ExamChat() {
           </div>
         </div>
       )}
-
       {/* 고정 헤더 */}
       <div className="bg-white border-b border-gray-200 flex-shrink-0 sticky top-0 z-50">
         <div className="p-4">
           <div className="flex justify-between items-center">
-            <div className="flex items-center space-x-3">
-              {/* 시험 로고 */}
-              <Button variant="outline" size="sm" className="w-8 h-8 p-0">
-                <span className="text-lg">🎓</span>
-              </Button>
-            </div>
+            <div className="flex items-center space-x-3">역할극</div>
             <div className="flex items-center space-x-1">
               {/* 전체 채팅방 버튼 */}
               <Button
@@ -641,7 +600,6 @@ export default function ExamChat() {
           </div>
         </div>
       </div>
-
       {/* 시험 정보 및 연결 상태 */}
       <div className="bg-card border-b border-border p-4 flex-shrink-0">
         <div className="text-center">
@@ -659,7 +617,9 @@ export default function ExamChat() {
                   className="w-12 h-12 p-0"
                   title={selectedExamCharacter.name}
                 >
-                  <span className="text-lg">{selectedExamCharacter.emoji}</span>
+                  <span className="text-lg font-semibold">
+                    {selectedCharacterSymbol}
+                  </span>
                 </Button>
                 {/* 음성 파동 + 상태 점 오버레이 (compact) */}
                 <div className="relative">
@@ -713,7 +673,7 @@ export default function ExamChat() {
                   </Button>
                 )}
 
-                {/* 빠른 테스트 버튼 (연결된 상태에서만) */}
+                {/* 역할극 시작 버튼 (연결된 상태에서만) */}
                 {connected && (
                   <Button
                     onClick={async () => {
@@ -728,42 +688,26 @@ export default function ExamChat() {
                           setDailyExamStatus("started");
                         }
                       } catch (error) {
-                        console.error("빠른 테스트 시작 실패:", error);
-                        console.error(
-                          "빠른 테스트를 시작할 수 없습니다:",
-                          error,
-                        );
+                        console.error("역할극 시작 실패:", error);
+                        console.error("역할극을 시작할 수 없습니다:", error);
                       }
                     }}
                     variant="outline"
                     size="sm"
-                    className="w-12 h-12 p-0 bg-green-100 hover:bg-green-200"
-                    title="빠른 테스트"
+                    className="h-12 px-3 bg-green-100 hover:bg-green-200 text-xs font-semibold"
+                    title="역할극 시작"
                     disabled={examSending}
                   >
-                    <span className="text-lg">⚡</span>
+                    역할극 시작
                   </Button>
                 )}
               </>
             ) : (
               <>
-                {/* 시험 출제자 선택 버튼 */}
-                {!isDailyExamRoute ? (
-                  <Button
-                    onClick={() => setExamCharacterDialogOpen(true)}
-                    variant="outline"
-                    size="sm"
-                    className="w-12 h-12 p-0"
-                    title={selectedExamCharacter.name}
-                  >
-                    <span className="text-lg">
-                      {selectedExamCharacter.emoji}
-                    </span>
-                  </Button>
-                ) : (
+                {isDailyExamRoute ? (
                   <div className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-left">
-                    <span className="text-lg">
-                      {selectedExamCharacter.emoji}
+                    <span className="text-lg font-semibold">
+                      {selectedCharacterSymbol}
                     </span>
                     <div className="flex flex-col">
                       <span className="text-xs font-semibold text-muted-foreground">
@@ -774,6 +718,18 @@ export default function ExamChat() {
                       </span>
                     </div>
                   </div>
+                ) : (
+                  <Button
+                    onClick={() => setExamCharacterDialogOpen(true)}
+                    variant="outline"
+                    size="sm"
+                    className="w-12 h-12 p-0"
+                    title={selectedExamCharacter.name}
+                  >
+                    <span className="text-lg font-semibold">
+                      {selectedCharacterSymbol}
+                    </span>
+                  </Button>
                 )}
 
                 {/* Connection and Exam Buttons */}
@@ -807,20 +763,20 @@ export default function ExamChat() {
                           }
 
                           // 연결 완료 후 시험 시작
-                        if (connected) {
-                          console.log("시험 버튼: 빠른 테스트 시작");
-                          clearChat();
-                          await triggerSingleExamWithCharacter(
-                            selectedExamCharacter,
-                          );
-                          if (isDailyExamRoute) {
-                            setDailyExamStatus("started");
+                          if (connected) {
+                            console.log("시험 버튼: 역할극 시작");
+                            clearChat();
+                            await triggerSingleExamWithCharacter(
+                              selectedExamCharacter,
+                            );
+                            if (isDailyExamRoute) {
+                              setDailyExamStatus("started");
+                            }
+                          } else {
+                            throw new Error("연결에 실패했습니다");
                           }
-                        } else {
-                          throw new Error("연결에 실패했습니다");
-                        }
-                      } catch (error) {
-                        console.error("시험 시작 실패:", error);
+                        } catch (error) {
+                          console.error("시험 시작 실패:", error);
                           console.error("시험을 시작할 수 없습니다:", error);
                         }
                       }}
@@ -834,8 +790,8 @@ export default function ExamChat() {
                         : examSending
                           ? "준비중..."
                           : connected
-                            ? "빠른 테스트"
-                            : "시험 시작"}
+                            ? "연결 중"
+                            : "연결 하기"}
                     </Button>
                     <span
                       className={`absolute -top-1 -right-1 w-3 h-3 rounded-full ring-2 ring-card ${
@@ -889,12 +845,13 @@ export default function ExamChat() {
           )}
         </div>
       </div>
-
       {isDailyExamRoute && dailyScenario && (
         <div className="px-4 pt-4">
           <div className="rounded-xl border border-border bg-blue-50/40 p-4 shadow-sm">
             <div className="flex items-center gap-3">
-              <span className="text-2xl">{selectedExamCharacter.emoji}</span>
+              <span className="text-2xl font-semibold">
+                {selectedCharacterSymbol}
+              </span>
               <div>
                 <p className="text-xs font-medium text-blue-600 uppercase tracking-wider">
                   오늘의 시나리오
@@ -913,7 +870,6 @@ export default function ExamChat() {
           </div>
         </div>
       )}
-
       {/* 시험 채팅 영역 */}
       <div
         className="h-[calc(100vh-200px)] overflow-y-scroll overscroll-contain p-4 space-y-3"
@@ -972,7 +928,6 @@ export default function ExamChat() {
         )}
         <div ref={messagesEndRef} />
       </div>
-
       {/* 테스트 입력 영역 */}
       {connected && (
         <div className="bg-card border-t border-border p-4 flex-shrink-0">
@@ -1068,7 +1023,6 @@ export default function ExamChat() {
               >
                 <LanguageIcon className="h-3 w-3" />
               </Button>
-
               <Button
                 onClick={sendMessage}
                 disabled={!newMessage.trim() || suggestLoading}
@@ -1083,7 +1037,6 @@ export default function ExamChat() {
           </div>
         </div>
       )}
-
       {/* 설정 드롭다운 */}
       <MobileSettingsDropdown
         isOpen={settingsOpen}
@@ -1120,7 +1073,6 @@ export default function ExamChat() {
         onEnglishLevelChange={setEnglishLevel}
         onClearChat={clearChat}
       />
-
       {/* Exam Character Dialog */}
       <ExamCharacterDialog
         open={examCharacterDialogOpen}
@@ -1139,36 +1091,31 @@ export default function ExamChat() {
           }
         }}
       />
-
       {/* Translation Dialog (mobile) */}
       <MobileTranslationDialog
         open={translationOpen}
         onClose={() => setTranslationOpen(false)}
         text={translationText}
         onInsertText={(text: string) => setNewMessage(text)}
-      />
-
+      />{" "}
       {/* My Conversation Archive Dialog */}
       <MyConversationArchive
         open={conversationArchiveDialogOpen}
         onClose={() => setConversationArchiveDialogOpen(false)}
         onInsertConversation={(text: string) => setNewMessage(text)}
       />
-
       {/* Korean Input Dialog */}
       <KoreanInputDialog
         isOpen={koreanInputDialogOpen}
         onClose={() => setKoreanInputDialogOpen(false)}
         onInsertText={(text: string) => setNewMessage(text)}
       />
-
       {/* Exam Results Slide Down */}
       <ExamResultsSlideDown
         examResultText={examResultsText}
         isVisible={examResultsVisible}
         onClose={() => setExamResultsVisible(false)}
       />
-
       {/* Toast Container */}
       <ToastContainer />
     </div>

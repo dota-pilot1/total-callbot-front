@@ -33,6 +33,10 @@ export default function ExamCharacterDialog({
     (c) => c.id === tempSelectedId,
   );
 
+  const getCharacterSymbol = (emoji: string, name: string) => {
+    return emoji?.trim() ? emoji : name;
+  };
+
   return (
     <FullScreenSlideDialog
       isOpen={open}
@@ -59,7 +63,9 @@ export default function ExamCharacterDialog({
           {selectedCharacter && (
             <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
               <div className="flex items-center space-x-3 mb-2">
-                <span className="text-2xl">{selectedCharacter.emoji}</span>
+                <span className="text-2xl font-semibold">
+                  {getCharacterSymbol(selectedCharacter.emoji, selectedCharacter.name)}
+                </span>
                 <div>
                   <h3 className="font-medium text-blue-900">
                     {selectedCharacter.name}
@@ -89,7 +95,9 @@ export default function ExamCharacterDialog({
                   }`}
                 >
                   <div className="text-center">
-                    <div className="text-2xl mb-2">{character.emoji}</div>
+                    <div className="text-2xl mb-2 font-semibold">
+                      {getCharacterSymbol(character.emoji, character.name)}
+                    </div>
                     <div className="text-sm font-medium text-gray-900 mb-1">
                       {character.name}
                     </div>

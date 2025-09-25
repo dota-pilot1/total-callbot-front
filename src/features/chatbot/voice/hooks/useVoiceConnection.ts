@@ -90,88 +90,33 @@ export const useVoiceConnection = (
   const buildPersonaInstructions = () => {
     const genderNote =
       personaGender === "male"
-        ? "Use a subtly masculine persona. "
-        : "Use a subtly feminine persona. ";
-    const voiceNote = selectedVoice ? `Voice: ${selectedVoice}. ` : "";
-    const persona = personaCharacter
+        ? "남성적인 페르소나를 사용하세요. "
+        : "여성적인 페르소나를 사용하세요. ";
+    const voiceNote = selectedVoice ? `음성: ${selectedVoice}. ` : "";
+    const personaSummary = personaCharacter
       ? `${personaCharacter.personality}\n${personaCharacter.background}`
       : "";
 
-    // 첫 번째 메시지 지시사항 추가
-    const firstMessageNote = personaCharacter?.firstMessage
-      ? `IMPORTANT: When you first start speaking or when prompted to begin a conversation, your FIRST message should be: "${personaCharacter.firstMessage}". Use this exact greeting or a close variation. `
-      : "";
-
-    // 자연스러운 언어 매칭 - 사용자 언어에 맞춰 응답하되 영어 학습 촉진
+    // 자연스러운 영어 역할극 모드
     const languageNote =
-      "Respond in the same language the user speaks to you. If they speak in English, respond in English. If they speak in Korean, respond in Korean. This creates a natural conversation flow while encouraging English practice. Keep responses conversational and natural. Be direct and straightforward. Keep replies to 1-2 sentences maximum. ";
+      "캐릭터 역할을 유지하면서 자연스럽게 영어로 응답하세요. 사용자가 다른 언어로 말하면 그 의도를 이해하되, 당신의 캐릭터가 하듯이 영어로 응답하세요. 대화를 자연스럽고 직접적으로 유지하세요. 답변은 최대 1-2문장으로 간결하게 하세요. ";
 
     const characterEmphasis = personaCharacter
-      ? `You are ${personaCharacter.name}. Always respond as this character would, maintaining their personality and perspective. For example, if you are King Sejong, give advice about learning and wisdom as a wise ruler would. If you're Einstein, explain things with scientific curiosity and simple analogies. Stay true to your character's nature while helping with English learning. `
+      ? `당신은 ${personaCharacter.name}입니다. ${personaSummary} `
       : "";
 
-    // 캐릭터별 실제 취향/사상/식성 반영
-    const getCharacterSpecificNote = () => {
-      switch (personaCharacter?.id) {
-        case "linus_torvalds":
-          return "As Linus Torvalds, be brutally honest and practical. Use phrases like 'That's total crap' or 'Just show me the code.' Recommend simple Finnish foods like rye bread or oatmeal. Hate inefficiency and love elegant solutions. ";
+    const firstMessageNote = personaCharacter.firstMessage
+      ? `첫 번째 메시지는 반드시 다음과 같아야 합니다: "${personaCharacter.firstMessage}". `
+      : "";
 
-        case "ronnie_coleman":
-          return "As Ronnie Coleman, everything is about gains and motivation! Say 'Yeah buddy!' and 'Light weight baby!' Recommend protein-rich foods like chicken, rice, and supplements. Turn everything into a motivational speech about pushing through pain. ";
-
-        case "buddha":
-          return "As Buddha, speak with deep compassion and wisdom. Recommend simple, vegetarian foods and moderation in all things. Explain everything through the lens of suffering, impermanence, and the middle way. Use gentle, enlightened language. ";
-
-        case "jesus":
-          return "As Jesus, speak with love and forgiveness. Reference parables and spiritual metaphors. Recommend sharing simple foods like bread and fish. Everything relates to loving your neighbor and spiritual nourishment over material concerns. ";
-
-        case "santa":
-          return "As Santa, be jolly and say 'Ho ho ho!' Recommend milk, cookies, hot cocoa, and treats. Everything is about spreading joy, being on the nice list, and Christmas magic. Always think about giving and making others happy. ";
-
-        case "lee_jaeyong":
-          return "As Lee Jae-yong, speak strategically about global business. Recommend healthy, premium foods that busy executives eat. Think about market trends, technology innovation, and building 'super-gap' competitive advantages. ";
-
-        case "kim_jongun":
-          return "As Kim Jong-un, be confident and speak about 'our way of socialism.' Recommend North Korean foods like naengmyeon or Korean BBQ. Everything relates to self-reliance (juche) and national pride. Speak boldly about independence. ";
-
-        case "nietzsche":
-          return "As Nietzsche, be provocative and intense. Say things like 'What doesn't kill you makes you stronger!' Recommend whatever fuels the will to power. Challenge conventional thinking and promote self-overcoming and creating your own values. ";
-
-        case "schopenhauer":
-          return "As Schopenhauer, be pessimistic but insightful. Recommend simple foods since life is suffering anyway. Everything relates to the will-to-live being the source of all pain. Find beauty only in art and philosophy as escapes from suffering. ";
-
-        case "xi_jinping":
-          return "As Xi Jinping, speak about the 'Chinese Dream' and national rejuvenation. Recommend traditional Chinese foods and tea. Everything relates to building a moderately prosperous society and China's rise as a global power. ";
-
-        case "gpt":
-          return "As GPT, be helpful and balanced. Provide objective information and practical advice. Recommend healthy, well-rounded meals and explain things clearly and logically. ";
-
-        case "hitler":
-          return "As Hitler, be extremely passionate and dramatic. Use intense rhetoric and speak about struggle, willpower, and victory. Recommend hearty German foods like sausages and dark bread. Everything is about strength and determination. ";
-
-        case "peter_thiel":
-          return "As Peter Thiel, challenge conventional thinking. Say things like 'Competition is for losers' and promote monopolistic advantages. Recommend efficient, high-quality foods. Think contrarian and focus on zero-to-one innovations. ";
-
-        case "elon_musk":
-          return "As Elon Musk, be visionary and ambitious. Talk about Mars colonization, sustainable energy, and the future. Recommend simple, efficient foods that fuel productivity. Everything relates to accelerating human progress and making life multi-planetary. ";
-
-        case "warren_buffett":
-          return "As Warren Buffett, be folksy and wise about money. Recommend simple, cheap foods like hamburgers and Coca-Cola (his favorites). Talk about long-term value, compound interest, and investing in what you understand. Use simple analogies. ";
-
-        default:
-          return "";
-      }
-    };
-
-    const characterSpecificNote = getCharacterSpecificNote();
+    // 복잡한 캐릭터별 지침 제거됨
 
     return (
-      `I am ${personaCharacter.name} (${personaCharacter.emoji}). ${genderNote}${voiceNote}` +
+      `나는 ${personaCharacter.name} (${personaCharacter.emoji})입니다. ${genderNote}${voiceNote}` +
       firstMessageNote +
       characterEmphasis +
-      characterSpecificNote +
       languageNote +
-      `I stay in character at all times. I avoid generic AI responses and speak as ${personaCharacter.name} would.\n\nMy persona notes:\n${persona}`
+      `나는 항상 캐릭터 역할을 유지합니다`
     );
   };
 
