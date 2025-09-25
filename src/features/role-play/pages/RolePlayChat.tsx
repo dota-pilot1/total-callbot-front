@@ -2,6 +2,8 @@ import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuthStore } from "../../auth";
 import { Button } from "../../../components/ui";
+import { createPortal } from "react-dom";
+import { motion, AnimatePresence } from "framer-motion";
 
 import {
   PaperAirplaneIcon,
@@ -15,6 +17,8 @@ import {
   ChatBubbleLeftRightIcon,
   SpeakerWaveIcon,
   PauseIcon,
+  AcademicCapIcon,
+  PlayIcon,
 } from "@heroicons/react/24/outline";
 import { useVoiceConnection } from "../../chatbot/voice";
 import { useChatMessages } from "../../chatbot/messaging";
@@ -219,7 +223,6 @@ export default function RolePlayChat() {
     addAssistantMessage,
     sendMessage,
     clearChat,
-    suggestReply,
   } = useChatMessages({
     responseDelayMs,
     selectedCharacterId: currentCharacter.id,
@@ -272,6 +275,20 @@ export default function RolePlayChat() {
   const [autoCompleteLoading, setAutoCompleteLoading] = useState(false);
   const [showTranslation, setShowTranslation] = useState(false);
   const [translatedText, setTranslatedText] = useState<string>("");
+
+  // 문장별 분석 상태
+  const [showSentenceAnalysis, setShowSentenceAnalysis] = useState(false);
+  const [sentences, setSentences] = useState<string[]>([]);
+  const [translations, setTranslations] = useState<{ [key: number]: string }>(
+    {},
+  );
+  const [translatingIndexes, setTranslatingIndexes] = useState<Set<number>>(
+    new Set(),
+  );
+  const [playingIndexes, setPlayingIndexes] = useState<Set<number>>(new Set());
+  const sentenceAudioRefs = useRef<{ [key: number]: HTMLAudioElement | null }>(
+    {},
+  );
 
   // 음성 연결 훅
   const {
@@ -419,10 +436,6 @@ export default function RolePlayChat() {
     setDailyExamStatus("ready");
   }, [isDailyExamRoute, dailyScenario, dailyExamStatus]);
 
-  const openTranslation = (text: string) => {
-    setTranslationText(text);
-    setTranslationOpen(true);
-  }; // 인풋 텍스트 TTS 재생
   const playInputText = async (text: string) => {
     if (!text.trim()) return;
 
@@ -522,6 +535,209 @@ export default function RolePlayChat() {
     setPlayingInputText(false);
   };
 
+  // 문장 분리 유틸리티
+  const splitIntoSentences = (text: string): string[] => {
+    const sentenceEnders = /[.!?。！？]/;
+    const sentences = text
+      .split(sentenceEnders)
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0);
+    return sentences;
+  };
+
+  // 언어 감지 유틸리티
+  const detectLanguage = (text: string): "ko" | "en" => {
+    const koreanRegex = /[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/;
+    return koreanRegex.test(text) ? "ko" : "en";
+  };
+
+  // 문장 번역 함수
+  const translateSentence = async (sentence: string, index: number) => {
+    if (translations[index] || translatingIndexes.has(index)) return;
+
+    setTranslatingIndexes((prev) => new Set([...prev, index]));
+
+    try {
+      const response = await examApi.translate(sentence.trim());
+
+      if (response.translation) {
+        setTranslations((prev) => ({ ...prev, [index]: response.translation }));
+      } else {
+        throw new Error("No translation received");
+      }
+    } catch (error) {
+      console.error("번역 실패:", error);
+      const sourceLanguage = detectLanguage(sentence);
+      const fallbackTranslation =
+        sourceLanguage === "ko"
+          ? `[영어 번역] ${sentence}`
+          : `[한국어 번역] ${sentence}`;
+      setTranslations((prev) => ({ ...prev, [index]: fallbackTranslation }));
+    } finally {
+      setTranslatingIndexes((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(index);
+        return newSet;
+      });
+    }
+  };
+
+  // TTS 재생 함수
+  const playText = async (text: string, index: number) => {
+    try {
+      if (sentenceAudioRefs.current[index]) {
+        sentenceAudioRefs.current[index]?.pause();
+        sentenceAudioRefs.current[index] = null;
+      }
+
+      setPlayingIndexes((prev) => new Set([...prev, index]));
+
+      const token = useAuthStore.getState().getAccessToken();
+      const apiUrl =
+        window.location.hostname === "localhost"
+          ? "/api/config/openai-key"
+          : "https://api.total-callbot.cloud/api/config/openai-key";
+
+      const keyResponse = await fetch(apiUrl, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!keyResponse.ok) {
+        throw new Error(`API 요청 실패: ${keyResponse.status}`);
+      }
+
+      const { key } = await keyResponse.json();
+      const isKorean = detectLanguage(text) === "ko";
+
+      const ttsResponse = await fetch(
+        "https://api.openai.com/v1/audio/speech",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${key}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "tts-1",
+            input: text,
+            voice: isKorean ? "nova" : "alloy",
+            speed: 1.0,
+          }),
+        },
+      );
+
+      if (ttsResponse.ok) {
+        const audioBlob = await ttsResponse.blob();
+        const reader = new FileReader();
+        reader.onload = async () => {
+          const audio = new Audio(reader.result as string);
+          sentenceAudioRefs.current[index] = audio;
+
+          audio.onended = () => {
+            setPlayingIndexes((prev) => {
+              const newSet = new Set(prev);
+              newSet.delete(index);
+              return newSet;
+            });
+            sentenceAudioRefs.current[index] = null;
+          };
+
+          audio.onerror = () => {
+            setPlayingIndexes((prev) => {
+              const newSet = new Set(prev);
+              newSet.delete(index);
+              return newSet;
+            });
+            sentenceAudioRefs.current[index] = null;
+            console.error("Audio playback failed");
+          };
+
+          await audio.play();
+        };
+
+        reader.onerror = () => {
+          console.error("FileReader error");
+          setPlayingIndexes((prev) => {
+            const newSet = new Set(prev);
+            newSet.delete(index);
+            return newSet;
+          });
+        };
+
+        reader.readAsDataURL(audioBlob);
+      } else {
+        throw new Error(`TTS API request failed: ${ttsResponse.status}`);
+      }
+    } catch (error) {
+      console.error("TTS API failed:", error);
+      setPlayingIndexes((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(index);
+        return newSet;
+      });
+    }
+  };
+
+  // 오디오 중지 함수
+  const stopAudio = (index: number) => {
+    if (sentenceAudioRefs.current[index]) {
+      sentenceAudioRefs.current[index]?.pause();
+      sentenceAudioRefs.current[index] = null;
+    }
+    setPlayingIndexes((prev) => {
+      const newSet = new Set(prev);
+      newSet.delete(index);
+      return newSet;
+    });
+  };
+
+  // 문장별 분석 핸들러
+  const handleSentenceAnalysisClick = () => {
+    if (!showSentenceAnalysis) {
+      const splitSentences = splitIntoSentences(newMessage);
+      setSentences(splitSentences);
+      setTranslations({});
+      setTranslatingIndexes(new Set());
+    }
+    setShowSentenceAnalysis(!showSentenceAnalysis);
+  };
+
+  // 문장별 분석 다이얼로그 닫기
+  const handleCloseSentenceAnalysis = () => {
+    setShowSentenceAnalysis(false);
+    setSentences([]);
+    setTranslations({});
+    setTranslatingIndexes(new Set());
+    setPlayingIndexes(new Set());
+    // 모든 오디오 중지
+    Object.values(sentenceAudioRefs.current).forEach((audio) => {
+      if (audio) {
+        audio.pause();
+      }
+    });
+    sentenceAudioRefs.current = {};
+  };
+
+  // 번역 기능
+  const handleTranslateText = async (text: string = newMessage) => {
+    if (!text.trim()) return;
+
+    try {
+      const response = await examApi.translate(text.trim());
+      if (response.translation) {
+        setTranslatedText(response.translation);
+        setShowTranslation(true);
+      }
+    } catch (error) {
+      console.error("번역 실패:", error);
+      setTranslatedText("번역에 실패했습니다");
+      setShowTranslation(true);
+    }
+  };
+
   // 자동 완성 기능
   const handleAutoComplete = async () => {
     console.log("자동 완성 버튼 클릭됨");
@@ -568,149 +784,59 @@ export default function RolePlayChat() {
 
       const { userRole, aiRole } = getRoleMapping(selectedExamCharacter.id);
 
-      // 최근 3-4개 메시지를 대화 형태로 구성 (역할 명확히 구분)
-      const conversationHistory = messages
-        .slice(-4)
+      // 전체 대화 내역을 체계적으로 구성 (맥락 이해를 위해)
+      const fullConversationHistory = messages
         .map(
-          (msg) =>
-            `${msg.sender === "user" ? userRole : aiRole}: ${cleanMessage(msg.message)}`,
+          (msg, index) =>
+            `[Message ${index + 1}] ${msg.sender === "user" ? userRole : aiRole}: ${cleanMessage(msg.message)}`,
         )
         .join("\n");
 
+      // 최근 대화 요약 (중요한 정보 추출)
       // 입력 중인 텍스트가 있으면 포함
       const currentInput = newMessage.trim();
 
-      // 캐릭터별 기본 인사말 설정
-      const getDefaultGreeting = (characterId: string, userRole: string) => {
-        if (characterId.startsWith("airline-")) {
-          return "Hello, how may I help you today?";
-        } else if (characterId === "it-interviewer") {
-          return "Thank you for coming. Please introduce yourself.";
-        } else if (characterId === "mcdonalds-staff") {
-          return "Welcome to McDonald's! What can I get for you today?";
-        } else if (characterId === "close-friend") {
-          return "Hey! How's it going?";
-        } else if (characterId === "philosopher") {
-          return "Let's discuss something thought-provoking today.";
-        } else if (characterId === "counselor") {
-          return "I'm here to listen. How are you feeling today?";
-        } else if (characterId.includes("-talk")) {
-          return "Welcome to the show! Let's start our conversation.";
-        }
-        return "Hello! How can I help you?";
-      };
-
+      // GPT에게 전달할 체계적인 대화 맥락 구성
       let conversationForGPT;
-      if (conversationHistory && currentInput) {
-        // 기존 대화 + 현재 입력 (미완성 문장 완성)
-        conversationForGPT = `${conversationHistory}\n${userRole}: ${currentInput}`;
-      } else if (conversationHistory) {
-        // 기존 대화만 있고 새로운 응답 필요 (사용자가 응답할 차례)
-        conversationForGPT = `${conversationHistory}\n${userRole}:`;
+      if (messages.length > 0) {
+        // 기존 대화가 있는 경우 - 전체 맥락과 현재 상황을 명확히 제공
+        conversationForGPT = `
+FULL CONVERSATION HISTORY:
+${fullConversationHistory}
+
+CURRENT SITUATION:
+- Customer issue: Please analyze the above conversation to understand the specific customer need
+- Current input: ${currentInput || "[Customer is waiting for response]"}
+- Next step: Provide appropriate response based on the conversation flow
+
+IMPORTANT: Read the ENTIRE conversation above to understand what the customer is asking for. Don't ignore previous context.`;
       } else {
-        // 대화 시작 - 사용자가 먼저 말하거나 기본 인사
-        const defaultGreeting = getDefaultGreeting(
-          selectedExamCharacter.id,
-          userRole,
-        );
-        conversationForGPT = `${userRole}: ${currentInput || defaultGreeting}`;
+        // 대화 시작
+        conversationForGPT = `
+CONVERSATION START:
+${userRole}: ${currentInput || "Hello!"}
+
+SITUATION: This is the beginning of a ${selectedExamCharacter.description} conversation.`;
       }
 
       console.log("대화 내용:", conversationForGPT);
 
       // 캐릭터별 맞춤 프롬프트 생성
-      const getPromptForCharacter = (
-        characterId: string,
-        userRole: string,
-        aiRole: string,
-      ) => {
-        if (characterId.startsWith("airline-")) {
-          return `다음은 항공사 고객 서비스 상황입니다. 고객이 ${selectedExamCharacter.description} 문제로 도움을 요청했습니다.
-
-대화 내용:
-${conversationForGPT}
-
-${userRole}이 ${aiRole}에게 응답할 말을 영어로 작성해주세요:`;
-        } else if (characterId === "it-interviewer") {
-          return `다음은 IT 기업 면접 상황입니다.
-
-대화 내용:
-${conversationForGPT}
-
-${userRole}이 ${aiRole}의 질문에 답변할 내용을 영어로 작성해주세요:`;
-        } else if (characterId === "mcdonalds-staff") {
-          return `다음은 맥도날드 매장 상황입니다.
-
-대화 내용:
-${conversationForGPT}
-
-${userRole}이 ${aiRole}에게 주문하거나 응답할 내용을 영어로 작성해주세요:`;
-        } else if (characterId === "close-friend") {
-          return `다음은 친구들 간의 일상 대화입니다.
-
-대화 내용:
-${conversationForGPT}
-
-${userRole}이 친구에게 자연스럽게 말할 내용을 영어로 작성해주세요:`;
-        } else {
-          return `다음은 ${selectedExamCharacter.name}와의 대화 상황입니다.
-
-대화 내용:
-${conversationForGPT}
-
-${userRole}이 ${aiRole}에게 응답할 내용을 영어로 작성해주세요:`;
-        }
-      };
-
-      const getContextForCharacter = (
-        characterId: string,
-        userRole: string,
-        aiRole: string,
-      ) => {
-        if (characterId.startsWith("airline-")) {
-          return `당신은 ${userRole} 역할입니다. ${aiRole}이 ${selectedExamCharacter.description} 문제로 도움을 요청했습니다. ${userRole}으로서 전문적이고 친절한 응답을 생성해주세요.`;
-        } else if (characterId === "it-interviewer") {
-          return `당신은 ${userRole} 역할입니다. ${aiRole}의 질문에 적절하게 답변하는 내용을 생성해주세요. 기술적 역량과 경험을 어필하는 답변을 해주세요.`;
-        } else if (characterId === "mcdonalds-staff") {
-          return `당신은 ${userRole} 역할입니다. ${aiRole}와 자연스러운 서비스 상황 대화를 나누는 내용을 생성해주세요.`;
-        } else {
-          return `당신은 ${userRole} 역할입니다. ${aiRole}와 ${selectedExamCharacter.description} 주제로 대화하는 상황에서 적절한 응답을 생성해주세요.`;
-        }
-      };
-
-      const response = await examApi.getSampleAnswers({
-        question: getPromptForCharacter(
-          selectedExamCharacter.id,
-          userRole,
-          aiRole,
-        ),
-        topic: selectedExamCharacter.questionStyle,
-        level: "intermediate",
-        count: 1,
-        englishOnly: true,
-        context: getContextForCharacter(
-          selectedExamCharacter.id,
-          userRole,
-          aiRole,
-        ),
+      const response = await examApi.autoComplete({
+        conversationContext: fullConversationHistory,
+        characterType: selectedExamCharacter.id,
+        userRole: userRole,
+        aiRole: aiRole,
       });
 
       console.log("API 응답:", response);
 
-      if (response.samples && response.samples.length > 0) {
-        let completion = response.samples[0].text.trim();
-
-        // 역할 접두어가 있으면 제거 (동적으로 현재 역할들 포함)
-        const rolePattern = new RegExp(
-          `^(Customer|Staff|Airline Staff|${userRole}|${aiRole}):\\s*`,
-          "i",
-        );
-        completion = completion.replace(rolePattern, "");
-
+      if (response.response) {
+        const completion = response.response.trim();
         console.log("자동 완성 결과:", completion);
         setNewMessage(completion);
 
-        // 동시에 번역도 수행
+        // 자동 완성 후 즉시 번역 실행
         await handleTranslateText(completion);
       } else {
         console.log("응답 데이터 없음");
@@ -721,39 +847,6 @@ ${userRole}이 ${aiRole}에게 응답할 내용을 영어로 작성해주세요:
       setTimeout(() => setToastMessage(null), 2000);
     } finally {
       setAutoCompleteLoading(false);
-    }
-  };
-
-  // 번역 기능
-  const handleTranslateText = async (text: string = newMessage) => {
-    if (!text.trim()) return;
-
-    try {
-      const response = await examApi.getSampleAnswers({
-        question: `다음 영어 문장을 자연스러운 한국어로 번역해주세요: "${text}"`,
-        topic: "translation",
-        level: "intermediate",
-        count: 1,
-        englishOnly: false,
-        context:
-          "항공사 고객 서비스 상황에서 사용되는 영어를 한국어로 번역합니다. 번역 결과만 제공하세요.",
-      });
-
-      if (response.samples && response.samples.length > 0) {
-        let translation = response.samples[0].text.trim();
-        // 불필요한 접두어 제거
-        translation = translation.replace(
-          /^(번역|한국어 번역|Translation|Korean translation):\s*/i,
-          "",
-        );
-        translation = translation.replace(/^"/g, "").replace(/"$/g, "");
-        setTranslatedText(translation);
-        setShowTranslation(true);
-      }
-    } catch (error) {
-      console.error("번역 실패:", error);
-      setTranslatedText("번역에 실패했습니다");
-      setShowTranslation(true);
     }
   };
 
@@ -771,7 +864,7 @@ ${userRole}이 ${aiRole}에게 응답할 내용을 영어로 작성해주세요:
       )}
       {/* 고정 헤더 */}
       <div className="bg-white border-b border-gray-200 flex-shrink-0 sticky top-0 z-50">
-        <div className="p-4">
+        <div className="px-3 py-2">
           <div className="flex justify-between items-center">
             <div className="flex items-center space-x-3">역할극</div>
             <div className="flex items-center space-x-1">
@@ -1189,6 +1282,17 @@ ${userRole}이 ${aiRole}에게 응답할 내용을 영어로 작성해주세요:
               </Button>
 
               <Button
+                onClick={() => handleTranslateText(newMessage)}
+                variant="outline"
+                size="sm"
+                className="w-8 h-8 p-0"
+                title="번역"
+                disabled={!newMessage.trim()}
+              >
+                <LanguageIcon className="h-3 w-3 text-green-500" />
+              </Button>
+
+              <Button
                 onClick={async () => {
                   if (playingInputText) {
                     stopInputSpeech();
@@ -1212,7 +1316,7 @@ ${userRole}이 ${aiRole}에게 응답할 내용을 영어로 작성해주세요:
 
             {/* 텍스트 입력 */}
             <textarea
-              rows={3}
+              rows={6}
               value={newMessage}
               onChange={(e) => {
                 setNewMessage(e.target.value);
@@ -1222,18 +1326,20 @@ ${userRole}이 ${aiRole}에게 응답할 내용을 영어로 작성해주세요:
                 const lineHeight = parseInt(
                   getComputedStyle(target).lineHeight,
                 );
-                const maxHeight = lineHeight * 5; // 5줄 최대
+                const maxHeight = lineHeight * 10; // 10줄 최대
                 const newHeight = Math.min(target.scrollHeight, maxHeight);
                 target.style.height = `${newHeight}px`;
               }}
               onCompositionStart={() => setIsIMEComposing(true)}
               onCompositionEnd={() => setIsIMEComposing(false)}
               onKeyDown={(e) => {
-                const anyEvt = e.nativeEvent as any;
+                const nativeEvent = e.nativeEvent;
+                const keyCodeIsComposition =
+                  "keyCode" in nativeEvent && nativeEvent.keyCode === 229;
                 const composing =
                   isIMEComposing ||
-                  anyEvt?.isComposing ||
-                  anyEvt?.keyCode === 229;
+                  nativeEvent.isComposing ||
+                  keyCodeIsComposition;
                 if (
                   e.key === "Enter" &&
                   !e.shiftKey &&
@@ -1249,22 +1355,22 @@ ${userRole}이 ${aiRole}에게 응답할 내용을 영어로 작성해주세요:
               }
               className="flex-1 px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring resize-none text-[13px] md:text-sm placeholder:text-muted-foreground overflow-y-auto"
               style={{
-                minHeight: "4.5rem",
-                maxHeight: "7.5rem", // 5줄 정도의 최대 높이
+                minHeight: "8rem",
+                maxHeight: "18rem", // 13줄 정도의 최대 높이
               }}
             />
 
             {/* 오른쪽 미니 버튼들 */}
             <div className="flex flex-col space-y-1">
               <Button
-                onClick={() => handleTranslateText()}
+                onClick={handleSentenceAnalysisClick}
                 disabled={!newMessage.trim()}
                 variant="outline"
                 size="sm"
                 className="w-8 h-8 p-0"
-                title="번역"
+                title="문장별 분석"
               >
-                <LanguageIcon className="h-3 w-3" />
+                <AcademicCapIcon className="h-3 w-3" />
               </Button>
               <Button
                 onClick={sendMessage}
@@ -1383,6 +1489,132 @@ ${userRole}이 ${aiRole}에게 응답할 내용을 영어로 작성해주세요:
         isVisible={examResultsVisible}
         onClose={() => setExamResultsVisible(false)}
       />
+      {/* 문장별 분석 모달 다이얼로그 */}
+      {showSentenceAnalysis &&
+        createPortal(
+          <AnimatePresence>
+            <motion.div
+              className="fixed inset-0 z-50"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            >
+              <div
+                className="absolute inset-0 bg-black/40"
+                onClick={handleCloseSentenceAnalysis}
+              />
+              <motion.div
+                className="absolute inset-0 bg-white md:rounded-t-xl md:top-auto md:bottom-0 md:h-[90vh] shadow-xl"
+                initial={{ y: "-100%" }}
+                animate={{ y: 0 }}
+                exit={{ y: "-100%" }}
+                transition={{ type: "spring", stiffness: 220, damping: 28 }}
+              >
+                <div className="flex flex-col h-full">
+                  {/* 헤더 */}
+                  <div className="flex items-center justify-between p-4 border-b border-gray-200 flex-shrink-0">
+                    <h3 className="text-lg font-semibold text-gray-900">
+                      문장별 번역
+                    </h3>
+                    <button
+                      onClick={handleCloseSentenceAnalysis}
+                      className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
+                    >
+                      <XMarkIcon className="h-4 w-4" />
+                    </button>
+                  </div>
+
+                  {/* 컨텐츠 */}
+                  <div className="flex-1 overflow-y-auto p-4">
+                    <div className="space-y-4">
+                      {sentences.map((sentence, index) => (
+                        <div
+                          key={index}
+                          className="border border-gray-200 rounded-lg p-4"
+                        >
+                          {/* 원본 문장 */}
+                          <div className="mb-3">
+                            <div className="flex items-start justify-between gap-2">
+                              <p className="text-gray-900 leading-relaxed flex-1">
+                                {sentence}
+                              </p>
+                              <button
+                                onClick={() => {
+                                  if (playingIndexes.has(index)) {
+                                    stopAudio(index);
+                                  } else {
+                                    playText(sentence, index);
+                                  }
+                                }}
+                                className="flex-shrink-0 p-1.5 rounded-full bg-blue-100 hover:bg-blue-200 text-blue-600 transition-colors"
+                                title="원본 음성 재생"
+                              >
+                                {playingIndexes.has(index) ? (
+                                  <PauseIcon className="h-4 w-4" />
+                                ) : (
+                                  <PlayIcon className="h-4 w-4" />
+                                )}
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* 번역 섹션 */}
+                          <div className="border-t border-gray-100 pt-3">
+                            {translations[index] ? (
+                              <div className="flex items-start justify-between gap-2">
+                                <p className="text-green-700 bg-green-50 p-2 rounded leading-relaxed flex-1">
+                                  {translations[index]}
+                                </p>
+                                <button
+                                  onClick={() => {
+                                    const translationKey = index + 1000; // 번역용 인덱스
+
+                                    if (playingIndexes.has(translationKey)) {
+                                      stopAudio(translationKey);
+                                    } else {
+                                      playText(
+                                        translations[index],
+                                        translationKey,
+                                      );
+                                    }
+                                  }}
+                                  className="flex-shrink-0 p-1.5 rounded-full bg-green-100 hover:bg-green-200 text-green-600 transition-colors"
+                                  title="번역 음성 재생"
+                                >
+                                  {playingIndexes.has(index + 1000) ? (
+                                    <PauseIcon className="h-4 w-4" />
+                                  ) : (
+                                    <PlayIcon className="h-4 w-4" />
+                                  )}
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() =>
+                                  translateSentence(sentence, index)
+                                }
+                                disabled={translatingIndexes.has(index)}
+                                className="w-full px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center space-x-2"
+                              >
+                                <LanguageIcon className="h-4 w-4" />
+                                <span>
+                                  {translatingIndexes.has(index)
+                                    ? "번역 중..."
+                                    : "번역하기"}
+                                </span>
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            </motion.div>
+          </AnimatePresence>,
+          document.body,
+        )}
       {/* Toast Container */}
       <ToastContainer />
     </div>
