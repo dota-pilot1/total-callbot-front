@@ -1,1 +1,1 @@
-export { default as RolePlayChat } from "./pages/ExamChat";
+export { default as RolePlayChat } from "./pages/RolePlayChat";

@@ -18,6 +18,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { useVoiceConnection } from "../../chatbot/voice";
 import { useChatMessages } from "../../chatbot/messaging";
+import { examApi } from "../../chatbot/exam/api/exam";
 import VoicePulse from "../../../components/VoicePulse";
 import MobileSettingsDropdown from "../../../components/MobileSettingsDropdown";
 
@@ -54,7 +55,7 @@ type DailyScenario = {
   category: string;
 };
 
-export default function ExamChat() {
+export default function RolePlayChat() {
   const { logout, getUser } = useAuthStore();
   const user = getUser();
   const navigate = useNavigate();
@@ -267,6 +268,11 @@ export default function ExamChat() {
   const [playingInputText, setPlayingInputText] = useState(false);
   const inputAudioRef = useRef<HTMLAudioElement | null>(null);
 
+  // 자동 완성 관련 상태
+  const [autoCompleteLoading, setAutoCompleteLoading] = useState(false);
+  const [showTranslation, setShowTranslation] = useState(false);
+  const [translatedText, setTranslatedText] = useState<string>("");
+
   // 음성 연결 훅
   const {
     voiceEnabled,
@@ -386,7 +392,7 @@ export default function ExamChat() {
     startVoice,
   ]);
 
-  // 시험 모드 훅
+  // 역할극 모드 훅
   const { examSending, triggerSingleExamWithCharacter } = useExamMode({
     voiceConnection: voiceConn,
     selectedVoice,
@@ -514,6 +520,241 @@ export default function ExamChat() {
       inputAudioRef.current.currentTime = 0;
     }
     setPlayingInputText(false);
+  };
+
+  // 자동 완성 기능
+  const handleAutoComplete = async () => {
+    console.log("자동 완성 버튼 클릭됨");
+    console.log("newMessage:", newMessage);
+    console.log("autoCompleteLoading:", autoCompleteLoading);
+
+    if (autoCompleteLoading) {
+      console.log("자동 완성 중단 - 이미 로딩 중");
+      return;
+    }
+
+    console.log("자동 완성 시작");
+    setAutoCompleteLoading(true);
+    try {
+      // 대화 내용을 직접 GPT에게 보내서 자연스러운 응답 받기
+      const cleanMessage = (text: string) => {
+        // [KO] 해석 부분 제거하고 영어 부분만 사용
+        return text.split(/\[KO\]|\[ko\]/i)[0].trim();
+      };
+
+      // 선택된 캐릭터에 따른 역할 매핑
+      const getRoleMapping = (characterId: string) => {
+        if (characterId.startsWith("airline-")) {
+          return { userRole: "Airline Staff", aiRole: "Customer" };
+        } else if (characterId === "it-interviewer") {
+          return { userRole: "Job Candidate", aiRole: "IT Interviewer" };
+        } else if (characterId === "mcdonalds-staff") {
+          return { userRole: "Customer", aiRole: "McDonald's Staff" };
+        } else if (characterId === "close-friend") {
+          return { userRole: "Friend", aiRole: "Friend" };
+        } else if (characterId === "philosopher") {
+          return { userRole: "Discussant", aiRole: "Philosopher" };
+        } else if (characterId === "counselor") {
+          return { userRole: "Client", aiRole: "Counselor" };
+        } else if (characterId === "current-affairs-talk") {
+          return { userRole: "Guest", aiRole: "Talk Show Host" };
+        } else if (characterId === "food-talk") {
+          return { userRole: "Guest", aiRole: "Food Talk Host" };
+        } else if (characterId === "travel-talk") {
+          return { userRole: "Guest", aiRole: "Travel Talk Host" };
+        }
+        return { userRole: "User", aiRole: "Assistant" };
+      };
+
+      const { userRole, aiRole } = getRoleMapping(selectedExamCharacter.id);
+
+      // 최근 3-4개 메시지를 대화 형태로 구성 (역할 명확히 구분)
+      const conversationHistory = messages
+        .slice(-4)
+        .map(
+          (msg) =>
+            `${msg.sender === "user" ? userRole : aiRole}: ${cleanMessage(msg.message)}`,
+        )
+        .join("\n");
+
+      // 입력 중인 텍스트가 있으면 포함
+      const currentInput = newMessage.trim();
+
+      // 캐릭터별 기본 인사말 설정
+      const getDefaultGreeting = (characterId: string, userRole: string) => {
+        if (characterId.startsWith("airline-")) {
+          return "Hello, how may I help you today?";
+        } else if (characterId === "it-interviewer") {
+          return "Thank you for coming. Please introduce yourself.";
+        } else if (characterId === "mcdonalds-staff") {
+          return "Welcome to McDonald's! What can I get for you today?";
+        } else if (characterId === "close-friend") {
+          return "Hey! How's it going?";
+        } else if (characterId === "philosopher") {
+          return "Let's discuss something thought-provoking today.";
+        } else if (characterId === "counselor") {
+          return "I'm here to listen. How are you feeling today?";
+        } else if (characterId.includes("-talk")) {
+          return "Welcome to the show! Let's start our conversation.";
+        }
+        return "Hello! How can I help you?";
+      };
+
+      let conversationForGPT;
+      if (conversationHistory && currentInput) {
+        // 기존 대화 + 현재 입력 (미완성 문장 완성)
+        conversationForGPT = `${conversationHistory}\n${userRole}: ${currentInput}`;
+      } else if (conversationHistory) {
+        // 기존 대화만 있고 새로운 응답 필요 (사용자가 응답할 차례)
+        conversationForGPT = `${conversationHistory}\n${userRole}:`;
+      } else {
+        // 대화 시작 - 사용자가 먼저 말하거나 기본 인사
+        const defaultGreeting = getDefaultGreeting(
+          selectedExamCharacter.id,
+          userRole,
+        );
+        conversationForGPT = `${userRole}: ${currentInput || defaultGreeting}`;
+      }
+
+      console.log("대화 내용:", conversationForGPT);
+
+      // 캐릭터별 맞춤 프롬프트 생성
+      const getPromptForCharacter = (
+        characterId: string,
+        userRole: string,
+        aiRole: string,
+      ) => {
+        if (characterId.startsWith("airline-")) {
+          return `다음은 항공사 고객 서비스 상황입니다. 고객이 ${selectedExamCharacter.description} 문제로 도움을 요청했습니다.
+
+대화 내용:
+${conversationForGPT}
+
+${userRole}이 ${aiRole}에게 응답할 말을 영어로 작성해주세요:`;
+        } else if (characterId === "it-interviewer") {
+          return `다음은 IT 기업 면접 상황입니다.
+
+대화 내용:
+${conversationForGPT}
+
+${userRole}이 ${aiRole}의 질문에 답변할 내용을 영어로 작성해주세요:`;
+        } else if (characterId === "mcdonalds-staff") {
+          return `다음은 맥도날드 매장 상황입니다.
+
+대화 내용:
+${conversationForGPT}
+
+${userRole}이 ${aiRole}에게 주문하거나 응답할 내용을 영어로 작성해주세요:`;
+        } else if (characterId === "close-friend") {
+          return `다음은 친구들 간의 일상 대화입니다.
+
+대화 내용:
+${conversationForGPT}
+
+${userRole}이 친구에게 자연스럽게 말할 내용을 영어로 작성해주세요:`;
+        } else {
+          return `다음은 ${selectedExamCharacter.name}와의 대화 상황입니다.
+
+대화 내용:
+${conversationForGPT}
+
+${userRole}이 ${aiRole}에게 응답할 내용을 영어로 작성해주세요:`;
+        }
+      };
+
+      const getContextForCharacter = (
+        characterId: string,
+        userRole: string,
+        aiRole: string,
+      ) => {
+        if (characterId.startsWith("airline-")) {
+          return `당신은 ${userRole} 역할입니다. ${aiRole}이 ${selectedExamCharacter.description} 문제로 도움을 요청했습니다. ${userRole}으로서 전문적이고 친절한 응답을 생성해주세요.`;
+        } else if (characterId === "it-interviewer") {
+          return `당신은 ${userRole} 역할입니다. ${aiRole}의 질문에 적절하게 답변하는 내용을 생성해주세요. 기술적 역량과 경험을 어필하는 답변을 해주세요.`;
+        } else if (characterId === "mcdonalds-staff") {
+          return `당신은 ${userRole} 역할입니다. ${aiRole}와 자연스러운 서비스 상황 대화를 나누는 내용을 생성해주세요.`;
+        } else {
+          return `당신은 ${userRole} 역할입니다. ${aiRole}와 ${selectedExamCharacter.description} 주제로 대화하는 상황에서 적절한 응답을 생성해주세요.`;
+        }
+      };
+
+      const response = await examApi.getSampleAnswers({
+        question: getPromptForCharacter(
+          selectedExamCharacter.id,
+          userRole,
+          aiRole,
+        ),
+        topic: selectedExamCharacter.questionStyle,
+        level: "intermediate",
+        count: 1,
+        englishOnly: true,
+        context: getContextForCharacter(
+          selectedExamCharacter.id,
+          userRole,
+          aiRole,
+        ),
+      });
+
+      console.log("API 응답:", response);
+
+      if (response.samples && response.samples.length > 0) {
+        let completion = response.samples[0].text.trim();
+
+        // 역할 접두어가 있으면 제거 (동적으로 현재 역할들 포함)
+        const rolePattern = new RegExp(
+          `^(Customer|Staff|Airline Staff|${userRole}|${aiRole}):\\s*`,
+          "i",
+        );
+        completion = completion.replace(rolePattern, "");
+
+        console.log("자동 완성 결과:", completion);
+        setNewMessage(completion);
+
+        // 동시에 번역도 수행
+        await handleTranslateText(completion);
+      } else {
+        console.log("응답 데이터 없음");
+      }
+    } catch (error) {
+      console.error("자동 완성 실패:", error);
+      setToastMessage("자동 완성에 실패했습니다");
+      setTimeout(() => setToastMessage(null), 2000);
+    } finally {
+      setAutoCompleteLoading(false);
+    }
+  };
+
+  // 번역 기능
+  const handleTranslateText = async (text: string = newMessage) => {
+    if (!text.trim()) return;
+
+    try {
+      const response = await examApi.getSampleAnswers({
+        question: `다음 영어 문장을 자연스러운 한국어로 번역해주세요: "${text}"`,
+        topic: "translation",
+        level: "intermediate",
+        count: 1,
+        englishOnly: false,
+        context:
+          "항공사 고객 서비스 상황에서 사용되는 영어를 한국어로 번역합니다. 번역 결과만 제공하세요.",
+      });
+
+      if (response.samples && response.samples.length > 0) {
+        let translation = response.samples[0].text.trim();
+        // 불필요한 접두어 제거
+        translation = translation.replace(
+          /^(번역|한국어 번역|Translation|Korean translation):\s*/i,
+          "",
+        );
+        translation = translation.replace(/^"/g, "").replace(/"$/g, "");
+        setTranslatedText(translation);
+        setShowTranslation(true);
+      }
+    } catch (error) {
+      console.error("번역 실패:", error);
+      setTranslatedText("번역에 실패했습니다");
+      setShowTranslation(true);
+    }
   };
 
   return (
@@ -935,14 +1176,16 @@ export default function ExamChat() {
             {/* 왼쪽 미니 버튼들 */}
             <div className="flex flex-col space-y-1">
               <Button
-                onClick={suggestReply}
+                onClick={handleAutoComplete}
                 variant="outline"
                 size="sm"
-                className={`w-8 h-8 p-0 ${suggestLoading ? "animate-pulse" : ""}`}
-                title="답변 도움말"
-                disabled={suggestLoading}
+                className={`w-8 h-8 p-0 ${autoCompleteLoading ? "animate-pulse" : ""}`}
+                title={autoCompleteLoading ? "자동 완성 중..." : "AI 자동 완성"}
+                disabled={autoCompleteLoading}
               >
-                <SparklesIcon className="h-3 w-3" />
+                <SparklesIcon
+                  className={`h-3 w-3 ${autoCompleteLoading ? "animate-spin" : "text-orange-500"}`}
+                />
               </Button>
 
               <Button
@@ -1014,7 +1257,7 @@ export default function ExamChat() {
             {/* 오른쪽 미니 버튼들 */}
             <div className="flex flex-col space-y-1">
               <Button
-                onClick={() => openTranslation(newMessage)}
+                onClick={() => handleTranslateText()}
                 disabled={!newMessage.trim()}
                 variant="outline"
                 size="sm"
@@ -1035,6 +1278,30 @@ export default function ExamChat() {
               </Button>
             </div>
           </div>
+
+          {/* 번역 표시 영역 */}
+          {showTranslation && translatedText && (
+            <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <p className="text-xs text-blue-600 font-medium mb-1">
+                    한국어 번역
+                  </p>
+                  <p className="text-sm text-blue-800">{translatedText}</p>
+                </div>
+                <button
+                  onClick={() => {
+                    setShowTranslation(false);
+                    setTranslatedText("");
+                  }}
+                  className="ml-2 p-1 text-blue-400 hover:text-blue-600 transition-colors"
+                  title="번역 닫기"
+                >
+                  <XMarkIcon className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
       {/* 설정 드롭다운 */}
