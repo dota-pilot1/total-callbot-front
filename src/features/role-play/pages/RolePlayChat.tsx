@@ -199,7 +199,6 @@ export default function RolePlayChat() {
 
   // Translation dialog state (mobile)
   const [translationOpen, setTranslationOpen] = useState(false);
-  const [translationText, setTranslationText] = useState<string>(""); // 나의 대화 아카이브 다이얼로그 상태
   const [conversationArchiveDialogOpen, setConversationArchiveDialogOpen] =
     useState(false);
 
@@ -1468,7 +1467,7 @@ SITUATION: This is the beginning of a ${selectedExamCharacter.description} conve
       <MobileTranslationDialog
         open={translationOpen}
         onClose={() => setTranslationOpen(false)}
-        text={translationText}
+        text={newMessage}
         onInsertText={(text: string) => setNewMessage(text)}
       />{" "}
       {/* My Conversation Archive Dialog */}
