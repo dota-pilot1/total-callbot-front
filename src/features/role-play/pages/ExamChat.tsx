@@ -203,7 +203,7 @@ export default function ExamChat() {
 
   // 시험 결과 슬라이드 다운 상태
   const [examResultsVisible, setExamResultsVisible] = useState(false);
-  const [examResultsText, setExamResultsText] = useState("");
+  const [examResultsText] = useState("");
 
   // 채팅 메시지 훅
   const {
