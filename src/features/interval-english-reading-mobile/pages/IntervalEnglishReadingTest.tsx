@@ -8,11 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui";
-import {
-  ClockIcon,
-  CheckCircleIcon,
-  XCircleIcon,
-} from "@heroicons/react/24/outline";
+import { ClockIcon } from "@heroicons/react/24/outline";
 import { apiClient } from "../../../shared/api/client";
 import { IntervalReadingHeader } from "../components/IntervalReadingHeader";
 import FullScreenSlideDialog from "../../../components/ui/FullScreenSlideDialog";
@@ -62,6 +58,7 @@ interface TestResult {
     correctAnswer: string;
     isCorrect: boolean;
     points: number;
+    responseTimeSeconds?: number;
   }[];
 }
 
@@ -142,14 +139,13 @@ const IntervalEnglishReadingTest: React.FC = () => {
       } catch (error) {
         console.error("Failed to get test result:", error);
         // 결과 조회 실패시 기본 결과 생성
-        const totalAnswered = Object.keys(selectedAnswers).length;
         const mockResult: TestResult = {
           sessionUuid,
           testTitle: testSet?.title || "영어 독해 테스트",
           totalQuestions: questions.length,
           correctAnswers: 0,
           totalScore: 0,
-          accuracyRate: 0,
+          accuracy: 0,
           timeTaken: elapsedTime,
           answers: questions.map((q) => ({
             questionId: q.id,
@@ -162,15 +158,17 @@ const IntervalEnglishReadingTest: React.FC = () => {
         };
 
         // 정답률 계산
-        const correctCount = mockResult.answers.filter(
-          (a) => a.isCorrect,
-        ).length;
-        mockResult.correctAnswers = correctCount;
-        mockResult.accuracyRate = (correctCount / questions.length) * 100;
-        mockResult.totalScore = mockResult.answers.reduce(
-          (sum, a) => sum + a.points,
-          0,
-        );
+        if (mockResult.answers) {
+          const correctCount = mockResult.answers.filter(
+            (a) => a.isCorrect,
+          ).length;
+          mockResult.correctAnswers = correctCount;
+          mockResult.accuracy = (correctCount / questions.length) * 100;
+          mockResult.totalScore = mockResult.answers.reduce(
+            (sum, a) => sum + a.points,
+            0,
+          );
+        }
 
         setTestResult(mockResult);
         setShowResultDialog(true);

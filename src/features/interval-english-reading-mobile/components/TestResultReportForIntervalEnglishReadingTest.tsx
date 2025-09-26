@@ -12,7 +12,6 @@ import {
   CheckCircleIcon,
   XCircleIcon,
   ClockIcon,
-  TrophyIcon,
   ChartBarIcon,
 } from "@heroicons/react/24/outline";
 
@@ -35,6 +34,7 @@ interface TestResult {
     correctAnswer: string;
     isCorrect: boolean;
     points: number;
+    responseTimeSeconds?: number;
   }[];
 }
 
@@ -172,7 +172,7 @@ const TestResultReportForIntervalEnglishReadingTest: React.FC<
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {safeAnswers.map((answer, index) => (
+            {safeAnswers.map((answer) => (
               <div
                 key={answer.questionId}
                 className={`p-4 rounded-lg border ${
