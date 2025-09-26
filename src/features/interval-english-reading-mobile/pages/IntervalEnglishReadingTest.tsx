@@ -141,10 +141,13 @@ const IntervalEnglishReadingTest: React.FC = () => {
         // 결과 조회 실패시 기본 결과 생성
         const mockResult: TestResult = {
           sessionUuid,
+          testSetId: testSet?.id || 0,
           testTitle: testSet?.title || "영어 독해 테스트",
           totalQuestions: questions.length,
           correctAnswers: 0,
           totalScore: 0,
+          sessionStatus: "COMPLETED",
+          completedAt: new Date().toISOString(),
           accuracy: 0,
           timeTaken: elapsedTime,
           answers: questions.map((q) => ({
