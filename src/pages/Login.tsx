@@ -23,6 +23,7 @@ type ServiceType =
   | "daily_english"
   | "quiz"
   | "interval_reading"
+  | "interval_listening"
   | "board"
   | "my_study";
 
@@ -74,6 +75,7 @@ export default function Login() {
       "daily_english",
       "quiz",
       "interval_reading",
+      "interval_listening",
       "board",
       "my_study",
     ];
@@ -154,6 +156,16 @@ export default function Login() {
             isMobile
               ? "/interval-english-reading-mobile"
               : "/interval-english-reading-web",
+          );
+          break;
+        case "interval_listening":
+          // 인터벌 영듣: 화면 크기에 따라 모바일/웹 페이지로 분기
+          console.log("로그인: 인터벌 영듣 페이지로 이동");
+          const isMobileListening = window.innerWidth < 768;
+          navigate(
+            isMobileListening
+              ? "/interval-listening-mobile"
+              : "/interval-listening-web",
           );
           break;
 
@@ -266,19 +278,19 @@ export default function Login() {
 
               {/* 인터벌 영듣 */}
               <button
-                onClick={() => handleServiceSelect("group_quiz")}
-                aria-pressed={selectedService === "group_quiz"}
+                onClick={() => handleServiceSelect("interval_listening")}
+                aria-pressed={selectedService === "interval_listening"}
                 className={`relative flex flex-col items-center p-3 rounded-xl border-2 transition-all duration-200 ${
-                  selectedService === "group_quiz"
+                  selectedService === "interval_listening"
                     ? "border-blue-500 bg-blue-50 shadow-lg ring-2 ring-blue-200"
                     : "border-gray-200 hover:bg-gray-50 hover:border-gray-300"
                 }`}
               >
-                {selectedService === "group_quiz" && (
+                {selectedService === "interval_listening" && (
                   <CheckCircleIcon className="absolute top-1 right-1 h-4 w-4 text-blue-500" />
                 )}
                 <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-purple-100 to-purple-200 flex items-center justify-center mb-1">
-                  <span className="text-lg">👥</span>
+                  <span className="text-lg">🎧</span>
                 </div>
                 <span className="text-xs font-medium text-gray-700">
                   인터벌 영듣

@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   BookOpenIcon,
   AcademicCapIcon,
   TrophyIcon,
+  SpeakerWaveIcon,
 } from "@heroicons/react/24/outline";
 import { Button } from "../components/ui";
 import { HeaderAuthControls } from "../components/layout/HeaderAuthControls";
@@ -154,18 +156,18 @@ export default function IntervalEnglishReadingPage() {
   const [activeTestId, setActiveTestId] = useState<number | null>(null);
 
   if (activeTestId === null) {
-    return <ReadingTestList onStartTest={(testId) => setActiveTestId(testId)} />;
+    return (
+      <ReadingTestList onStartTest={(testId) => setActiveTestId(testId)} />
+    );
   }
 
   return (
-    <ReadingTest
-      testId={activeTestId}
-      onBack={() => setActiveTestId(null)}
-    />
+    <ReadingTest testId={activeTestId} onBack={() => setActiveTestId(null)} />
   );
 }
 
 const ReadingTestList = ({ onStartTest }: ReadingTestListProps) => {
+  const navigate = useNavigate();
   const difficultyLabels: Record<DifficultyLevel, string> = {
     BEGINNER: "Beginner",
     INTERMEDIATE: "Intermediate",
@@ -179,15 +181,68 @@ const ReadingTestList = ({ onStartTest }: ReadingTestListProps) => {
         <div className="max-w-4xl mx-auto">
           <div className="mb-8 text-center">
             <h2 className="text-3xl font-bold text-foreground mb-3">
-              Choose a Reading Test
+              English Practice
             </h2>
             <p className="text-muted-foreground">
-              Pick a practice test that matches your level and start reading.
+              Choose your practice type and start learning.
+            </p>
+          </div>
+
+          {/* Practice Type Selection */}
+          <div className="grid gap-6 md:grid-cols-2 mb-12">
+            <div className="rounded-lg border bg-card p-6">
+              <div className="flex items-center gap-3 mb-4 text-primary">
+                <BookOpenIcon className="h-8 w-8" />
+                <h3 className="text-xl font-semibold text-foreground">
+                  Interval Reading
+                </h3>
+              </div>
+              <p className="text-muted-foreground mb-4">
+                Improve your reading comprehension with timed interval reading
+                exercises.
+              </p>
+              <Button
+                className="w-full"
+                onClick={() => navigate("/interval-english-reading-mobile")}
+              >
+                Start Reading Practice
+              </Button>
+            </div>
+
+            <div className="rounded-lg border bg-card p-6">
+              <div className="flex items-center gap-3 mb-4 text-primary">
+                <SpeakerWaveIcon className="h-8 w-8" />
+                <h3 className="text-xl font-semibold text-foreground">
+                  Interval Listening
+                </h3>
+              </div>
+              <p className="text-muted-foreground mb-4">
+                Enhance your listening skills with interactive audio exercises
+                and TTS practice.
+              </p>
+              <Button
+                className="w-full"
+                onClick={() => navigate("/interval-listening")}
+              >
+                Start Listening Practice
+              </Button>
+            </div>
+          </div>
+
+          <div className="mb-8 text-center">
+            <h2 className="text-2xl font-bold text-foreground mb-3">
+              Reading Tests (Demo)
+            </h2>
+            <p className="text-muted-foreground">
+              Try these sample reading comprehension tests.
             </p>
           </div>
           <div className="grid gap-6 md:grid-cols-2">
             {mockTests.map((test) => (
-              <div key={test.id} className="rounded-lg border bg-card p-6 flex flex-col justify-between">
+              <div
+                key={test.id}
+                className="rounded-lg border bg-card p-6 flex flex-col justify-between"
+              >
                 <div>
                   <div className="flex items-center gap-3 mb-2 text-primary">
                     <BookOpenIcon className="h-6 w-6" />
@@ -195,11 +250,15 @@ const ReadingTestList = ({ onStartTest }: ReadingTestListProps) => {
                       {test.title}
                     </h3>
                   </div>
-                  <p className="text-muted-foreground mb-4">{test.description}</p>
+                  <p className="text-muted-foreground mb-4">
+                    {test.description}
+                  </p>
                   <div className="space-y-2 text-sm text-muted-foreground">
                     <div className="flex items-center gap-2">
                       <AcademicCapIcon className="h-4 w-4" />
-                      <span>Difficulty: {difficultyLabels[test.difficulty]}</span>
+                      <span>
+                        Difficulty: {difficultyLabels[test.difficulty]}
+                      </span>
                     </div>
                     <div className="flex items-center gap-2">
                       <TrophyIcon className="h-4 w-4" />
@@ -233,7 +292,7 @@ const ReadingTest = ({ testId, onBack }: ReadingTestProps) => {
   const [score, setScore] = useState(0);
   const [showResult, setShowResult] = useState(false);
   const [timeLeft, setTimeLeft] = useState(
-    () => (testDetails?.timeLimitMinutes ?? 10) * 60
+    () => (testDetails?.timeLimitMinutes ?? 10) * 60,
   );
 
   useEffect(() => {

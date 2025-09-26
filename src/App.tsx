@@ -54,6 +54,13 @@ import {
   MyStudyWebDashboard,
   MyStudyMobileDashboard,
 } from "./features/my-study";
+import {
+  IntervalEnglishListening as IntervalEnglishListeningMobile,
+  IntervalEnglishListeningTest,
+  IntervalEnglishListeningResult,
+  CreateListeningTest,
+} from "./features/interval-english-listening-mobile";
+import { IntervalEnglishListening as IntervalEnglishListeningWeb } from "./features/interval-english-listening-web";
 
 import ErrorBoundary from "./components/ErrorBoundary";
 
@@ -94,6 +101,9 @@ function ProtectedApp() {
     "/interval-english-reading",
     "/interval-english-reading-mobile",
     "/interval-english-reading-web",
+    "/interval-listening",
+    "/interval-listening-mobile",
+    "/interval-listening-web",
   ];
   const usesDedicatedHeader = dedicatedHeaderPrefixes.some((p) =>
     location.pathname.startsWith(p),
@@ -191,6 +201,38 @@ function ProtectedApp() {
         <Route
           path="/interval-english-reading-web/test/:testId"
           element={<IntervalEnglishReadingTest />}
+        />
+        <Route
+          path="/interval-listening-mobile"
+          element={<IntervalEnglishListeningMobile />}
+        />
+        <Route
+          path="/interval-listening-mobile/test/:testId"
+          element={<IntervalEnglishListeningTest />}
+        />
+        <Route
+          path="/interval-listening/test/:testId"
+          element={<IntervalEnglishListeningTest />}
+        />
+        <Route
+          path="/interval-listening/create"
+          element={<CreateListeningTest />}
+        />
+        <Route
+          path="/interval-listening-mobile/result/:sessionUuid"
+          element={<IntervalEnglishListeningResult />}
+        />
+        <Route
+          path="/interval-listening/result/:sessionUuid"
+          element={<IntervalEnglishListeningResult />}
+        />
+        <Route
+          path="/interval-listening-web"
+          element={<IntervalEnglishListeningWeb />}
+        />
+        <Route
+          path="/interval-listening"
+          element={<IntervalEnglishListeningMobile />}
         />
       </Routes>
     </>

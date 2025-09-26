@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { isAxiosError } from "axios";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   Badge,
@@ -90,45 +91,114 @@ const IntervalEnglishReadingTest: React.FC = () => {
   const handleSubmit = useCallback(async () => {
     if (isSubmitting) return;
 
+    if (!testId) {
+      alert("테스트 정보를 찾을 수 없습니다.");
+      return;
+    }
+
+    const parsedTestId = Number(testId);
+    if (Number.isNaN(parsedTestId)) {
+      alert("유효하지 않은 테스트 ID입니다.");
+      return;
+    }
+
+    const averageResponseTimeSeconds =
+      questions.length > 0 ? Math.floor(elapsedTime / questions.length) : 0;
+
+    const createMockResult = (sessionUuid: string): TestResult => {
+      const mockResult: TestResult = {
+        sessionUuid,
+        testSetId: testSet?.id || parsedTestId,
+        testTitle: testSet?.title || "영어 독해 테스트",
+        totalQuestions: questions.length,
+        correctAnswers: 0,
+        totalScore: 0,
+        sessionStatus: "COMPLETED",
+        completedAt: new Date().toISOString(),
+        accuracy: 0,
+        timeTaken: elapsedTime,
+        answers: questions.map((q) => ({
+          questionId: q.id,
+          questionNumber: q.questionNumber,
+          selectedAnswer: selectedAnswers[q.id] || "",
+          correctAnswer: q.correctAnswer,
+          isCorrect: selectedAnswers[q.id] === q.correctAnswer,
+          points: selectedAnswers[q.id] === q.correctAnswer ? q.points : 0,
+          responseTimeSeconds: averageResponseTimeSeconds,
+        })),
+      };
+
+      if (mockResult.answers && mockResult.answers.length > 0) {
+        const correctCount = mockResult.answers.filter((a) => a.isCorrect).length;
+        mockResult.correctAnswers = correctCount;
+        mockResult.accuracy =
+          questions.length > 0 ? (correctCount / questions.length) * 100 : 0;
+        mockResult.totalScore = mockResult.answers.reduce(
+          (sum, answer) => sum + answer.points,
+          0,
+        );
+      }
+
+      return mockResult;
+    };
+
     try {
       setIsSubmitting(true);
       setIsTimerActive(false); // 타이머 중지
 
-      // 1. 세션 시작 (필요한 경우)
       let sessionUuid = "";
-      try {
-        const sessionResponse = await apiClient.post(
-          `/interval-reading/sessions/start`,
-          { testSetId: parseInt(testId!) },
-        );
-        sessionUuid = sessionResponse.data.sessionUuid;
-      } catch (error) {
-        console.error("Session start failed:", error);
-      }
+      const sessionPayload = {
+        testSetId: parsedTestId,
+        testId: parsedTestId,
+      };
+      const startEndpoints = [
+        `/interval-reading/tests/${parsedTestId}/sessions/start`,
+        `/interval-reading/sessions/start`,
+      ];
 
-      // 2. 각 문제별 답안 제출
-      for (const question of questions) {
-        const selectedAnswer = selectedAnswers[question.id];
-        if (selectedAnswer) {
-          try {
-            await apiClient.post(
-              `/interval-reading/sessions/${sessionUuid}/submit-answer`,
-              {
-                questionId: question.id,
-                selectedAnswer,
-                responseTimeSeconds: Math.floor(elapsedTime / questions.length), // 평균 시간으로 계산
-              },
-            );
-          } catch (error) {
-            console.error(
-              `Failed to submit answer for question ${question.id}:`,
-              error,
-            );
+      for (const endpoint of startEndpoints) {
+        try {
+          const sessionResponse = await apiClient.post(endpoint, sessionPayload);
+          if (sessionResponse?.data?.sessionUuid) {
+            sessionUuid = sessionResponse.data.sessionUuid;
+            break;
+          }
+        } catch (startError) {
+          console.error(`Session start failed at ${endpoint}:`, startError);
+          if (!isAxiosError(startError) || startError.response?.status !== 404) {
+            throw startError;
           }
         }
       }
 
-      // 3. 세션 결과 조회
+      if (!sessionUuid) {
+        console.warn("Unable to start session, falling back to mock result.");
+        setTestResult(createMockResult("mock-session"));
+        setShowResultDialog(true);
+        return;
+      }
+
+      for (const question of questions) {
+        const selectedAnswer = selectedAnswers[question.id];
+        if (!selectedAnswer) continue;
+
+        try {
+          await apiClient.post(
+            `/interval-reading/sessions/${sessionUuid}/submit-answer`,
+            {
+              questionId: question.id,
+              selectedAnswer,
+              responseTimeSeconds: averageResponseTimeSeconds,
+            },
+          );
+        } catch (submitError) {
+          console.error(
+            `Failed to submit answer for question ${question.id}:`,
+            submitError,
+          );
+        }
+      }
+
       try {
         const resultResponse = await apiClient.get(
           `/interval-reading/sessions/${sessionUuid}/result`,
@@ -136,44 +206,9 @@ const IntervalEnglishReadingTest: React.FC = () => {
         const result: TestResult = resultResponse.data;
         setTestResult(result);
         setShowResultDialog(true);
-      } catch (error) {
-        console.error("Failed to get test result:", error);
-        // 결과 조회 실패시 기본 결과 생성
-        const mockResult: TestResult = {
-          sessionUuid,
-          testSetId: testSet?.id || 0,
-          testTitle: testSet?.title || "영어 독해 테스트",
-          totalQuestions: questions.length,
-          correctAnswers: 0,
-          totalScore: 0,
-          sessionStatus: "COMPLETED",
-          completedAt: new Date().toISOString(),
-          accuracy: 0,
-          timeTaken: elapsedTime,
-          answers: questions.map((q) => ({
-            questionId: q.id,
-            questionNumber: q.questionNumber,
-            selectedAnswer: selectedAnswers[q.id] || "",
-            correctAnswer: q.correctAnswer,
-            isCorrect: selectedAnswers[q.id] === q.correctAnswer,
-            points: selectedAnswers[q.id] === q.correctAnswer ? q.points : 0,
-          })),
-        };
-
-        // 정답률 계산
-        if (mockResult.answers) {
-          const correctCount = mockResult.answers.filter(
-            (a) => a.isCorrect,
-          ).length;
-          mockResult.correctAnswers = correctCount;
-          mockResult.accuracy = (correctCount / questions.length) * 100;
-          mockResult.totalScore = mockResult.answers.reduce(
-            (sum, a) => sum + a.points,
-            0,
-          );
-        }
-
-        setTestResult(mockResult);
+      } catch (resultError) {
+        console.error("Failed to get test result:", resultError);
+        setTestResult(createMockResult(sessionUuid));
         setShowResultDialog(true);
       }
     } catch (error) {
@@ -183,13 +218,12 @@ const IntervalEnglishReadingTest: React.FC = () => {
       setIsSubmitting(false);
     }
   }, [
-    selectedAnswers,
-    navigate,
-    testId,
-    questions,
     elapsedTime,
-    testSet,
     isSubmitting,
+    questions,
+    selectedAnswers,
+    testId,
+    testSet,
   ]);
 
   // 타이머 효과
