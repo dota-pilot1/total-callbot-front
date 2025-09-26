@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Badge,
@@ -85,7 +85,9 @@ const IntervalEnglishReadingWeb: React.FC = () => {
     }
   };
 
-  const handleDifficultyFilter = (difficulty: ReadingDifficultyType | "all") => {
+  const handleDifficultyFilter = (
+    difficulty: ReadingDifficultyType | "all",
+  ) => {
     setSelectedDifficulty(difficulty);
     setIsSearching(false);
     setSearchKeyword("");
@@ -95,9 +97,12 @@ const IntervalEnglishReadingWeb: React.FC = () => {
     generateTestDataMutation.mutate();
   };
 
-  const startTest = (testId: number) => {
-    navigate(`/interval-english-reading-web/test/${testId}`);
-  };
+  const startTest = useCallback(
+    (testId: number) => {
+      navigate(`/interval-english-reading-web/test/${testId}`);
+    },
+    [navigate],
+  );
 
   const resumeSession = (sessionUuid: string) => {
     navigate(`/interval-english-reading-web/session/${sessionUuid}`);
@@ -179,7 +184,9 @@ const IntervalEnglishReadingWeb: React.FC = () => {
             <select
               value={selectedDifficulty}
               onChange={(event: React.ChangeEvent<HTMLSelectElement>) =>
-                handleDifficultyFilter(event.target.value as ReadingDifficultyType | "all")
+                handleDifficultyFilter(
+                  event.target.value as ReadingDifficultyType | "all",
+                )
               }
               className="w-32 rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >

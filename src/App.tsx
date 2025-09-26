@@ -188,6 +188,10 @@ function ProtectedApp() {
           path="/interval-english-reading-web"
           element={<IntervalEnglishReadingWeb />}
         />
+        <Route
+          path="/interval-english-reading-web/test/:testId"
+          element={<IntervalEnglishReadingTest />}
+        />
       </Routes>
     </>
   );
