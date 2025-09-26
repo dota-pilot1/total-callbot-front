@@ -321,12 +321,14 @@ const IntervalEnglishReadingMobile: React.FC = () => {
                       <div className="space-y-2 mb-4">
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <BookOpenIcon className="h-4 w-4" />
-                          {test.wordCount || 0}단어
+                          {test.totalQuestions || 0}문제
                         </div>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <ClockIcon className="h-4 w-4" />
-                          예상 시간: {test.estimatedReadingTimeMinutes || 0}분
-                        </div>
+                        {test.timeLimitMinutes && test.timeLimitMinutes > 0 && (
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <ClockIcon className="h-4 w-4" />
+                            제한시간: {test.timeLimitMinutes}분
+                          </div>
+                        )}
                       </div>
                       <Button
                         onClick={() => startTest(test.id)}

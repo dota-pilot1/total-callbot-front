@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   Badge,
@@ -8,8 +8,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui";
-import { ChevronLeftIcon } from "@heroicons/react/24/outline";
+import { ClockIcon } from "@heroicons/react/24/outline";
 import { apiClient } from "../../../shared/api/client";
+import { IntervalReadingHeader } from "../components/IntervalReadingHeader";
 
 interface Question {
   id: number;
@@ -25,14 +26,31 @@ interface Question {
   testSetId: number;
 }
 
+interface TestSet {
+  id: number;
+  title: string;
+  description: string;
+  difficulty: string;
+  totalQuestions: number;
+  timeLimitMinutes: number;
+  wordCount: number;
+  estimatedReadingTimeMinutes: number;
+}
+
 const IntervalEnglishReadingTest: React.FC = () => {
   const { testId } = useParams<{ testId: string }>();
   const navigate = useNavigate();
   const [questions, setQuestions] = useState<Question[]>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [selectedAnswers, setSelectedAnswers] = useState<Record<number, string>>({});
+  const [selectedAnswers, setSelectedAnswers] = useState<
+    Record<number, string>
+  >({});
   const [loading, setLoading] = useState(true);
-  const [testTitle, setTestTitle] = useState("");
+  const [testSet, setTestSet] = useState<TestSet | null>(null);
+  const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
+  const [isTimerActive, setIsTimerActive] = useState(false);
+  const [startTime, setStartTime] = useState<Date | null>(null);
+  const [elapsedTime, setElapsedTime] = useState<number>(0);
 
   useEffect(() => {
     if (testId) {
@@ -40,15 +58,82 @@ const IntervalEnglishReadingTest: React.FC = () => {
     }
   }, [testId]);
 
+  // 답안 제출 함수 (useEffect보다 먼저 정의)
+  const handleSubmit = useCallback(() => {
+    // TODO: 답안 제출 로직 구현
+    console.log("Selected answers:", selectedAnswers);
+    setIsTimerActive(false); // 타이머 중지
+    alert("테스트가 제출되었습니다!");
+    navigate("/interval-english-reading-mobile");
+  }, [selectedAnswers, navigate]);
+
+  // 타이머 효과
+  useEffect(() => {
+    if (!isTimerActive) {
+      return;
+    }
+
+    const timer = setInterval(() => {
+      if (startTime) {
+        const now = new Date();
+        const elapsed = Math.floor(
+          (now.getTime() - startTime.getTime()) / 1000,
+        );
+        setElapsedTime(elapsed);
+
+        // 시간 제한이 있는 경우 남은 시간 계산
+        if (testSet?.timeLimitMinutes) {
+          const totalTimeInSeconds = testSet.timeLimitMinutes * 60;
+          const remaining = totalTimeInSeconds - elapsed;
+
+          if (remaining <= 0) {
+            setTimeRemaining(0);
+            setIsTimerActive(false);
+            // 시간 초과시 자동 제출
+            handleSubmit();
+          } else {
+            setTimeRemaining(remaining);
+          }
+        }
+      }
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [isTimerActive, startTime, testSet?.timeLimitMinutes, handleSubmit]);
+
+  // 시간 포맷팅 함수
+  const formatTime = (seconds: number): string => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+
+    if (hours > 0) {
+      return `${hours}:${minutes.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+    }
+    return `${minutes}:${secs.toString().padStart(2, "0")}`;
+  };
+
   const loadQuestions = async () => {
     try {
       setLoading(true);
-      const response = await apiClient.get(`/interval-reading/tests/${testId}/questions`);
+      const response = await apiClient.get(
+        `/interval-reading/tests/${testId}/questions`,
+      );
       setQuestions(response.data);
 
-      // 테스트 제목 가져오기
-      const testResponse = await apiClient.get(`/interval-reading/tests/${testId}`);
-      setTestTitle(testResponse.data.title);
+      // 테스트 세트 정보 가져오기
+      const testResponse = await apiClient.get(
+        `/interval-reading/tests/${testId}`,
+      );
+      const testSetData = testResponse.data;
+      setTestSet(testSetData);
+
+      // 시간 제한이 있으면 타이머 설정
+      if (testSetData.timeLimitMinutes && testSetData.timeLimitMinutes > 0) {
+        setTimeRemaining(testSetData.timeLimitMinutes * 60); // 분을 초로 변환
+        setIsTimerActive(true);
+        setStartTime(new Date());
+      }
     } catch (error) {
       console.error("Failed to load questions:", error);
     } finally {
@@ -58,29 +143,22 @@ const IntervalEnglishReadingTest: React.FC = () => {
 
   const handleAnswerSelect = (answer: string) => {
     const currentQuestion = questions[currentQuestionIndex];
-    setSelectedAnswers(prev => ({
+    setSelectedAnswers((prev) => ({
       ...prev,
-      [currentQuestion.id]: answer
+      [currentQuestion.id]: answer,
     }));
   };
 
   const handleNext = () => {
     if (currentQuestionIndex < questions.length - 1) {
-      setCurrentQuestionIndex(prev => prev + 1);
+      setCurrentQuestionIndex((prev) => prev + 1);
     }
   };
 
   const handlePrevious = () => {
     if (currentQuestionIndex > 0) {
-      setCurrentQuestionIndex(prev => prev - 1);
+      setCurrentQuestionIndex((prev) => prev - 1);
     }
-  };
-
-  const handleSubmit = () => {
-    // TODO: 답안 제출 로직 구현
-    console.log("Selected answers:", selectedAnswers);
-    alert("테스트가 제출되었습니다!");
-    navigate("/interval-english-reading-mobile");
   };
 
   const handleBack = () => {
@@ -116,34 +194,78 @@ const IntervalEnglishReadingTest: React.FC = () => {
 
   const currentQuestion = questions[currentQuestionIndex];
   const selectedAnswer = selectedAnswers[currentQuestion.id];
-  const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="sticky top-0 z-10 bg-background border-b">
-        <div className="max-w-4xl mx-auto p-4">
+    <div className="min-h-screen bg-gray-50">
+      <IntervalReadingHeader
+        title={testSet?.title || "독해 테스트"}
+        showBackButton={true}
+        onBack={handleBack}
+      />
+
+      {/* Progress Section */}
+      <div className="bg-white border-b border-gray-200 px-4 py-4">
+        <div className="max-w-4xl mx-auto space-y-3">
+          {/* 첫 번째 줄: 문제 진행상황과 답안 완료 상태 */}
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" size="sm" onClick={handleBack}>
-                <ChevronLeftIcon className="h-4 w-4" />
-              </Button>
-              <h1 className="font-semibold">{testTitle}</h1>
-            </div>
-            <div className="flex items-center gap-2">
-              <Badge variant="outline">
-                {currentQuestionIndex + 1} / {questions.length}
-              </Badge>
+            <Badge variant="outline">
+              {currentQuestionIndex + 1} / {questions.length}
+            </Badge>
+            <div className="text-sm text-muted-foreground">
+              {Object.keys(selectedAnswers).length} / {questions.length} 완료
             </div>
           </div>
-          {/* Progress Bar */}
-          <div className="mt-2">
-            <div className="w-full bg-secondary rounded-full h-2">
+
+          {/* 두 번째 줄: 타이머 정보 (제한시간이 있는 경우만) */}
+          {testSet?.timeLimitMinutes && testSet.timeLimitMinutes > 0 && (
+            <div className="flex items-center justify-between text-sm">
               <div
-                className="bg-primary h-2 rounded-full transition-all duration-300"
-                style={{ width: `${progress}%` }}
-              />
+                className={`flex items-center gap-2 font-medium ${
+                  timeRemaining !== null && timeRemaining <= 300
+                    ? "text-red-600"
+                    : "text-blue-600"
+                }`}
+              >
+                <ClockIcon className="h-4 w-4" />
+                남은시간:{" "}
+                {timeRemaining !== null ? formatTime(timeRemaining) : "--:--"}
+              </div>
+              <div className="text-gray-600">
+                경과시간: {formatTime(elapsedTime)}
+              </div>
             </div>
+          )}
+
+          {/* 세 번째 줄: 프로그레스바들 */}
+          <div className="space-y-2">
+            {/* 시간 진행 프로그레스바 (제한시간이 있는 경우만) */}
+            {testSet?.timeLimitMinutes && testSet.timeLimitMinutes > 0 && (
+              <div className="space-y-1">
+                <div className="text-xs text-gray-500">남은 시간</div>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div
+                    className={`h-2 rounded-full transition-all duration-300 ${
+                      timeRemaining !== null && timeRemaining <= 300
+                        ? "bg-red-500"
+                        : "bg-blue-500"
+                    }`}
+                    style={{
+                      width: `${Math.max(
+                        0,
+                        Math.min(
+                          100,
+                          timeRemaining !== null && testSet.timeLimitMinutes
+                            ? (timeRemaining /
+                                (testSet.timeLimitMinutes * 60)) *
+                                100
+                            : 0,
+                        ),
+                      )}%`,
+                    }}
+                  />
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -182,26 +304,29 @@ const IntervalEnglishReadingTest: React.FC = () => {
                 { key: "C", text: currentQuestion.optionC },
                 { key: "D", text: currentQuestion.optionD },
               ].map((option) => (
-                <div
+                <button
                   key={option.key}
-                  className={`p-4 border rounded-lg cursor-pointer transition-colors ${
+                  type="button"
+                  className={`w-full p-4 border rounded-lg cursor-pointer transition-colors text-left ${
                     selectedAnswer === option.key
-                      ? "bg-primary/10 border-primary"
-                      : "border-border hover:bg-muted"
+                      ? "bg-primary/10 border-primary ring-2 ring-primary/20"
+                      : "border-border hover:bg-muted hover:border-muted-foreground"
                   }`}
                   onClick={() => handleAnswerSelect(option.key)}
                 >
                   <div className="flex items-start gap-3">
-                    <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center text-sm font-medium ${
-                      selectedAnswer === option.key
-                        ? "bg-primary border-primary text-primary-foreground"
-                        : "border-muted-foreground"
-                    }`}>
+                    <div
+                      className={`w-6 h-6 rounded-full border-2 flex items-center justify-center text-sm font-medium flex-shrink-0 ${
+                        selectedAnswer === option.key
+                          ? "bg-primary border-primary text-primary-foreground"
+                          : "border-muted-foreground text-muted-foreground"
+                      }`}
+                    >
                       {option.key}
                     </div>
-                    <p className="text-sm">{option.text}</p>
+                    <p className="text-sm leading-relaxed">{option.text}</p>
                   </div>
-                </div>
+                </button>
               ))}
             </div>
           </CardContent>
@@ -226,14 +351,14 @@ const IntervalEnglishReadingTest: React.FC = () => {
           {currentQuestionIndex === questions.length - 1 ? (
             <Button
               onClick={handleSubmit}
-              disabled={Object.keys(selectedAnswers).length !== questions.length}
+              disabled={
+                Object.keys(selectedAnswers).length !== questions.length
+              }
             >
               제출하기
             </Button>
           ) : (
-            <Button onClick={handleNext}>
-              다음 문제
-            </Button>
+            <Button onClick={handleNext}>다음 문제</Button>
           )}
         </div>
       </div>

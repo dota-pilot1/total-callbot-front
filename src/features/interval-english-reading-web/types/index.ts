@@ -6,6 +6,8 @@ export interface IntervalReadingTest {
   content: string;
   wordCount: number;
   estimatedReadingTimeMinutes: number;
+  totalQuestions?: number;
+  timeLimitMinutes?: number;
   createdAt: string;
   updatedAt: string;
 }
