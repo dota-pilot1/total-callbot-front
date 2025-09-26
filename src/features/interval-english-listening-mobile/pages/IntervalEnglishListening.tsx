@@ -77,10 +77,8 @@ const IntervalEnglishListening: React.FC = () => {
       enabled: isSearching && searchKeyword.trim().length > 0,
     });
 
-  const {
-    data: activeSessions = [],
-    isLoading: isLoadingActiveSessions,
-  } = useGetActiveUserSessions();
+  const { data: activeSessions = [], isLoading: isLoadingActiveSessions } =
+    useGetActiveUserSessions();
 
   const generateTestDataMutation = useGenerateTestData();
 
@@ -171,10 +169,7 @@ const IntervalEnglishListening: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <IntervalListeningHeader
-        title="인터벌 영어 듣기"
-        onBack={() => navigate(-1)}
-      />
+      <IntervalListeningHeader />
 
       <div className="mx-auto max-w-6xl space-y-8 px-4 py-8">
         <div className="flex flex-col gap-6 rounded-xl bg-white p-6 shadow-sm">
@@ -300,8 +295,8 @@ const IntervalEnglishListening: React.FC = () => {
 
                     <CardContent className="space-y-4">
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <ClockIcon className="h-4 w-4" />
-                        총 {session.totalQuestions}문제
+                        <ClockIcon className="h-4 w-4" />총{" "}
+                        {session.totalQuestions}문제
                       </div>
 
                       <Button
@@ -371,7 +366,9 @@ const IntervalEnglishListening: React.FC = () => {
                       ? "생성 중..."
                       : "샘플 테스트 데이터 생성"}
                   </Button>
-                  <Button onClick={() => navigate("/interval-listening/create")}>
+                  <Button
+                    onClick={() => navigate("/interval-listening/create")}
+                  >
                     첫 번째 테스트 만들기
                   </Button>
                 </div>
@@ -380,9 +377,12 @@ const IntervalEnglishListening: React.FC = () => {
           ) : (
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               {tests.map((test) => {
-                const timeLimit = (
-                  test as IntervalListeningTest & { timeLimitMinutes?: number }
-                ).timeLimitMinutes ?? test.estimatedTimeMinutes;
+                const timeLimit =
+                  (
+                    test as IntervalListeningTest & {
+                      timeLimitMinutes?: number;
+                    }
+                  ).timeLimitMinutes ?? test.estimatedTimeMinutes;
 
                 return (
                   <Card key={test.id} className="flex h-full flex-col">

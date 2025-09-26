@@ -1,9 +1,19 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Card, CardContent, CardHeader, CardTitle } from "../../../components/ui/Card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../../../components/ui/Card";
 import { Button } from "../../../components/ui/Button";
 import { Badge } from "../../../components/ui/Badge";
-import { PlayIcon, ClockIcon, QuestionMarkCircleIcon, PlusIcon } from "@heroicons/react/24/outline";
+import {
+  PlayIcon,
+  ClockIcon,
+  QuestionMarkCircleIcon,
+  PlusIcon,
+} from "@heroicons/react/24/outline";
 import { IntervalListeningHeader } from "../components/IntervalListeningHeader";
 import { intervalListeningApi } from "../api/intervalListeningApi";
 import type { IntervalListeningTest, ListeningDifficulty } from "../types";
@@ -23,7 +33,9 @@ const difficultyLabels = {
 export function IntervalEnglishListening() {
   const navigate = useNavigate();
   const [tests, setTests] = useState<IntervalListeningTest[]>([]);
-  const [selectedDifficulty, setSelectedDifficulty] = useState<ListeningDifficulty | 'ALL'>('ALL');
+  const [selectedDifficulty, setSelectedDifficulty] = useState<
+    ListeningDifficulty | "ALL"
+  >("ALL");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -37,16 +49,17 @@ export function IntervalEnglishListening() {
       setError(null);
 
       let data: IntervalListeningTest[];
-      if (selectedDifficulty === 'ALL') {
+      if (selectedDifficulty === "ALL") {
         data = await intervalListeningApi.getAllTests();
       } else {
-        data = await intervalListeningApi.getTestsByDifficulty(selectedDifficulty);
+        data =
+          await intervalListeningApi.getTestsByDifficulty(selectedDifficulty);
       }
 
       setTests(data);
     } catch (err) {
-      setError('테스트 목록을 불러오는데 실패했습니다.');
-      console.error('Failed to load tests:', err);
+      setError("테스트 목록을 불러오는데 실패했습니다.");
+      console.error("Failed to load tests:", err);
     } finally {
       setIsLoading(false);
     }
@@ -62,8 +75,8 @@ export function IntervalEnglishListening() {
       await intervalListeningApi.generateTestData();
       await loadTests();
     } catch (err) {
-      setError('테스트 데이터 생성에 실패했습니다.');
-      console.error('Failed to generate test data:', err);
+      setError("테스트 데이터 생성에 실패했습니다.");
+      console.error("Failed to generate test data:", err);
     } finally {
       setIsLoading(false);
     }
@@ -71,10 +84,7 @@ export function IntervalEnglishListening() {
 
   return (
     <div className="min-h-screen bg-background">
-      <IntervalListeningHeader
-        title="인터벌 영어 듣기"
-        onBack={() => navigate(-1)}
-      />
+      <IntervalListeningHeader />
 
       <div className="max-w-6xl mx-auto p-6 space-y-8">
         {/* 난이도 필터 */}
@@ -82,18 +92,20 @@ export function IntervalEnglishListening() {
           <CardContent className="p-6">
             <div className="flex flex-wrap gap-3">
               <Button
-                variant={selectedDifficulty === 'ALL' ? 'default' : 'outline'}
+                variant={selectedDifficulty === "ALL" ? "default" : "outline"}
                 size="default"
-                onClick={() => setSelectedDifficulty('ALL')}
+                onClick={() => setSelectedDifficulty("ALL")}
               >
                 전체
               </Button>
               {Object.entries(difficultyLabels).map(([value, label]) => (
                 <Button
                   key={value}
-                  variant={selectedDifficulty === value ? 'default' : 'outline'}
+                  variant={selectedDifficulty === value ? "default" : "outline"}
                   size="default"
-                  onClick={() => setSelectedDifficulty(value as ListeningDifficulty)}
+                  onClick={() =>
+                    setSelectedDifficulty(value as ListeningDifficulty)
+                  }
                 >
                   {label}
                 </Button>
@@ -149,12 +161,15 @@ export function IntervalEnglishListening() {
                     <div className="text-center py-12">
                       <QuestionMarkCircleIcon className="h-16 w-16 text-muted-foreground mx-auto mb-6" />
                       <div className="text-xl text-muted-foreground mb-6">
-                        {selectedDifficulty === 'ALL'
-                          ? '등록된 테스트가 없습니다.'
-                          : `${difficultyLabels[selectedDifficulty as ListeningDifficulty]} 레벨의 테스트가 없습니다.`
-                        }
+                        {selectedDifficulty === "ALL"
+                          ? "등록된 테스트가 없습니다."
+                          : `${difficultyLabels[selectedDifficulty as ListeningDifficulty]} 레벨의 테스트가 없습니다.`}
                       </div>
-                      <Button onClick={handleGenerateTestData} variant="outline" size="lg">
+                      <Button
+                        onClick={handleGenerateTestData}
+                        variant="outline"
+                        size="lg"
+                      >
                         테스트 데이터 생성
                       </Button>
                     </div>
@@ -163,7 +178,10 @@ export function IntervalEnglishListening() {
               </div>
             ) : (
               tests.map((test) => (
-                <Card key={test.id} className="hover:shadow-lg transition-shadow cursor-pointer">
+                <Card
+                  key={test.id}
+                  className="hover:shadow-lg transition-shadow cursor-pointer"
+                >
                   <CardHeader className="pb-4">
                     <div className="flex items-start justify-between mb-2">
                       <CardTitle className="text-xl font-semibold leading-tight">

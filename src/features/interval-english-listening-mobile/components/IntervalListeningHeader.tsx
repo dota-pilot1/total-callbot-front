@@ -1,45 +1,57 @@
-import { ArrowLeftIcon, Cog6ToothIcon } from "@heroicons/react/24/outline";
-import { Button } from "../../../components/ui/Button";
+import { HeaderAuthControls } from "@/components/layout/HeaderAuthControls";
 
 interface IntervalListeningHeaderProps {
-  title: string;
-  onBack: () => void;
-  onSettings?: () => void;
-  showSettings?: boolean;
+  title?: string;
+  showBackButton?: boolean;
+  onBack?: () => void;
 }
 
 export function IntervalListeningHeader({
-  title,
+  title = "인터벌 영어 듣기",
+  showBackButton = false,
   onBack,
-  onSettings,
-  showSettings = false,
 }: IntervalListeningHeaderProps) {
   return (
-    <header className="flex items-center justify-between p-4 bg-background border-b border-border">
-      <div className="flex items-center gap-3">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onBack}
-          className="p-2"
-        >
-          <ArrowLeftIcon className="h-5 w-5" />
-        </Button>
-        <h1 className="text-lg font-semibold text-foreground truncate">
-          {title}
-        </h1>
-      </div>
+    <header className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-40">
+      <div className="container mx-auto px-4">
+        <div className="flex items-center justify-between h-16">
+          <div className="flex items-center gap-3">
+            {showBackButton && (
+              <button
+                onClick={onBack}
+                className="p-2 hover:bg-gray-100 rounded-md transition-colors"
+                aria-label="뒤로 가기"
+              >
+                <svg
+                  className="w-5 h-5 text-gray-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M15 19l-7-7 7-7"
+                  />
+                </svg>
+              </button>
+            )}
+            <div>
+              <h1 className="text-xl font-bold text-gray-900">{title}</h1>
+              <p className="text-xs text-gray-500 hidden sm:block">
+                단계별 속도 조절로 듣기 실력 향상
+              </p>
+            </div>
+          </div>
 
-      {showSettings && onSettings && (
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onSettings}
-          className="p-2"
-        >
-          <Cog6ToothIcon className="h-5 w-5" />
-        </Button>
-      )}
+          <HeaderAuthControls
+            showProfile={false}
+            showSettings={false}
+            size="sm"
+          />
+        </div>
+      </div>
     </header>
   );
 }
