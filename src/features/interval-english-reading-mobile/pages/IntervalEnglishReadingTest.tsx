@@ -8,9 +8,15 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui";
-import { ClockIcon } from "@heroicons/react/24/outline";
+import {
+  ClockIcon,
+  CheckCircleIcon,
+  XCircleIcon,
+} from "@heroicons/react/24/outline";
 import { apiClient } from "../../../shared/api/client";
 import { IntervalReadingHeader } from "../components/IntervalReadingHeader";
+import FullScreenSlideDialog from "../../../components/ui/FullScreenSlideDialog";
+import TestResultReportForIntervalEnglishReadingTest from "../components/TestResultReportForIntervalEnglishReadingTest";
 
 interface Question {
   id: number;
@@ -37,6 +43,28 @@ interface TestSet {
   estimatedReadingTimeMinutes: number;
 }
 
+interface TestResult {
+  sessionUuid: string;
+  testSetId: number;
+  totalQuestions: number;
+  correctAnswers: number;
+  totalScore: number;
+  sessionStatus: string;
+  completedAt: string;
+  accuracy: number;
+  // 추가 필드들 (프론트엔드에서 생성)
+  testTitle?: string;
+  timeTaken?: number;
+  answers?: {
+    questionId: number;
+    questionNumber: number;
+    selectedAnswer: string;
+    correctAnswer: string;
+    isCorrect: boolean;
+    points: number;
+  }[];
+}
+
 const IntervalEnglishReadingTest: React.FC = () => {
   const { testId } = useParams<{ testId: string }>();
   const navigate = useNavigate();
@@ -51,6 +79,9 @@ const IntervalEnglishReadingTest: React.FC = () => {
   const [isTimerActive, setIsTimerActive] = useState(false);
   const [startTime, setStartTime] = useState<Date | null>(null);
   const [elapsedTime, setElapsedTime] = useState<number>(0);
+  const [showResultDialog, setShowResultDialog] = useState(false);
+  const [testResult, setTestResult] = useState<TestResult | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (testId) {
@@ -59,13 +90,106 @@ const IntervalEnglishReadingTest: React.FC = () => {
   }, [testId]);
 
   // 답안 제출 함수 (useEffect보다 먼저 정의)
-  const handleSubmit = useCallback(() => {
-    // TODO: 답안 제출 로직 구현
-    console.log("Selected answers:", selectedAnswers);
-    setIsTimerActive(false); // 타이머 중지
-    alert("테스트가 제출되었습니다!");
-    navigate("/interval-english-reading-mobile");
-  }, [selectedAnswers, navigate]);
+  const handleSubmit = useCallback(async () => {
+    if (isSubmitting) return;
+
+    try {
+      setIsSubmitting(true);
+      setIsTimerActive(false); // 타이머 중지
+
+      // 1. 세션 시작 (필요한 경우)
+      let sessionUuid = "";
+      try {
+        const sessionResponse = await apiClient.post(
+          `/interval-reading/sessions/start`,
+          { testSetId: parseInt(testId!) },
+        );
+        sessionUuid = sessionResponse.data.sessionUuid;
+      } catch (error) {
+        console.error("Session start failed:", error);
+      }
+
+      // 2. 각 문제별 답안 제출
+      for (const question of questions) {
+        const selectedAnswer = selectedAnswers[question.id];
+        if (selectedAnswer) {
+          try {
+            await apiClient.post(
+              `/interval-reading/sessions/${sessionUuid}/submit-answer`,
+              {
+                questionId: question.id,
+                selectedAnswer,
+                responseTimeSeconds: Math.floor(elapsedTime / questions.length), // 평균 시간으로 계산
+              },
+            );
+          } catch (error) {
+            console.error(
+              `Failed to submit answer for question ${question.id}:`,
+              error,
+            );
+          }
+        }
+      }
+
+      // 3. 세션 결과 조회
+      try {
+        const resultResponse = await apiClient.get(
+          `/interval-reading/sessions/${sessionUuid}/result`,
+        );
+        const result: TestResult = resultResponse.data;
+        setTestResult(result);
+        setShowResultDialog(true);
+      } catch (error) {
+        console.error("Failed to get test result:", error);
+        // 결과 조회 실패시 기본 결과 생성
+        const totalAnswered = Object.keys(selectedAnswers).length;
+        const mockResult: TestResult = {
+          sessionUuid,
+          testTitle: testSet?.title || "영어 독해 테스트",
+          totalQuestions: questions.length,
+          correctAnswers: 0,
+          totalScore: 0,
+          accuracyRate: 0,
+          timeTaken: elapsedTime,
+          answers: questions.map((q) => ({
+            questionId: q.id,
+            questionNumber: q.questionNumber,
+            selectedAnswer: selectedAnswers[q.id] || "",
+            correctAnswer: q.correctAnswer,
+            isCorrect: selectedAnswers[q.id] === q.correctAnswer,
+            points: selectedAnswers[q.id] === q.correctAnswer ? q.points : 0,
+          })),
+        };
+
+        // 정답률 계산
+        const correctCount = mockResult.answers.filter(
+          (a) => a.isCorrect,
+        ).length;
+        mockResult.correctAnswers = correctCount;
+        mockResult.accuracyRate = (correctCount / questions.length) * 100;
+        mockResult.totalScore = mockResult.answers.reduce(
+          (sum, a) => sum + a.points,
+          0,
+        );
+
+        setTestResult(mockResult);
+        setShowResultDialog(true);
+      }
+    } catch (error) {
+      console.error("Submit failed:", error);
+      alert("답안 제출 중 오류가 발생했습니다. 다시 시도해주세요.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [
+    selectedAnswers,
+    navigate,
+    testId,
+    questions,
+    elapsedTime,
+    testSet,
+    isSubmitting,
+  ]);
 
   // 타이머 효과
   useEffect(() => {
@@ -352,16 +476,43 @@ const IntervalEnglishReadingTest: React.FC = () => {
             <Button
               onClick={handleSubmit}
               disabled={
-                Object.keys(selectedAnswers).length !== questions.length
+                Object.keys(selectedAnswers).length !== questions.length ||
+                isSubmitting
               }
             >
-              제출하기
+              {isSubmitting ? "제출 중..." : "제출하기"}
             </Button>
           ) : (
             <Button onClick={handleNext}>다음 문제</Button>
           )}
         </div>
       </div>
+
+      {/* 시험 결과 다이얼로그 */}
+      <FullScreenSlideDialog
+        isOpen={showResultDialog}
+        onClose={() => setShowResultDialog(false)}
+        title="시험 결과"
+        showCloseButton={true}
+      >
+        {testResult && (
+          <TestResultReportForIntervalEnglishReadingTest
+            result={testResult}
+            onClose={() => setShowResultDialog(false)}
+            onRetakeTest={() => {
+              // 테스트 재도전 로직
+              setSelectedAnswers({});
+              setCurrentQuestionIndex(0);
+              setElapsedTime(0);
+              setStartTime(new Date());
+              setIsTimerActive(true);
+              if (testSet?.timeLimitMinutes) {
+                setTimeRemaining(testSet.timeLimitMinutes * 60);
+              }
+            }}
+          />
+        )}
+      </FullScreenSlideDialog>
     </div>
   );
 };
