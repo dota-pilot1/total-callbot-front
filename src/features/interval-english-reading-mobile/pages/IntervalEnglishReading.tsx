@@ -157,6 +157,8 @@ const IntervalEnglishReading: React.FC = () => {
             <PlusIcon className="h-4 w-4" />새 독해 테스트 만들기
           </Button>
 
+        </div>
+
         {/* Search and Filter */}
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1 relative">

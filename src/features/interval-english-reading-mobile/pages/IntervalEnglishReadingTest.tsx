@@ -1,9 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Card, CardContent, CardHeader, CardTitle } from "../../../components/ui/card";
-import { Button } from "../../../components/ui/button";
-import { Badge } from "../../../components/ui/badge";
-import { ChevronLeftIcon, ClockIcon } from "@heroicons/react/24/outline";
+import {
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui";
+import { ChevronLeftIcon } from "@heroicons/react/24/outline";
 import { apiClient } from "../../../shared/api/client";
 
 interface Question {
