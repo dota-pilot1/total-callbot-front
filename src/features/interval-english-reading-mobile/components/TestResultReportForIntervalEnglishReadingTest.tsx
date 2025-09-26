@@ -83,7 +83,13 @@ const TestResultReportForIntervalEnglishReadingTest: React.FC<
   const safeAccuracyRate = result.accuracy || 0;
   const safeAnswers = result.answers || [];
   const displayTitle = result.testTitle || "영어 독해 테스트";
-  const displayTime = result.timeTaken ? formatTime(result.timeTaken) : "N/A";
+
+  // 총 소요 시간 계산 (답변 응답 시간들의 합)
+  const totalTime = safeAnswers.reduce(
+    (sum, answer) => sum + (answer.responseTimeSeconds || 0),
+    0,
+  );
+  const displayTime = totalTime > 0 ? formatTime(totalTime) : "N/A";
 
   const handleGoHome = () => {
     navigate("/interval-english-reading-web");
@@ -151,7 +157,7 @@ const TestResultReportForIntervalEnglishReadingTest: React.FC<
             {/* 소요 시간 */}
             <div className="text-center">
               <div className="text-3xl font-bold text-foreground mb-1">
-                {formatTime(result.timeTaken)}
+                {displayTime}
               </div>
               <div className="text-sm text-muted-foreground">소요 시간</div>
             </div>
@@ -215,6 +221,13 @@ const TestResultReportForIntervalEnglishReadingTest: React.FC<
                     <div className="flex items-center gap-1">
                       <span className="text-muted-foreground">점수:</span>
                       <span className="font-medium">{answer.points}점</span>
+                    </div>
+
+                    <div className="flex items-center gap-1">
+                      <ClockIcon className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-sm text-muted-foreground">
+                        {answer.responseTimeSeconds || 0}초
+                      </span>
                     </div>
                   </div>
                 </div>
