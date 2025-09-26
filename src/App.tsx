@@ -12,7 +12,10 @@ import { ChatbotSelector } from "./features/chatbot";
 import CallbotChat from "./pages/CallbotChat";
 import MobileChat from "./pages/MobileChat";
 import { RolePlayChat } from "./features/role-play";
-import Practice from "./pages/Practice";
+import Practice, { IntervalEnglishReadingFeature } from "./pages/Practice";
+import { IntervalEnglishReadingMobile } from "./features/interval-english-reading-mobile";
+import IntervalEnglishReadingTest from "./features/interval-english-reading-mobile/pages/IntervalEnglishReadingTest";
+import { IntervalEnglishReadingWeb } from "./features/interval-english-reading-web";
 import Chat from "./pages/Chat";
 import ChatRoomList from "./pages/ChatRoomList";
 import { Study } from "./features/study";
@@ -77,7 +80,6 @@ function ProtectedApp() {
     "/admin-scenarios",
     "/user-admin",
     "/study",
-    "/practice",
     "/daily-english",
     "/personal-daily-english",
     "/conversation-scenario-templates",
@@ -89,6 +91,9 @@ function ProtectedApp() {
     "/my-study",
     "/my-study-web",
     "/my-study-mobile",
+    "/interval-english-reading",
+    "/interval-english-reading-mobile",
+    "/interval-english-reading-web",
   ];
   const usesDedicatedHeader = dedicatedHeaderPrefixes.some((p) =>
     location.pathname.startsWith(p),
@@ -109,7 +114,7 @@ function ProtectedApp() {
         <Route path="/chatbots" element={<ChatbotSelector />} />
         <Route path="/mobile" element={<MobileChat />} />
         <Route path="/role-play" element={<RolePlayChat />} />
-        <Route path="/practice" element={<Practice />} />
+        <Route path="/interval-english-reading" element={<Practice />} />
         <Route path="/study" element={<Study />} />
         <Route
           path="/user-admin"
@@ -167,6 +172,22 @@ function ProtectedApp() {
         <Route path="/my-study" element={<MyStudyRedirect />} />
         <Route path="/my-study-web" element={<MyStudyWebDashboard />} />
         <Route path="/my-study-mobile" element={<MyStudyMobileDashboard />} />
+        <Route
+          path="/interval-english-reading"
+          element={<IntervalEnglishReadingFeature />}
+        />
+        <Route
+          path="/interval-english-reading-mobile"
+          element={<IntervalEnglishReadingMobile />}
+        />
+        <Route
+          path="/interval-english-reading-mobile/test/:testId"
+          element={<IntervalEnglishReadingTest />}
+        />
+        <Route
+          path="/interval-english-reading-web"
+          element={<IntervalEnglishReadingWeb />}
+        />
       </Routes>
     </>
   );

@@ -9,6 +9,28 @@ import {
 } from "@heroicons/react/24/outline";
 import FullScreenSlideDialog from "./ui/FullScreenSlideDialog";
 import { examApi } from "../features/chatbot/exam/api/exam";
+
+interface SpeechRecognitionInstance {
+  lang: string;
+  continuous: boolean;
+  interimResults: boolean;
+  maxAlternatives: number;
+  start: () => void;
+  stop: () => void;
+  onstart: (() => void) | null;
+  onresult: ((event: any) => void) | null;
+  onerror: ((event: any) => void) | null;
+  onend: (() => void) | null;
+}
+
+type SpeechRecognitionConstructor = new () => SpeechRecognitionInstance;
+
+declare global {
+  interface Window {
+    webkitSpeechRecognition?: SpeechRecognitionConstructor;
+    SpeechRecognition?: SpeechRecognitionConstructor;
+  }
+}
 // TODO: GPT Realtime API 통합 예정
 // import { voiceApi } from "../features/chatbot/voice/api/voice";
 // import { connectRealtimeVoice, type VoiceConnection } from "../features/chatbot/voice/lib/realtime";
@@ -105,9 +127,15 @@ export default function InputAssistDialogForChatting({
       }
 
       console.log("🎤 Web Speech API 초기화 시작...");
-      const SpeechRecognition =
-        window.SpeechRecognition || window.webkitSpeechRecognition;
-      const recognition = new SpeechRecognition();
+      const SpeechRecognitionConstructor =
+        window.SpeechRecognition ?? window.webkitSpeechRecognition;
+
+      if (!SpeechRecognitionConstructor) {
+        alert("이 브라우저에서는 음성 인식을 지원하지 않습니다.");
+        return;
+      }
+
+      const recognition = new SpeechRecognitionConstructor();
 
       recognition.lang = "ko-KR";
       recognition.continuous = false;

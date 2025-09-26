@@ -148,7 +148,13 @@ export default function Login() {
           navigate("/quiz-list");
           break;
         case "interval_reading":
-          navigate("/quiz-list"); // 인터벌 영독 (듣기 시험 목록으로 임시 연결)
+          // 화면 크기에 따라 모바일/웹 페이지로 분기
+          const isMobile = window.innerWidth < 768;
+          navigate(
+            isMobile
+              ? "/interval-english-reading-mobile"
+              : "/interval-english-reading-web",
+          );
           break;
 
         case "scenario_template":
