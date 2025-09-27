@@ -10,6 +10,10 @@ import {
 import SentenceSplitterDialogButtonWithTranslate from "./SentenceSplitterDialogButtonWithTranslate";
 import { useConversationArchive } from "../features/conversation-archive/hooks/useConversationArchive";
 import { useToast } from "./ui/Toast";
+import {
+  translateWithOpenAI,
+  detectLanguage,
+} from "../shared/utils/translation";
 
 interface Message {
   id: number;
@@ -42,12 +46,6 @@ export default function CardForChattingMessageWithTranslation({
   const { addConversation } = useConversationArchive();
   const { showToast } = useToast();
 
-  const detectLanguage = (text: string): "ko" | "en" => {
-    // 한글 문자 포함 여부 확인
-    const koreanRegex = /[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/;
-    return koreanRegex.test(text) ? "ko" : "en";
-  };
-
   const translateMessage = async (text: string) => {
     if (translation || isTranslating) return;
 
@@ -57,26 +55,33 @@ export default function CardForChattingMessageWithTranslation({
       const sourceLanguage = detectLanguage(text);
       const targetLanguage = sourceLanguage === "ko" ? "en" : "ko";
 
-      // 간단한 번역 API 호출
-      const response = await fetch("/api/translate", {
-        method: "POST",
+      // OpenAI API 키 가져오기
+      const token = useAuthStore.getState().getAccessToken();
+      const apiUrl =
+        window.location.hostname === "localhost"
+          ? "/api/config/openai-key"
+          : "https://api.total-callbot.cloud/api/config/openai-key";
+
+      const keyResponse = await fetch(apiUrl, {
         headers: {
+          Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
-          Authorization: `Bearer ${useAuthStore.getState().getAccessToken()}`,
         },
-        body: JSON.stringify({
-          text: text,
-          sourceLanguage: sourceLanguage,
-          targetLanguage: targetLanguage,
-        }),
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        setTranslation(data.translatedText || data.translation);
-      } else {
-        throw new Error(`Translation API failed: ${response.status}`);
+      if (!keyResponse.ok) {
+        throw new Error(`API 키 요청 실패: ${keyResponse.status}`);
       }
+
+      const { key } = await keyResponse.json();
+
+      // 공통 번역 함수 사용
+      const translatedText = await translateWithOpenAI(
+        text,
+        targetLanguage,
+        key,
+      );
+      setTranslation(translatedText);
     } catch (error) {
       console.error("번역 실패:", error);
       // 간단한 fallback 번역

@@ -10,6 +10,10 @@ import {
 } from "@heroicons/react/24/outline";
 import { examApi } from "../shared/chatbot-utils/exam/api/exam";
 import { useAuthStore } from "../features/auth";
+import {
+  translateWithOpenAI,
+  detectLanguage,
+} from "../shared/utils/translation";
 
 interface SentenceSplitterDialogButtonWithTranslateProps {
   message: string;
@@ -42,11 +46,6 @@ export default function SentenceSplitterDialogButtonWithTranslate({
     return sentences;
   };
 
-  const detectLanguage = (text: string): "ko" | "en" => {
-    const koreanRegex = /[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/;
-    return koreanRegex.test(text) ? "ko" : "en";
-  };
-
   const translateSentence = async (sentence: string, index: number) => {
     if (translations[index] || translatingIndexes.has(index)) return;
 
@@ -56,26 +55,33 @@ export default function SentenceSplitterDialogButtonWithTranslate({
       const sourceLanguage = detectLanguage(sentence);
       const targetLanguage = sourceLanguage === "ko" ? "en" : "ko";
 
-      const translationQuestion =
-        sourceLanguage === "ko"
-          ? `Translate this Korean sentence to English: "${sentence}"`
-          : `Translate this English sentence to Korean: "${sentence}"`;
+      // OpenAI API 키 가져오기
+      const token = useAuthStore.getState().getAccessToken();
+      const apiUrl =
+        window.location.hostname === "localhost"
+          ? "/api/config/openai-key"
+          : "https://api.total-callbot.cloud/api/config/openai-key";
 
-      const response = await examApi.getSampleAnswers({
-        question: translationQuestion,
-        topic: "translation",
-        level: "intermediate",
-        count: 1,
-        englishOnly: targetLanguage === "en",
-        context: `Please provide only the translated sentence without any explanations or additional text.`,
+      const keyResponse = await fetch(apiUrl, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
       });
 
-      const translatedText = (response.samples?.[0]?.text || "").trim();
-      if (translatedText) {
-        setTranslations((prev) => ({ ...prev, [index]: translatedText }));
-      } else {
-        throw new Error("No translation received");
+      if (!keyResponse.ok) {
+        throw new Error(`API 키 요청 실패: ${keyResponse.status}`);
       }
+
+      const { key } = await keyResponse.json();
+
+      // 공통 번역 함수 사용
+      const translatedText = await translateWithOpenAI(
+        sentence,
+        targetLanguage,
+        key,
+      );
+      setTranslations((prev) => ({ ...prev, [index]: translatedText }));
     } catch (error) {
       console.error("번역 실패:", error);
       const sourceLanguage = detectLanguage(sentence);

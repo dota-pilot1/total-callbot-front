@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../../auth";
 import { Button } from "../../../components/ui";
@@ -18,6 +18,7 @@ import {
   SparklesIcon,
   LanguageIcon,
 } from "@heroicons/react/24/outline";
+import { translateWithOpenAI } from "../../../shared/utils/translation";
 
 // 기존 컴포넌트들 (필요한 것들만)
 import MobileCharacterDialog from "../../../components/MobileCharacterDialog";
@@ -83,6 +84,36 @@ export default function CharacterChatbotMobilePage() {
   const [suggestLoading, setSuggestLoading] = useState(false);
   const [showTranslation, setShowTranslation] = useState(false);
   const [translation, setTranslation] = useState("");
+  const [apiKey, setApiKey] = useState<string | null>(null);
+
+  // OpenAI API 키 가져오기
+  useEffect(() => {
+    const fetchApiKey = async () => {
+      try {
+        const token = useAuthStore.getState().getAccessToken();
+        const apiUrl =
+          window.location.hostname === "localhost"
+            ? "/api/config/openai-key"
+            : "https://api.total-callbot.cloud/api/config/openai-key";
+
+        const response = await fetch(apiUrl, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (response.ok) {
+          const { key } = await response.json();
+          setApiKey(key);
+        }
+      } catch (error) {
+        console.error("API 키 가져오기 실패:", error);
+      }
+    };
+
+    fetchApiKey();
+  }, []);
 
   // 대화 시작/중단 처리
   const handleStartConversation = async () => {
@@ -121,6 +152,10 @@ export default function CharacterChatbotMobilePage() {
   const suggestReply = async () => {
     setSuggestLoading(true);
     try {
+      if (!apiKey) {
+        throw new Error("OpenAI API 키가 설정되지 않았습니다.");
+      }
+
       // 캐릭터와 최근 대화 맥락을 고려한 AI 제안 생성
       const recentMessages = messages.slice(-3); // 최근 3개 메시지
       const conversationContext = recentMessages
@@ -135,53 +170,40 @@ Generate a natural, engaging English response or question that would be appropri
 Keep it conversational, friendly, and relevant to ${settings.character.name}'s character.
 Response should be 1-2 sentences maximum.`;
 
-      const response = await apiClient.post("/chat/ai-suggestion", {
-        prompt: prompt,
-        maxTokens: 50,
-      });
+      // OpenAI API로 자동완성 생성
+      const response = await fetch(
+        "https://api.openai.com/v1/chat/completions",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "gpt-3.5-turbo",
+            messages: [{ role: "user", content: prompt }],
+            max_tokens: 100,
+            temperature: 0.7,
+          }),
+        },
+      );
 
-      let suggestedText = "";
-
-      if (response.data && response.data.suggestion) {
-        suggestedText = response.data.suggestion.trim();
-      } else {
-        // Fallback to character-specific suggestions
-        const characterSuggestions = [
-          `Tell me more about your ${settings.character.personality.toLowerCase()} side`,
-          "What's been on your mind lately?",
-          "Share something interesting with me",
-          "What advice would you give me?",
-          "How do you see the world?",
-        ];
-        suggestedText =
-          characterSuggestions[
-            Math.floor(Math.random() * characterSuggestions.length)
-          ];
+      if (!response.ok) {
+        throw new Error("자동 완성 생성 실패");
       }
+
+      const data = await response.json();
+      const suggestedText = data.choices[0].message.content.trim();
 
       setNewMessage(suggestedText);
 
-      // 간단한 번역 제공
-      const translateText = (text: string): string => {
-        // 영어 → 한국어 간단 번역
-        const translations: { [key: string]: string } = {
-          "What makes you unique?": "당신을 독특하게 만드는 것은 무엇인가요?",
-          "Tell me about yourself": "자신에 대해 말해주세요",
-          "What's your story?": "당신의 이야기는 무엇인가요?",
-          "Share your thoughts with me": "당신의 생각을 저와 공유해주세요",
-          "How are you feeling today?": "오늘 기분이 어떠세요?",
-          "What's been on your mind lately?":
-            "최근에 무엇을 생각하고 계셨나요?",
-          "Share something interesting with me":
-            "흥미로운 것을 저와 공유해주세요",
-          "What advice would you give me?": "저에게 어떤 조언을 해주시겠어요?",
-          "How do you see the world?": "세상을 어떻게 보시나요?",
-        };
-
-        return translations[text] || `[한국어 번역] ${text}`;
-      };
-
-      setTranslation(translateText(suggestedText));
+      // OpenAI API를 사용한 번역
+      const translatedText = await translateWithOpenAI(
+        suggestedText,
+        "ko",
+        apiKey,
+      );
+      setTranslation(translatedText);
       setShowTranslation(true);
     } catch (error) {
       console.error("AI 제안 생성 실패:", error);
@@ -199,19 +221,13 @@ Response should be 1-2 sentences maximum.`;
         ];
       setNewMessage(randomSuggestion);
 
-      // 간단한 번역 제공
-      const translateText = (text: string): string => {
-        const translations: { [key: string]: string } = {
-          "Tell me about yourself": "자신에 대해 말해주세요",
-          "What's your story?": "당신의 이야기는 무엇인가요?",
-          "Share your thoughts with me": "당신의 생각을 저와 공유해주세요",
-          "What makes you unique?": "당신을 독특하게 만드는 것은 무엇인가요?",
-          "How are you feeling today?": "오늘 기분이 어떠세요?",
-        };
-        return translations[text] || `[한국어 번역] ${text}`;
-      };
-
-      setTranslation(translateText(randomSuggestion));
+      // Fallback에도 OpenAI 번역 사용
+      const translatedText = await translateWithOpenAI(
+        randomSuggestion,
+        "ko",
+        apiKey,
+      );
+      setTranslation(translatedText);
       setShowTranslation(true);
     } finally {
       setSuggestLoading(false);
