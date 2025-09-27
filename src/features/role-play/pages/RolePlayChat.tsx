@@ -2,9 +2,7 @@ import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuthStore } from "../../auth";
 import { Button } from "../../../components/ui";
-import { createPortal } from "react-dom";
 import FullScreenSlideDialog from "../../../components/ui/FullScreenSlideDialog";
-import { motion, AnimatePresence } from "framer-motion";
 
 import {
   PaperAirplaneIcon,
