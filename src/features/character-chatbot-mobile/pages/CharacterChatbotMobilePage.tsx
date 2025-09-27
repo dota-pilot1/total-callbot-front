@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuthStore } from "../features/auth";
-import { Button } from "../components/ui";
+import { useAuthStore } from "../../auth";
+import { Button } from "../../../components/ui";
 
 import {
   PaperAirplaneIcon,
@@ -15,34 +15,34 @@ import {
   ChatBubbleLeftRightIcon,
 } from "@heroicons/react/24/outline";
 // no solid icons needed currently
-import { useVoiceConnection } from "../features/chatbot/voice";
-import { useChatMessages } from "../features/chatbot/messaging";
-import VoicePulse from "../components/VoicePulse";
-import MobileSettingsDropdown from "../components/MobileSettingsDropdown";
+import { useVoiceConnection } from "../../chatbot/voice";
+import { useChatMessages } from "../../chatbot/messaging";
+import VoicePulse from "../../../components/VoicePulse";
+import MobileSettingsDropdown from "../../../components/MobileSettingsDropdown";
 // import SockJS from "sockjs-client";
 // import { Stomp } from "@stomp/stompjs";
 
-import MobileCharacterDialog from "../components/MobileCharacterDialog";
-import { CHARACTER_LIST } from "../features/chatbot/character/characters";
+import MobileCharacterDialog from "../../../components/MobileCharacterDialog";
+import { CHARACTER_LIST } from "../../chatbot/character/characters";
 import {
   useCharacterStore,
   CHARACTER_PRESETS,
   VOICE_OPTIONS,
   useCharacterSelection,
-} from "../features/chatbot/character";
-import { useWebSocketStore } from "../features/websocket/stores/useWebSocketStore";
-import MobileTranslationDialog from "../components/MobileTranslationDialog";
-import CustomQuestionGenerator from "../components/CustomQuestionGenerator";
-import KoreanInputDialog from "../components/KoreanInputDialog";
-import CardForChattingMessageWithTranslation from "../components/CardForChattingMessageWithTranslation";
-import { MyConversationArchive } from "../features/conversation-archive";
+} from "../../chatbot/character";
+import { useWebSocketStore } from "../../websocket/stores/useWebSocketStore";
+import MobileTranslationDialog from "../../../components/MobileTranslationDialog";
+import CustomQuestionGenerator from "../../../components/CustomQuestionGenerator";
+import KoreanInputDialog from "../../../components/KoreanInputDialog";
+import CardForChattingMessageWithTranslation from "../../../components/CardForChattingMessageWithTranslation";
+import { MyConversationArchive } from "../../conversation-archive";
 
-import { useAudioSettings } from "../features/chatbot/settings";
-import ExamResultsSlideDown from "../components/ExamResultsSlideDown";
-import { useExamMode } from "../features/chatbot/exam";
-import { useToast } from "../components/ui/Toast";
+import { useAudioSettings } from "../../chatbot/settings";
+import ExamResultsSlideDown from "../../../components/ExamResultsSlideDown";
+import { useExamMode } from "../../chatbot/exam";
+import { useToast } from "../../../components/ui/Toast";
 
-export default function MobileChat() {
+export default function CharacterChatbotMobilePage() {
   const { logout, getUser } = useAuthStore();
   const user = getUser();
   const navigate = useNavigate();
@@ -375,7 +375,7 @@ export default function MobileChat() {
                 variant="outline"
                 size="sm"
                 onClick={() => {
-                  console.log("Logout button clicked in MobileChat");
+                  console.log("Logout button clicked in CharacterChatbotMobilePage");
                   logout();
                 }}
                 title="로그아웃"

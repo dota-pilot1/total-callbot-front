@@ -122,7 +122,11 @@ export default function Login() {
 
       switch (selectedService) {
         case "chatbot":
-          navigate(isMobileDevice ? "/mobile" : "/chatbots");
+          navigate(
+            isMobileDevice
+              ? "/character-chatbot-mobile"
+              : "/character-chatbot-web",
+          );
           break;
         case "exam":
           // 회화 선택 시 랜덤 캐릭터만 선택하고 바로 이동
@@ -190,7 +194,11 @@ export default function Login() {
           navigate("/my-study");
           break;
         default:
-          navigate(isMobileDevice ? "/mobile" : "/chatbots");
+          navigate(
+            isMobileDevice
+              ? "/character-chatbot-mobile"
+              : "/character-chatbot-web",
+          );
       }
     } catch (error) {
       console.error("Login failed:", error);

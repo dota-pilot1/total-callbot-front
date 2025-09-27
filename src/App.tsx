@@ -10,7 +10,8 @@ import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import { ChatbotSelector } from "./features/chatbot";
 import CallbotChat from "./pages/CallbotChat";
-import MobileChat from "./pages/MobileChat";
+import { CharacterChatbotMobilePage } from "./features/character-chatbot-mobile";
+import { CharacterChatbotWebPage } from "./features/character-chatbot-web";
 import { RolePlayChat } from "./features/role-play";
 import Practice, { IntervalEnglishReadingFeature } from "./pages/Practice";
 import { IntervalEnglishReadingMobile } from "./features/interval-english-reading-mobile";
@@ -76,7 +77,8 @@ function ProtectedApp() {
   // 전용 헤더를 사용하는 경로들: 공통 헤더(AppHeader) 숨김
   const dedicatedHeaderPrefixes = [
     "/board",
-    "/mobile",
+    "/character-chatbot-mobile",
+    "/character-chatbot-web",
     "/role-play",
     "/chat",
     "/chatbots",
@@ -124,7 +126,14 @@ function ProtectedApp() {
         <Route path="/signup" element={<Signup />} />
         <Route path="/welcome" element={<Welcome />} />
         <Route path="/chatbots" element={<ChatbotSelector />} />
-        <Route path="/mobile" element={<MobileChat />} />
+        <Route
+          path="/character-chatbot-mobile"
+          element={<CharacterChatbotMobilePage />}
+        />
+        <Route
+          path="/character-chatbot-web"
+          element={<CharacterChatbotWebPage />}
+        />
         <Route path="/role-play" element={<RolePlayChat />} />
         <Route path="/interval-english-reading" element={<Practice />} />
         <Route path="/study" element={<Study />} />
