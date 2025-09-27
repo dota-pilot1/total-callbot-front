@@ -13,6 +13,11 @@ import {
 import { useCharacterState } from "../hooks/useCharacterState";
 import { useCharacterVoice } from "../hooks/useCharacterVoice";
 import { useCharacterChat } from "../hooks/useCharacterChat";
+import {
+  PaperAirplaneIcon,
+  SparklesIcon,
+  LanguageIcon,
+} from "@heroicons/react/24/outline";
 
 // 기존 컴포넌트들 (필요한 것들만)
 import MobileCharacterDialog from "../../../components/MobileCharacterDialog";
@@ -72,6 +77,11 @@ export default function CharacterChatbotMobilePage() {
   // 캐릭터 선택 다이얼로그 상태
   const [characterDialogOpen, setCharacterDialogOpen] = useState(false);
 
+  // 텍스트 입력 상태
+  const [newMessage, setNewMessage] = useState("");
+  const [isIMEComposing, setIsIMEComposing] = useState(false);
+  const [suggestLoading, setSuggestLoading] = useState(false);
+
   // 대화 시작/중단 처리
   const handleStartConversation = async () => {
     try {
@@ -87,6 +97,43 @@ export default function CharacterChatbotMobilePage() {
     clearMessages();
   };
 
+  // 텍스트 메시지 전송
+  const handleSendMessage = () => {
+    const text = newMessage.trim();
+    if (!text || suggestLoading) return;
+
+    // 사용자 메시지 추가
+    addUserMessage(text);
+    setNewMessage("");
+
+    // 음성 연결을 통해 전송
+    if (isConnected) {
+      sendTextMessage(text);
+    }
+  };
+
+  // AI 제안 생성 (임시 구현)
+  const suggestReply = async () => {
+    setSuggestLoading(true);
+    try {
+      // 간단한 제안 메시지들
+      const suggestions = [
+        "Tell me about yourself",
+        "What's your advice for beginners?",
+        "Share your experience with me",
+        "What motivates you the most?",
+        "How did you start your journey?",
+      ];
+      const randomSuggestion =
+        suggestions[Math.floor(Math.random() * suggestions.length)];
+      setNewMessage(randomSuggestion);
+    } catch (error) {
+      console.error("AI 제안 생성 실패:", error);
+    } finally {
+      setSuggestLoading(false);
+    }
+  };
+
   // 캐릭터 변경 처리
   const handleCharacterChange = (newSettings: {
     characterId: string;
@@ -94,7 +141,7 @@ export default function CharacterChatbotMobilePage() {
     gender: "male" | "female";
     voice: "alloy" | "sage" | "verse";
   }) => {
-    console.log("🎭 [CharacterChatbotMobilePageNew] 캐릭터 변경:", newSettings);
+    console.log("🎭 [CharacterChatbotMobilePage] 캐릭터 변경:", newSettings);
 
     updateCharacter(newSettings.characterId);
     updateGender(newSettings.gender);
@@ -102,12 +149,13 @@ export default function CharacterChatbotMobilePage() {
 
     setCharacterDialogOpen(false);
 
-    // 연결되어 있으면 재시작
+    // 연결되어 있으면 재시작 (대화 내용도 지우고 새로 시작)
     if (isConnected) {
-      console.log("🎭 연결 중이므로 재시작");
+      console.log("🎭 연결 중이므로 재시작 - 새로운 캐릭터로 처음부터");
       stopConnection();
+      clearMessages(); // 기존 대화 내용 지우기
       setTimeout(() => {
-        startConnection();
+        startConnection(); // 새로운 캐릭터로 재시작 (첫 메시지 포함)
       }, 1000);
     }
   };
@@ -338,6 +386,71 @@ export default function CharacterChatbotMobilePage() {
         )}
         <div ref={messagesEndRef} />
       </div>
+
+      {/* 입력 영역 */}
+      {isConnected && (
+        <div className="bg-card border-t border-border p-4 flex-shrink-0">
+          <div className="flex items-center space-x-2">
+            {/* 왼쪽 미니 버튼들 */}
+            <div className="flex flex-col space-y-1">
+              <Button
+                onClick={suggestReply}
+                variant="outline"
+                size="sm"
+                className={`w-8 h-8 p-0 ${suggestLoading ? "animate-pulse" : ""}`}
+                title="AI 제안"
+                disabled={suggestLoading}
+              >
+                <SparklesIcon className="h-3 w-3" />
+              </Button>
+            </div>
+
+            {/* 텍스트 입력 */}
+            <textarea
+              rows={3}
+              value={newMessage}
+              onChange={(e) => setNewMessage(e.target.value)}
+              onCompositionStart={() => setIsIMEComposing(true)}
+              onCompositionEnd={() => setIsIMEComposing(false)}
+              onKeyDown={(e) => {
+                const anyEvt = e.nativeEvent as any;
+                const composing =
+                  isIMEComposing ||
+                  anyEvt?.isComposing ||
+                  anyEvt?.keyCode === 229;
+                if (
+                  e.key === "Enter" &&
+                  !e.shiftKey &&
+                  !composing &&
+                  !suggestLoading
+                ) {
+                  e.preventDefault();
+                  handleSendMessage();
+                }
+              }}
+              placeholder={
+                suggestLoading ? "AI 응답 생성 중…" : "메시지를 입력하세요..."
+              }
+              className="flex-1 px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring resize-none text-[13px] md:text-sm placeholder:text-muted-foreground"
+              style={{ minHeight: "4.5rem" }}
+            />
+
+            {/* 오른쪽 미니 버튼들 */}
+            <div className="flex flex-col space-y-1">
+              <Button
+                onClick={handleSendMessage}
+                disabled={!newMessage.trim() || suggestLoading}
+                variant="outline"
+                size="sm"
+                className="w-8 h-8 p-0"
+                title="전송"
+              >
+                <PaperAirplaneIcon className="h-3 w-3" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 캐릭터 선택 다이얼로그 */}
       <MobileCharacterDialog
