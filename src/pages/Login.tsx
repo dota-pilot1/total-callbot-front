@@ -21,7 +21,6 @@ type ServiceType =
   | "group_quiz"
   | "question_bank"
   | "daily_english"
-  | "quiz"
   | "interval_reading"
   | "interval_listening"
   | "board"
@@ -73,7 +72,6 @@ export default function Login() {
       "group_quiz",
       "question_bank",
       "daily_english",
-      "quiz",
       "interval_reading",
       "interval_listening",
       "board",
@@ -144,11 +142,7 @@ export default function Login() {
           console.log("로그인: 단체 퀴즈 페이지로 이동");
           navigate(isMobileDevice ? "/group-quiz-mobile" : "/group-quiz-web");
           break;
-        case "quiz":
-          // 영어 듣기 시험 목록 페이지로 이동
-          console.log("로그인: 영어 듣기 시험 목록 페이지로 이동");
-          navigate("/quiz-list");
-          break;
+
         case "interval_reading":
           // 화면 크기에 따라 모바일/웹 페이지로 분기
           const isMobile = window.innerWidth < 768;
@@ -177,8 +171,12 @@ export default function Login() {
           navigate("/board"); // 게시판 페이지
           break;
         case "question_bank":
+          // 화면 크기에 따라 모바일/웹 페이지로 분기
+          const isTestCenterMobile = window.innerWidth < 768;
           console.log("로그인: 테스트 센터 페이지로 이동");
-          navigate("/test-center"); // 테스트 센터 페이지
+          navigate(
+            isTestCenterMobile ? "/test-center-mobile" : "/test-center-web",
+          );
           break;
         case "daily_english":
           console.log("로그인: 일일 영어 페이지로 이동");
@@ -315,27 +313,6 @@ export default function Login() {
                 </div>
                 <span className="text-xs font-medium text-gray-700">
                   역할극
-                </span>
-              </button>
-
-              {/* 듣기 시험 */}
-              <button
-                onClick={() => handleServiceSelect("quiz")}
-                aria-pressed={selectedService === "quiz"}
-                className={`relative flex flex-col items-center p-4 rounded-xl border-2 transition-all duration-200 ${
-                  selectedService === "quiz"
-                    ? "border-blue-500 bg-blue-50 shadow-lg ring-2 ring-blue-200"
-                    : "border-gray-200 hover:bg-gray-50 hover:border-gray-300"
-                }`}
-              >
-                {selectedService === "quiz" && (
-                  <CheckCircleIcon className="absolute top-2 right-2 h-5 w-5 text-blue-500" />
-                )}
-                <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center mb-2">
-                  <span className="text-2xl">🎧</span>
-                </div>
-                <span className="text-xs font-medium text-gray-700">
-                  듣기 시험
                 </span>
               </button>
 

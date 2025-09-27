@@ -27,10 +27,7 @@ import { useAuthStore } from "./features/auth";
 import { ExamManagement, QuestionManagement } from "./features/exam-management";
 import { MemberManagement } from "./features/admin";
 import AdminScenarios from "./pages/AdminScenarios";
-import {
-  ListeningTest,
-  ListeningTestList,
-} from "./features/english-listening-test";
+import { ListeningTest } from "./features/english-listening-test";
 import { MathPage } from "./features/math";
 import {
   DailyEnglish,
@@ -47,8 +44,11 @@ import { DailyMath } from "./features/daily-math";
 import { GroupQuiz } from "./features/group-quiz/web";
 import { GroupQuizMobile } from "./features/group-quiz/mobile";
 import { BoardList, BoardDetail, BoardWrite } from "./features/board";
-import { TestCenter } from "./features/test-center";
-import TestRoomDetail from "./features/test-center/pages/TestRoomDetail";
+
+import { TestCenter as TestCenterMobile } from "./features/test-center-mobile";
+import { TestCenter as TestCenterWeb } from "./features/test-center-web";
+import TestRoomDetailMobile from "./features/test-center-mobile/pages/TestRoomDetail";
+import TestRoomDetailWeb from "./features/test-center-web/pages/TestRoomDetail";
 import {
   MyStudyRedirect,
   MyStudyWebDashboard,
@@ -94,7 +94,9 @@ function ProtectedApp() {
     "/group-quiz",
     "/daily-english-exam",
     "/daily-english-conversation",
-    "/test-center",
+
+    "/test-center-mobile",
+    "/test-center-web",
     "/my-study",
     "/my-study-web",
     "/my-study-mobile",
@@ -141,7 +143,7 @@ function ProtectedApp() {
         />
         <Route path="/admin/members" element={<MemberManagement />} />
         <Route path="/admin/scenarios" element={<AdminScenarios />} />
-        <Route path="/quiz-list" element={<ListeningTestList />} />
+
         <Route path="/quiz" element={<ListeningTest />} />
         <Route path="/math" element={<MathPage />} />
         <Route path="/daily-english" element={<DailyEnglish />} />
@@ -177,8 +179,17 @@ function ProtectedApp() {
         <Route path="/chat/room/:roomId" element={<Chat />} />
         <Route path="/chat/bot/:botId" element={<CallbotChat />} />
         <Route path="/chat/:chatRoomId" element={<CallbotChat />} />
-        <Route path="/test-center" element={<TestCenter />} />
-        <Route path="/test-center/room/:roomId" element={<TestRoomDetail />} />
+
+        <Route path="/test-center-mobile" element={<TestCenterMobile />} />
+        <Route
+          path="/test-center-mobile/room/:roomId"
+          element={<TestRoomDetailMobile />}
+        />
+        <Route path="/test-center-web" element={<TestCenterWeb />} />
+        <Route
+          path="/test-center-web/room/:roomId"
+          element={<TestRoomDetailWeb />}
+        />
         <Route path="/my-study" element={<MyStudyRedirect />} />
         <Route path="/my-study-web" element={<MyStudyWebDashboard />} />
         <Route path="/my-study-mobile" element={<MyStudyMobileDashboard />} />
