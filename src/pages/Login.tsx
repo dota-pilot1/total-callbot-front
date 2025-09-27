@@ -3,14 +3,22 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuthStore } from "../features/auth";
 import { EXAM_CHARACTERS } from "../features/chatbot/exam/examCharacters";
 import { PasswordInput } from "../components/ui/PasswordInput";
+import { ServiceCard } from "../components/ui/ServiceCard";
 
 import { Button } from "../components/ui";
 import {
-  CheckCircleIcon,
   ArrowRightIcon,
   CogIcon,
   ChatBubbleLeftRightIcon,
 } from "@heroicons/react/24/outline";
+import {
+  Bot,
+  BookOpen,
+  Headphones,
+  Drama,
+  Swords,
+  Calendar,
+} from "lucide-react";
 
 type ServiceType =
   | "chatbot"
@@ -96,12 +104,6 @@ export default function Login() {
   const { login, isLoading, getUser } = useAuthStore();
   const navigate = useNavigate();
 
-  // 로봇 이미지 고정
-  const robotImages = {
-    brand: "/simple-chatbot.png",
-    chatbot: "/simple-chatbot.png",
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -172,10 +174,10 @@ export default function Login() {
           break;
         case "question_bank":
           // 화면 크기에 따라 모바일/웹 페이지로 분기
-          const isTestCenterMobile = window.innerWidth < 768;
-          console.log("로그인: 테스트 센터 페이지로 이동");
+          const isQuizBattleMobile = window.innerWidth < 768;
+          console.log("로그인: Quiz Battle 페이지로 이동");
           navigate(
-            isTestCenterMobile ? "/test-center-mobile" : "/test-center-web",
+            isQuizBattleMobile ? "/test-center-mobile" : "/test-center-web",
           );
           break;
         case "daily_english":
@@ -232,173 +234,68 @@ export default function Login() {
           <div className="rounded-lg bg-card p-6 shadow-lg">
             {/* 서비스 선택 (3x3 그리드) */}
             <div className="grid grid-cols-3 gap-3 mb-6">
-              {/* 챗봇 */}
-              <button
-                onClick={() => handleServiceSelect("chatbot")}
-                aria-pressed={selectedService === "chatbot"}
-                className={`relative flex flex-col items-center p-4 rounded-xl border-2 transition-all duration-200 ${
-                  selectedService === "chatbot"
-                    ? "border-blue-500 bg-blue-50 shadow-lg ring-2 ring-blue-200"
-                    : "border-gray-200 hover:bg-gray-50 hover:border-gray-300"
-                }`}
-              >
-                {selectedService === "chatbot" && (
-                  <CheckCircleIcon className="absolute top-2 right-2 h-5 w-5 text-blue-500" />
-                )}
-                <img
-                  src={robotImages.chatbot}
-                  alt="챗봇"
-                  className="h-12 w-12 rounded-lg object-cover mb-2"
-                />
-                <span className="text-xs font-medium text-gray-700">챗봇</span>
-              </button>
+              <ServiceCard
+                id="chatbot"
+                title="챗봇"
+                iconElement={<Bot className="h-8 w-8 text-gray-600" />}
+                isSelected={selectedService === "chatbot"}
+                onSelect={() => handleServiceSelect("chatbot")}
+              />
 
-              {/* 인터벌 영독 */}
-              <button
-                onClick={() => handleServiceSelect("interval_reading")}
-                aria-pressed={selectedService === "interval_reading"}
-                className={`relative flex flex-col items-center p-4 rounded-xl border-2 transition-all duration-200 ${
-                  selectedService === "interval_reading"
-                    ? "border-blue-500 bg-blue-50 shadow-lg ring-2 ring-blue-200"
-                    : "border-gray-200 hover:bg-gray-50 hover:border-gray-300"
-                }`}
-              >
-                {selectedService === "interval_reading" && (
-                  <CheckCircleIcon className="absolute top-2 right-2 h-5 w-5 text-blue-500" />
-                )}
-                <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-green-100 to-green-200 flex items-center justify-center mb-2">
-                  <span className="text-xl">📚</span>
-                </div>
-                <span className="text-xs font-medium text-gray-700">
-                  인터벌 영독
-                </span>
-              </button>
+              <ServiceCard
+                id="interval_reading"
+                title="인터벌 영독"
+                iconElement={<BookOpen className="h-8 w-8 text-gray-600" />}
+                isSelected={selectedService === "interval_reading"}
+                onSelect={() => handleServiceSelect("interval_reading")}
+              />
 
-              {/* 인터벌 영듣 */}
-              <button
-                onClick={() => handleServiceSelect("interval_listening")}
-                aria-pressed={selectedService === "interval_listening"}
-                className={`relative flex flex-col items-center p-3 rounded-xl border-2 transition-all duration-200 ${
-                  selectedService === "interval_listening"
-                    ? "border-blue-500 bg-blue-50 shadow-lg ring-2 ring-blue-200"
-                    : "border-gray-200 hover:bg-gray-50 hover:border-gray-300"
-                }`}
-              >
-                {selectedService === "interval_listening" && (
-                  <CheckCircleIcon className="absolute top-1 right-1 h-4 w-4 text-blue-500" />
-                )}
-                <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-purple-100 to-purple-200 flex items-center justify-center mb-1">
-                  <span className="text-lg">🎧</span>
-                </div>
-                <span className="text-xs font-medium text-gray-700">
-                  인터벌 영듣
-                </span>
-              </button>
+              <ServiceCard
+                id="interval_listening"
+                title="인터벌 영듣"
+                iconElement={<Headphones className="h-8 w-8 text-gray-600" />}
+                isSelected={selectedService === "interval_listening"}
+                onSelect={() => handleServiceSelect("interval_listening")}
+              />
 
-              {/* 역할극 */}
-              <button
-                onClick={() => handleServiceSelect("exam")}
-                aria-pressed={selectedService === "exam"}
-                className={`relative flex flex-col items-center p-3 rounded-xl border-2 transition-all duration-200 ${
-                  selectedService === "exam"
-                    ? "border-blue-500 bg-blue-50 shadow-lg ring-2 ring-blue-200"
-                    : "border-gray-200 hover:bg-gray-50 hover:border-gray-300"
-                }`}
-              >
-                {selectedService === "exam" && (
-                  <CheckCircleIcon className="absolute top-1 right-1 h-4 w-4 text-blue-500" />
-                )}
-                <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center mb-1">
-                  <span className="text-lg">🎭</span>
-                </div>
-                <span className="text-xs font-medium text-gray-700">
-                  역할극
-                </span>
-              </button>
+              <ServiceCard
+                id="exam"
+                title="역할극"
+                iconElement={<Drama className="h-8 w-8 text-gray-600" />}
+                isSelected={selectedService === "exam"}
+                onSelect={() => handleServiceSelect("exam")}
+              />
 
-              {/* 테스트 센터 */}
-              <button
-                onClick={() => handleServiceSelect("question_bank")}
-                aria-pressed={selectedService === "question_bank"}
-                className={`relative flex flex-col items-center p-4 rounded-xl border-2 transition-all duration-200 ${
-                  selectedService === "question_bank"
-                    ? "border-blue-500 bg-blue-50 shadow-lg ring-2 ring-blue-200"
-                    : "border-gray-200 hover:bg-gray-50 hover:border-gray-300"
-                }`}
-              >
-                {selectedService === "question_bank" && (
-                  <CheckCircleIcon className="absolute top-2 right-2 h-5 w-5 text-blue-500" />
-                )}
-                <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-red-100 to-red-200 flex items-center justify-center mb-2">
-                  <span className="text-2xl">🏛️</span>
-                </div>
-                <span className="text-xs font-medium text-gray-700">
-                  문제 은행
-                </span>
-              </button>
+              <ServiceCard
+                id="question_bank"
+                title="Quiz Battle"
+                iconElement={<Swords className="h-8 w-8 text-gray-600" />}
+                isSelected={selectedService === "question_bank"}
+                onSelect={() => handleServiceSelect("question_bank")}
+              />
 
-              {/* 일일 회화 */}
-              <button
-                onClick={() => handleServiceSelect("daily_english")}
-                aria-pressed={selectedService === "daily_english"}
-                className={`relative flex flex-col items-center p-4 rounded-xl border-2 transition-all duration-200 ${
-                  selectedService === "daily_english"
-                    ? "border-blue-500 bg-blue-50 shadow-lg ring-2 ring-blue-200"
-                    : "border-gray-200 hover:bg-gray-50 hover:border-gray-300"
-                }`}
-              >
-                {selectedService === "daily_english" && (
-                  <CheckCircleIcon className="absolute top-2 right-2 h-5 w-5 text-blue-500" />
-                )}
-                <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-green-100 to-green-200 flex items-center justify-center mb-2">
-                  <span className="text-2xl">📅</span>
-                </div>
-                <span className="text-xs font-medium text-gray-700">
-                  일일 회화
-                </span>
-              </button>
+              <ServiceCard
+                id="daily_english"
+                title="일일 회화"
+                iconElement={<Calendar className="h-8 w-8 text-gray-600" />}
+                isSelected={selectedService === "daily_english"}
+                onSelect={() => handleServiceSelect("daily_english")}
+              />
 
-              {/* my-study */}
-              <button
-                onClick={() => handleServiceSelect("my_study")}
-                aria-pressed={selectedService === "my_study"}
-                className={`relative flex flex-col items-center p-4 rounded-xl border-2 transition-all duration-200 ${
-                  selectedService === "my_study"
-                    ? "border-blue-500 bg-blue-50 shadow-lg ring-2 ring-blue-200"
-                    : "border-gray-200 hover:bg-gray-50 hover:border-gray-300"
-                }`}
-              >
-                {selectedService === "my_study" && (
-                  <CheckCircleIcon className="absolute top-2 right-2 h-5 w-5 text-blue-500" />
-                )}
-                <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center mb-2">
-                  <span className="text-white font-bold text-sm">MS</span>
-                </div>
-                <span className="text-xs font-medium text-gray-700">
-                  my-study
-                </span>
-              </button>
+              <ServiceCard
+                id="my_study"
+                title="my-study"
+                iconElement={
+                  <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
+                    <span className="text-white font-bold text-xs">MS</span>
+                  </div>
+                }
+                isSelected={selectedService === "my_study"}
+                onSelect={() => handleServiceSelect("my_study")}
+              />
 
-              {/* 시나리오 템플릿 */}
-              <button
-                onClick={() => handleServiceSelect("scenario_template")}
-                aria-pressed={selectedService === "scenario_template"}
-                className={`relative flex flex-col items-center p-4 rounded-xl border-2 transition-all duration-200 ${
-                  selectedService === "scenario_template"
-                    ? "border-blue-500 bg-blue-50 shadow-lg ring-2 ring-blue-200"
-                    : "border-gray-200 hover:bg-gray-50 hover:border-gray-300"
-                }`}
-              >
-                {selectedService === "scenario_template" && (
-                  <CheckCircleIcon className="absolute top-2 right-2 h-5 w-5 text-blue-500" />
-                )}
-                <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-green-100 to-green-200 flex items-center justify-center mb-2">
-                  <span className="text-2xl">📝</span>
-                </div>
-                <span className="text-xs font-medium text-gray-700">
-                  시나리오 템플릿
-                </span>
-              </button>
+              {/* 빈 공간 (그리드 9번째 자리) */}
+              <div></div>
             </div>
 
             {/* 자동 입력 안내 */}
@@ -480,6 +377,21 @@ export default function Login() {
 
           {/* 하단 관리 버튼들 */}
           <div className="mt-6 space-y-3">
+            {/* 시나리오 템플릿 */}
+            <Button
+              variant={
+                selectedService === "scenario_template" ? "default" : "outline"
+              }
+              className={`w-full flex items-center justify-center gap-2 py-3 ${
+                selectedService === "scenario_template"
+                  ? "bg-blue-500 hover:bg-blue-600 text-white"
+                  : ""
+              }`}
+              onClick={() => handleServiceSelect("scenario_template")}
+            >
+              <span className="text-2xl">📝</span>
+              <span className="text-base">시나리오 템플릿</span>
+            </Button>
             <Button
               variant="outline"
               className="w-full flex items-center justify-center gap-2 py-3"
