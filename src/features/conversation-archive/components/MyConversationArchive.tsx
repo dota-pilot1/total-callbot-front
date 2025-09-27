@@ -13,7 +13,7 @@ import {
   ChatBubbleLeftRightIcon,
 } from "@heroicons/react/24/outline";
 import { Button } from "../../../components/ui/Button";
-import { examApi } from "../../chatbot/exam/api/exam";
+import { examApi } from "../../../shared/chatbot-utils/exam/api/exam";
 import { useConversationArchive } from "../hooks/useConversationArchive";
 import type { ConversationArchive } from "../../../shared/api/conversationArchive";
 import ConversationInputForm from "./ConversationInputForm";

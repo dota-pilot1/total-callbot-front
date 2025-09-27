@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { XMarkIcon, PlayIcon } from "@heroicons/react/24/outline";
-import { useCharacterStore } from "../features/chatbot/character/store";
+import { useCharacterStore } from "../shared/chatbot-utils/character/store";
 import { useAuthStore } from "../features/auth";
-import { CHARACTER_LIST } from "../features/chatbot/character/characters";
+import { CHARACTER_LIST } from "../shared/chatbot-utils/character/characters";
 
 interface CustomQuestionGeneratorProps {
   open: boolean;

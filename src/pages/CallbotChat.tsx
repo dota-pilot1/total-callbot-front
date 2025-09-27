@@ -5,7 +5,7 @@ import { v4 as uuidv4 } from "uuid";
 import { Button } from "../components/ui";
 import Sidebar from "../components/Sidebar";
 import ChatSettingsPanel from "../components/ChatSettingsPanel";
-import { chatApi } from "../features/chatbot/messaging/api/chat";
+import { chatApi } from "../shared/chatbot-utils/messaging/api/chat";
 import type { ChatRoom } from "../shared/api/chat-types";
 import {
   MicrophoneIcon,
@@ -37,11 +37,11 @@ import {
   ArrowRightOnRectangleIcon,
 } from "@heroicons/react/24/outline";
 import { MicrophoneIcon as MicrophoneIconSolid } from "@heroicons/react/24/solid";
-import { voiceApi } from "../features/chatbot/voice/api/voice";
+import { voiceApi } from "../shared/chatbot-utils/voice/api/voice";
 import {
   connectRealtimeVoice,
   type VoiceConnection,
-} from "../features/chatbot/voice/lib/realtime";
+} from "../shared/chatbot-utils/voice/lib/realtime";
 import VoicePulse from "../components/VoicePulse";
 import {
   useState as useGlobalState,

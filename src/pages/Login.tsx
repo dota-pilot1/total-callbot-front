@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuthStore } from "../features/auth";
-import { EXAM_CHARACTERS } from "../features/chatbot/exam/examCharacters";
+import { EXAM_CHARACTERS } from "../shared/chatbot-utils/exam/examCharacters";
 import { PasswordInput } from "../components/ui/PasswordInput";
 import { ServiceCard } from "../components/ui/ServiceCard";
 

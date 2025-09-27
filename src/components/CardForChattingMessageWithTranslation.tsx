@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { useAuthStore } from "../features/auth";
-import { examApi } from "../features/chatbot/exam/api/exam";
+import { examApi } from "../shared/chatbot-utils/exam/api/exam";
 import { examArchiveApi } from "../features/role-play/api/examArchive";
 import {
   LanguageIcon,

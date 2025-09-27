@@ -15,21 +15,21 @@ import {
   ChatBubbleLeftRightIcon,
 } from "@heroicons/react/24/outline";
 // no solid icons needed currently
-import { useVoiceConnection } from "../../chatbot/voice";
-import { useChatMessages } from "../../chatbot/messaging";
+import { useVoiceConnection } from "../../../shared/chatbot-utils/voice";
+import { useChatMessages } from "../../../shared/chatbot-utils/messaging";
 import VoicePulse from "../../../components/VoicePulse";
 import MobileSettingsDropdown from "../../../components/MobileSettingsDropdown";
 // import SockJS from "sockjs-client";
 // import { Stomp } from "@stomp/stompjs";
 
 import MobileCharacterDialog from "../../../components/MobileCharacterDialog";
-import { CHARACTER_LIST } from "../../chatbot/character/characters";
+import { CHARACTER_LIST } from "../../../shared/chatbot-utils/character/characters";
 import {
   useCharacterStore,
   CHARACTER_PRESETS,
   VOICE_OPTIONS,
   useCharacterSelection,
-} from "../../chatbot/character";
+} from "../../../shared/chatbot-utils/character";
 import { useWebSocketStore } from "../../websocket/stores/useWebSocketStore";
 import MobileTranslationDialog from "../../../components/MobileTranslationDialog";
 import CustomQuestionGenerator from "../../../components/CustomQuestionGenerator";
@@ -37,9 +37,9 @@ import KoreanInputDialog from "../../../components/KoreanInputDialog";
 import CardForChattingMessageWithTranslation from "../../../components/CardForChattingMessageWithTranslation";
 import { MyConversationArchive } from "../../conversation-archive";
 
-import { useAudioSettings } from "../../chatbot/settings";
+import { useAudioSettings } from "../../../shared/chatbot-utils/settings";
 import ExamResultsSlideDown from "../../../components/ExamResultsSlideDown";
-import { useExamMode } from "../../chatbot/exam";
+import { useExamMode } from "../../../shared/chatbot-utils/exam";
 import { useToast } from "../../../components/ui/Toast";
 
 export default function CharacterChatbotMobilePage() {

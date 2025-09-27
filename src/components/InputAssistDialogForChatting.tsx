@@ -8,7 +8,7 @@ import {
   PlayIcon,
 } from "@heroicons/react/24/outline";
 import FullScreenSlideDialog from "./ui/FullScreenSlideDialog";
-import { examApi } from "../features/chatbot/exam/api/exam";
+import { examApi } from "../shared/chatbot-utils/exam/api/exam";
 
 interface SpeechRecognitionInstance {
   lang: string;
@@ -32,8 +32,8 @@ declare global {
   }
 }
 // TODO: GPT Realtime API 통합 예정
-// import { voiceApi } from "../features/chatbot/voice/api/voice";
-// import { connectRealtimeVoice, type VoiceConnection } from "../features/chatbot/voice/lib/realtime";
+// import { voiceApi } from "../shared/chatbot-utils/voice/api/voice";
+// import { connectRealtimeVoice, type VoiceConnection } from "../shared/chatbot-utils/voice/lib/realtime";
 
 // GPT 기반 연습장: Web Speech API (실시간 음성인식) + OpenAI TTS (음성합성)
 

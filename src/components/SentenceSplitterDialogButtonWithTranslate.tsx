@@ -8,7 +8,7 @@ import {
   PlayIcon,
   PauseIcon,
 } from "@heroicons/react/24/outline";
-import { examApi } from "../features/chatbot/exam/api/exam";
+import { examApi } from "../shared/chatbot-utils/exam/api/exam";
 import { useAuthStore } from "../features/auth";
 
 interface SentenceSplitterDialogButtonWithTranslateProps {

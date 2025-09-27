@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { XMarkIcon } from "@heroicons/react/24/outline";
-import { CHARACTER_LIST } from "../features/chatbot/character/characters";
+import { CHARACTER_LIST } from "../shared/chatbot-utils/character/characters";
 import { Button } from "./ui";
 
 export type CharacterOption = { id: string; name: string; emoji: string };

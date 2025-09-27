@@ -1,9 +1,9 @@
 import { useState, useRef, useCallback, useEffect } from "react";
-import { voiceApi } from "../../chatbot/voice/api/voice";
+import { voiceApi } from "../../../shared/chatbot-utils/voice/api/voice";
 import {
   connectRealtimeVoice,
   type VoiceConnection,
-} from "../../chatbot/voice/lib/realtime";
+} from "../../../shared/chatbot-utils/voice/lib/realtime";
 
 export interface UseVoiceToTextOptions {
   onTranscript?: (text: string, isFinal: boolean) => void;

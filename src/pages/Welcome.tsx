@@ -1,12 +1,14 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '../components/ui';
 import { ChatBubbleLeftRightIcon } from '@heroicons/react/24/outline';
+import { getChatbotHomeRoute } from '../lib/chatbotRoute';
 
 type Tab = 'chatbot' | 'chat';
 
 export default function Welcome() {
   const [tab, setTab] = useState<Tab>('chatbot');
+  const chatbotRoute = useMemo(getChatbotHomeRoute, []);
 
   return (
     <div className="min-h-screen bg-background">
@@ -72,7 +74,7 @@ export default function Welcome() {
             <div className="space-y-2">
               {tab === 'chatbot' ? (
                 <>
-                  <Link to="/chatbots" className="block w-full">
+                  <Link to={chatbotRoute} className="block w-full">
                     <Button className="w-full" size="lg" variant="outline">챗봇 둘러보기</Button>
                   </Link>
                   <Link to="/login" className="block w-full">

@@ -12,6 +12,7 @@ import {
   UsersIcon,
   ListBulletIcon,
 } from "@heroicons/react/24/outline";
+import { getChatbotHomeRoute } from "../lib/chatbotRoute";
 import { useToast } from "../components/ui/Toast";
 
 // 메시지 컴포넌트
@@ -193,7 +194,7 @@ export default function Chat() {
   const handleLeave = () => {
     disconnect();
     showToast(`${currentUserName}님이 채팅방에서 나갔습니다.`, "info", 1500);
-    navigate("/chatbots");
+    navigate(getChatbotHomeRoute());
   };
 
   return (

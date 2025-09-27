@@ -4,7 +4,7 @@ import {
   PauseIcon,
   DocumentTextIcon,
 } from "@heroicons/react/24/outline";
-import { examApi } from "../features/chatbot/exam/api/exam";
+import { examApi } from "../shared/chatbot-utils/exam/api/exam";
 import FullScreenSlideDialog from "./ui/FullScreenSlideDialog";
 import { useAuthStore } from "../features/auth";
 

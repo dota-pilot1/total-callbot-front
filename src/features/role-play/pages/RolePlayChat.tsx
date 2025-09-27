@@ -21,28 +21,28 @@ import {
   AcademicCapIcon,
   PlayIcon,
 } from "@heroicons/react/24/outline";
-import { useVoiceConnection } from "../../chatbot/voice";
-import { useChatMessages } from "../../chatbot/messaging";
-import { examApi } from "../../chatbot/exam/api/exam";
+import { useVoiceConnection } from "../../../shared/chatbot-utils/voice";
+import { useChatMessages } from "../../../shared/chatbot-utils/messaging";
+import { examApi } from "../../../shared/chatbot-utils/exam/api/exam";
 import VoicePulse from "../../../components/VoicePulse";
 import MobileSettingsDropdown from "../../../components/MobileSettingsDropdown";
 
-import { VOICE_OPTIONS } from "../../chatbot/character";
+import { VOICE_OPTIONS } from "../../../shared/chatbot-utils/character";
 import { useWebSocketStore } from "../../websocket/stores/useWebSocketStore";
 import MobileTranslationDialog from "../../../components/MobileTranslationDialog";
 import KoreanInputDialog from "../../../components/KoreanInputDialog";
 import { MyConversationArchive } from "../../conversation-archive";
 
-import { useAudioSettings } from "../../chatbot/settings";
+import { useAudioSettings } from "../../../shared/chatbot-utils/settings";
 import ExamResultsSlideDown from "../../../components/ExamResultsSlideDown";
-import { useExamMode } from "../../chatbot/exam";
+import { useExamMode } from "../../../shared/chatbot-utils/exam";
 import { useToast } from "../../../components/ui/Toast";
 import CardForChattingMessageWithTranslation from "@/components/CardForChattingMessageWithTranslation";
 import ExamCharacterDialog from "../../../components/ExamCharacterDialog";
 import {
   EXAM_CHARACTERS,
   type ExamCharacter,
-} from "../../chatbot/exam/examCharacters";
+} from "../../../shared/chatbot-utils/exam/examCharacters";
 
 const FALLBACK_EXAM_CHARACTER: ExamCharacter = {
   id: "airline-reservation-customer",

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "./ui";
-import { chatApi } from "../features/chatbot/messaging/api/chat";
+import { chatApi } from "../shared/chatbot-utils/messaging/api/chat";
 import type { ChatRoom } from "../shared/api/chat-types";
 
 interface ChatbotInfo {

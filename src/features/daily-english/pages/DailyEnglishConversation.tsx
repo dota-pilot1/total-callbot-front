@@ -14,19 +14,19 @@ import {
   ChartBarIcon,
   LanguageIcon,
 } from "@heroicons/react/24/outline";
-import { useVoiceConnection } from "../../chatbot/voice";
-import { useChatMessages } from "../../chatbot/messaging";
-import { useConversationStore } from "../../chatbot/messaging/stores/conversationStore";
+import { useVoiceConnection } from "../../../shared/chatbot-utils/voice";
+import { useChatMessages } from "../../../shared/chatbot-utils/messaging";
+import { useConversationStore } from "../../../shared/chatbot-utils/messaging/stores/conversationStore";
 import VoicePulse from "../../../components/VoicePulse";
 import MobileSettingsDropdown from "../../../components/MobileSettingsDropdown";
 
-import { VOICE_OPTIONS } from "../../chatbot/character";
+import { VOICE_OPTIONS } from "../../../shared/chatbot-utils/character";
 import { useWebSocketStore } from "../../websocket/stores/useWebSocketStore";
 import KoreanInputDialog from "../../../components/KoreanInputDialog";
 import CardForChattingMessageWithTranslation from "../../../components/CardForChattingMessageWithTranslation";
 import { MyConversationArchive } from "../../conversation-archive";
 
-import { useAudioSettings } from "../../chatbot/settings";
+import { useAudioSettings } from "../../../shared/chatbot-utils/settings";
 import ExamResultsSlideDown from "../../../components/ExamResultsSlideDown";
 import { useToast } from "../../../components/ui/Toast";
 import ConversationEvaluationDialog from "../../../components/ConversationEvaluationDialog";
@@ -577,7 +577,9 @@ Start speaking now!`;
       console.log("📤 평가 프롬프트 전송:", evaluationPrompt);
 
       // examApi를 사용해서 평가 요청
-      const { examApi } = await import("../../chatbot/exam/api/exam");
+      const { examApi } = await import(
+        "../../../shared/chatbot-utils/exam/api/exam"
+      );
 
       let response;
       try {

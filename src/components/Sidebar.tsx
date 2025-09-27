@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { useChatStore } from "../features/chatbot/messaging/model/chatStore";
+import { useChatStore } from "../shared/chatbot-utils/messaging/model/chatStore";
 import { ChevronLeftIcon } from "@heroicons/react/24/outline";
 import { categories } from "./data/categories";
 import { chatbots } from "./data/chatbots";
+import { getChatbotHomeRoute } from "../lib/chatbotRoute";
 
 interface SidebarProps {
   collapsed: boolean;
@@ -16,6 +17,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const {} = useChatStore();
   const [openCategories, setOpenCategories] = useState<string[]>([]);
   const [selectedBot, setSelectedBot] = useState<string | null>(null);
+  const chatbotHomeRoute = useMemo(getChatbotHomeRoute, []);
 
   const toggleCategory = (categoryId: string) => {
     if (collapsed) {
@@ -215,7 +217,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
             className="p-4 border-t border-border"
           >
             <Link
-              to="/chatbots"
+              to={chatbotHomeRoute}
               className="flex items-center justify-center w-full px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted/30 rounded-md transition-colors border border-transparent hover:border-border"
             >
               📋 챗봇 목록으로

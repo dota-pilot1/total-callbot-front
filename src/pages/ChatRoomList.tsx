@@ -11,6 +11,7 @@ import {
   MagnifyingGlassIcon,
   ClockIcon,
 } from "@heroicons/react/24/outline";
+import { getChatbotHomeRoute } from "../lib/chatbotRoute";
 
 interface CreateRoomModalProps {
   isOpen: boolean;
@@ -265,7 +266,7 @@ export default function ChatRoomList() {
           <div className="flex items-center space-x-3">
             <Button
               variant="outline"
-              onClick={() => navigate("/chatbots")}
+              onClick={() => navigate(getChatbotHomeRoute())}
               className="flex items-center space-x-1"
             >
               <ArrowLeftIcon className="h-4 w-4" />

@@ -8,7 +8,6 @@ import {
 import Welcome from "./pages/Welcome";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
-import { ChatbotSelector } from "./features/chatbot";
 import CallbotChat from "./pages/CallbotChat";
 import { CharacterChatbotMobilePage } from "./features/character-chatbot-mobile";
 import { CharacterChatbotWebPage } from "./features/character-chatbot-web";
@@ -81,7 +80,6 @@ function ProtectedApp() {
     "/character-chatbot-web",
     "/role-play",
     "/chat",
-    "/chatbots",
     "/quiz",
     "/quiz-list",
     "/exam-management",
@@ -125,7 +123,6 @@ function ProtectedApp() {
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/welcome" element={<Welcome />} />
-        <Route path="/chatbots" element={<ChatbotSelector />} />
         <Route
           path="/character-chatbot-mobile"
           element={<CharacterChatbotMobilePage />}

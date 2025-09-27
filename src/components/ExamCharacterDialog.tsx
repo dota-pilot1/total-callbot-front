@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { CheckCircleIcon, ArrowPathIcon } from "@heroicons/react/24/outline";
 import { Button } from "./ui";
-import { EXAM_CHARACTERS } from "../features/chatbot/exam/examCharacters";
+import { EXAM_CHARACTERS } from "../shared/chatbot-utils/exam/examCharacters";
 import FullScreenSlideDialog from "./ui/FullScreenSlideDialog";
 
 interface ExamCharacterDialogProps {

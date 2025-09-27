@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { XMarkIcon } from "@heroicons/react/24/outline";
-import { examApi, type SampleAnswer } from "../features/chatbot/exam/api/exam";
+import { examApi, type SampleAnswer } from "../shared/chatbot-utils/exam/api/exam";
 
 interface MobileModelAnswerDialogProps {
   open: boolean;
