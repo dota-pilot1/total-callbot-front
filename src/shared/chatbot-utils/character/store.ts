@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { CHARACTER_LIST } from "./characters";
 
 export type GenderOption = "male" | "female";
 export type VoiceOption = "verse" | "alloy" | "sage";
@@ -28,11 +29,31 @@ interface CharacterState {
   }) => void;
 }
 
+const CHARACTER_META_MAP: Record<string, { id: string; name: string; emoji: string }> =
+  CHARACTER_LIST.reduce((acc, character) => {
+    acc[character.id] = {
+      id: character.id,
+      name: character.name,
+      emoji: character.emoji,
+    };
+    return acc;
+  }, {} as Record<string, { id: string; name: string; emoji: string }>);
+
+const DEFAULT_CHARACTER =
+  CHARACTER_META_MAP["gpt"] ||
+  (CHARACTER_LIST.length > 0
+    ? {
+        id: CHARACTER_LIST[0].id,
+        name: CHARACTER_LIST[0].name,
+        emoji: CHARACTER_LIST[0].emoji,
+      }
+    : { id: "gpt", name: "GPT", emoji: "🤖" });
+
 export const useCharacterStore = create<CharacterState>()(
   persist(
     (set) => ({
-      // 기본값: GPT
-      personaCharacter: { id: "gpt", name: "GPT", emoji: "🤖" },
+      // 기본값: 캐릭터 목록의 기본 캐릭터 (기본적으로 GPT)
+      personaCharacter: DEFAULT_CHARACTER,
       personaScenario: "",
       personaGender: "male",
       selectedVoice: "alloy",
@@ -43,40 +64,8 @@ export const useCharacterStore = create<CharacterState>()(
       setSelectedVoice: (voice) => set({ selectedVoice: voice }),
 
       setCharacterSettings: (settings) => {
-        const mapChar: Record<
-          string,
-          { id: string; name: string; emoji: string }
-        > = {
-          gpt: { id: "gpt", name: "GPT", emoji: "🤖" },
-          linus_torvalds: {
-            id: "linus_torvalds",
-            name: "리눅스 토발즈",
-            emoji: "🐧",
-          },
-          ronnie_coleman: {
-            id: "ronnie_coleman",
-            name: "로니 콜먼",
-            emoji: "💪",
-          },
-          buddha: { id: "buddha", name: "부처", emoji: "🧘" },
-          jesus: { id: "jesus", name: "예수", emoji: "✝️" },
-          santa: { id: "santa", name: "산타클로스", emoji: "🎅" },
-          lee_jaeyong: { id: "lee_jaeyong", name: "이재용", emoji: "📱" },
-          kim_jongun: { id: "kim_jongun", name: "김정은", emoji: "🚀" },
-          nietzsche: { id: "nietzsche", name: "니체", emoji: "⚡" },
-          schopenhauer: { id: "schopenhauer", name: "쇼펜하우어", emoji: "🌑" },
-          xi_jinping: { id: "xi_jinping", name: "시진핑", emoji: "🇨🇳" },
-          hitler: { id: "hitler", name: "히틀러", emoji: "📢" },
-          peter_thiel: { id: "peter_thiel", name: "피터 틸", emoji: "🦄" },
-          elon_musk: { id: "elon_musk", name: "일론 머스크", emoji: "🚀" },
-          warren_buffett: {
-            id: "warren_buffett",
-            name: "워렌 버핏",
-            emoji: "💰",
-          },
-        };
-
-        const newCharacter = mapChar[settings.characterId] || mapChar["gpt"];
+        const newCharacter =
+          CHARACTER_META_MAP[settings.characterId] || DEFAULT_CHARACTER;
 
         set({
           personaCharacter: newCharacter,

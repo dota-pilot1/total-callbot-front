@@ -30,6 +30,7 @@ export interface UseVoiceConnectionReturn {
   // 액션들
   startVoice: () => Promise<void>;
   stopVoice: () => void;
+  updatePersona: () => void; // 실시간 페르소나 업데이트 추가
 
   setVoiceEnabled: (enabled: boolean) => void;
   sendVoiceMessage: (message: string) => void;
@@ -88,6 +89,23 @@ export const useVoiceConnection = (
 
   // AI 페르소나 지시사항 생성
   const buildPersonaInstructions = () => {
+    console.log("🎭 [buildPersonaInstructions] 현재 캐릭터 상태:");
+    console.log("  - personaCharacter:", personaCharacter);
+    console.log("  - personaGender:", personaGender);
+    console.log("  - selectedVoice:", selectedVoice);
+    console.log(
+      "  - personaCharacter.personality:",
+      personaCharacter?.personality,
+    );
+    console.log(
+      "  - personaCharacter.background:",
+      personaCharacter?.background,
+    );
+    console.log(
+      "  - personaCharacter.firstMessage:",
+      personaCharacter?.firstMessage,
+    );
+
     const genderNote =
       personaGender === "male"
         ? "남성적인 페르소나를 사용하세요. "
@@ -111,18 +129,26 @@ export const useVoiceConnection = (
 
     // 복잡한 캐릭터별 지침 제거됨
 
-    return (
+    const finalInstructions =
       `나는 ${personaCharacter.name} (${personaCharacter.emoji})입니다. ${genderNote}${voiceNote}` +
       firstMessageNote +
       characterEmphasis +
       languageNote +
-      `나는 항상 캐릭터 역할을 유지합니다`
-    );
+      `나는 항상 캐릭터 역할을 유지합니다`;
+
+    console.log("🎭 [buildPersonaInstructions] 생성된 지시사항:");
+    console.log(finalInstructions);
+
+    return finalInstructions;
   };
 
   // 음성 연결 시작
   const startVoice = async () => {
-    if (voiceConn) return;
+    console.log("🎭 [startVoice] 음성 연결 시작 호출됨");
+    if (voiceConn) {
+      console.log("🎭 [startVoice] 이미 연결되어 있어서 종료");
+      return;
+    }
 
     try {
       const session = await voiceApi.createSession({
@@ -235,44 +261,69 @@ export const useVoiceConnection = (
 
       // 세션 기본 퍼소나 업데이트
       try {
+        const instructions = buildPersonaInstructions();
+        const sessionConfig = {
+          type: "session.update",
+          session: {
+            instructions: instructions,
+            turn_detection: {
+              type: "server_vad",
+              threshold: 0.6, // 더 확실한 음성만 감지 (잡음 무시)
+              prefix_padding_ms: 300, // 음성 시작 전 여유시간
+              silence_duration_ms: 800, // 침묵 800ms 후 턴 종료 감지
+              create_response: false, // 자동 응답 비활성화 (수동 제어)
+            },
+          },
+        };
+
+        console.log("🎭 [startVoice] OpenAI 세션 설정 전송:");
+        console.log(JSON.stringify(sessionConfig, null, 2));
+
         if (conn.dc && conn.dc.readyState === "open") {
-          conn.dc.send(
-            JSON.stringify({
-              type: "session.update",
-              session: {
-                instructions: buildPersonaInstructions(),
-                turn_detection: {
-                  type: "server_vad",
-                  threshold: 0.6, // 더 확실한 음성만 감지 (잡음 무시)
-                  prefix_padding_ms: 300, // 음성 시작 전 여유시간
-                  silence_duration_ms: 800, // 침묵 800ms 후 턴 종료 감지
-                  create_response: false, // 자동 응답 비활성화 (수동 제어)
-                },
-              },
-            }),
-          );
+          conn.dc.send(JSON.stringify(sessionConfig));
+          console.log("🎭 [startVoice] 즉시 세션 업데이트 전송 완료");
         } else {
+          console.log(
+            "🎭 [startVoice] 데이터 채널 대기 중, open 이벤트에서 전송 예정",
+          );
           conn.dc?.addEventListener("open", () => {
             try {
-              conn.dc?.send(
-                JSON.stringify({
-                  type: "session.update",
-                  session: {
-                    instructions: buildPersonaInstructions(),
-                    turn_detection: {
-                      type: "server_vad",
-                      threshold: 0.6, // 더 확실한 음성만 감지 (잡음 무시)
-                      prefix_padding_ms: 300, // 음성 시작 전 여유시간
-                      silence_duration_ms: 800, // 침묵 800ms 후 턴 종료 감지
-                      create_response: false, // 자동 응답 비활성화 (수동 제어)
-                    },
-                  },
-                }),
+              console.log(
+                "🎭 [startVoice] open 이벤트 발생 - 새로운 세션 설정 생성",
               );
-            } catch {}
+              const newInstructions = buildPersonaInstructions();
+              const newSessionConfig = {
+                type: "session.update",
+                session: {
+                  instructions: newInstructions,
+                  turn_detection: {
+                    type: "server_vad",
+                    threshold: 0.6,
+                    prefix_padding_ms: 300,
+                    silence_duration_ms: 800,
+                    create_response: false,
+                  },
+                },
+              };
+
+              console.log("🎭 [startVoice] open 이벤트에서 새로 생성한 설정:");
+              console.log(JSON.stringify(newSessionConfig, null, 2));
+
+              conn.dc?.send(JSON.stringify(newSessionConfig));
+              console.log(
+                "🎭 [startVoice] open 이벤트에서 세션 업데이트 전송 완료",
+              );
+            } catch (e) {
+              console.error(
+                "🎭 [startVoice] open 이벤트에서 세션 업데이트 실패:",
+                e,
+              );
+            }
           });
         }
-      } catch {}
+      } catch (e) {
+        console.error("🎭 [startVoice] 세션 업데이트 준비 실패:", e);
+      }
     } catch (e) {
       console.error("음성 연결 실패:", e);
     }
@@ -287,6 +338,41 @@ export const useVoiceConnection = (
     setIsRecording(false);
     setIsListening(false);
     setIsResponding(false);
+  };
+
+  // 실시간 페르소나 업데이트
+  const updatePersona = () => {
+    try {
+      if (voiceConn?.dc && voiceConn.dc.readyState === "open") {
+        const newInstructions = buildPersonaInstructions();
+        console.log(
+          "🎭 [페르소나 업데이트] 새로운 지시사항 전송:",
+          newInstructions,
+        );
+
+        voiceConn.dc.send(
+          JSON.stringify({
+            type: "session.update",
+            session: {
+              instructions: newInstructions,
+              turn_detection: {
+                type: "server_vad",
+                threshold: 0.6,
+                prefix_padding_ms: 300,
+                silence_duration_ms: 800,
+                create_response: false,
+              },
+            },
+          }),
+        );
+
+        console.log("🎭 [페르소나 업데이트] OpenAI 세션 업데이트 완료");
+      } else {
+        console.warn("🎭 [페르소나 업데이트] 음성 연결이 준비되지 않음");
+      }
+    } catch (e) {
+      console.error("🎭 [페르소나 업데이트] 실패:", e);
+    }
   };
 
   // 텍스트 메시지를 음성 연결로 전송
@@ -338,6 +424,7 @@ export const useVoiceConnection = (
     // 액션들
     startVoice,
     stopVoice,
+    updatePersona,
     setVoiceEnabled,
     sendVoiceMessage,
   };

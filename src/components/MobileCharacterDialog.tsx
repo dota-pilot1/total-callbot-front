@@ -2,11 +2,14 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { XMarkIcon } from "@heroicons/react/24/outline";
 import { CHARACTER_LIST } from "../shared/chatbot-utils/character/characters";
+import {
+  type GenderOption,
+  type VoiceOption,
+} from "../shared/chatbot-utils/character/store";
 import { Button } from "./ui";
 
 export type CharacterOption = { id: string; name: string; emoji: string };
 export type ScenarioOption = { id: string; name: string; desc: string };
-export type GenderOption = "male" | "female";
 export type ExamTypeOption = "none" | "general" | "mission" | "coding";
 
 // 공통 캐릭터 버튼 컴포넌트
@@ -52,15 +55,13 @@ interface MobileCharacterDialogProps {
     characterId: string;
     scenarioId?: string;
     gender: GenderOption;
-    voice?: "verse" | "alloy" | "sage";
-    examType?: ExamTypeOption;
+    voice: VoiceOption;
   };
   onConfirm: (v: {
     characterId: string;
     scenarioId?: string;
     gender: GenderOption;
-    voice: "verse" | "alloy" | "sage";
-    examType: ExamTypeOption;
+    voice: VoiceOption;
   }) => void;
 }
 
@@ -109,12 +110,8 @@ export default function MobileCharacterDialog({
   );
   const [scenarioId, setScenarioId] = useState<string>(value?.scenarioId || "");
   const [gender, setGender] = useState<GenderOption>(value?.gender || "male");
-  const [voice, setVoice] = useState<"verse" | "alloy" | "sage">(
-    value?.voice || "verse",
-  );
-  const [examType, setExamType] = useState<ExamTypeOption>(
-    value?.examType || "none",
-  );
+  const [voice, setVoice] = useState<VoiceOption>(value?.voice || "alloy");
+  const [examType, setExamType] = useState<ExamTypeOption>("none");
 
   // 카테고리별 접기/열기 상태
   const [expandedSections, setExpandedSections] = useState({
@@ -129,8 +126,8 @@ export default function MobileCharacterDialog({
     setCharacterId(value?.characterId || ALL_CHARACTERS[0].id);
     setScenarioId(value?.scenarioId || "");
     setGender(value?.gender || "male");
-    setVoice(value?.voice || "verse");
-  }, [open]);
+    setVoice(value?.voice || "alloy");
+  }, [open, value]);
 
   const toggleSection = (section: keyof typeof expandedSections) => {
     setExpandedSections((prev) => ({
@@ -140,7 +137,13 @@ export default function MobileCharacterDialog({
   };
 
   const confirm = () => {
-    onConfirm({ characterId, scenarioId, gender, voice, examType });
+    console.log("🎭 [MobileCharacterDialog] 캐릭터 확인 버튼 클릭:", {
+      characterId,
+      scenarioId,
+      gender,
+      voice,
+    });
+    onConfirm({ characterId, scenarioId, gender, voice });
     onClose();
   };
 

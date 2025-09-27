@@ -27,7 +27,10 @@ export interface UseCharacterSelectionReturn {
   closeCharacterDialog: () => void;
 
   // 캐릭터 설정 적용
-  applyCharacterSettings: (settings: CharacterSelectionValue) => void;
+  applyCharacterSettings: (
+    settings: CharacterSelectionValue,
+    onComplete?: () => void,
+  ) => void;
 
   // 현재 다이얼로그에 표시할 값
   getCurrentDialogValue: () => CharacterSelectionValue;
@@ -51,32 +54,39 @@ export const useCharacterSelection = (): UseCharacterSelectionReturn => {
     personaCharacter,
     personaScenario,
     personaGender,
+    selectedVoice: storedVoice,
     setCharacterSettings,
   } = useCharacterStore();
 
   // 로컬 캐릭터/음성 선택 상태
-  const [selectedCharacterId, setSelectedCharacterId] = useState<
-    (typeof CHARACTER_PRESETS)[number]["id"]
-  >(CHARACTER_PRESETS[0].id);
-
-  const [selectedVoice, setSelectedVoice] = useState<string>(
-    CHARACTER_PRESETS[0].defaultVoice,
+  const resolveCharacterId = useCallback(
+    (characterId: string): (typeof CHARACTER_PRESETS)[number]["id"] => {
+      const preset = CHARACTER_PRESETS.find((c) => c.id === characterId);
+      return (preset?.id ||
+        CHARACTER_PRESETS[0].id) as (typeof CHARACTER_PRESETS)[number]["id"];
+    },
+    [],
   );
+
+  const [selectedCharacterId, setSelectedCharacterIdState] = useState<
+    (typeof CHARACTER_PRESETS)[number]["id"]
+  >(() => resolveCharacterId(personaCharacter.id));
+
+  const [selectedVoice, setSelectedVoiceState] = useState<string>(storedVoice);
 
   // 캐릭터 다이얼로그 상태
   const [characterDialogOpen, setCharacterDialogOpen] = useState(false);
 
   /**
-   * 캐릭터 변경 시 기본 음성 동기화
-   * CHARACTER_PRESETS에서 해당 캐릭터의 기본 음성으로 자동 설정
+   * zustand store 값이 변경되면 로컬 상태 동기화
    */
   useEffect(() => {
-    const character =
-      CHARACTER_PRESETS.find(
-        (c: (typeof CHARACTER_PRESETS)[number]) => c.id === selectedCharacterId,
-      ) || CHARACTER_PRESETS[0];
-    setSelectedVoice(character.defaultVoice);
-  }, [selectedCharacterId]);
+    setSelectedCharacterIdState(resolveCharacterId(personaCharacter.id));
+  }, [personaCharacter.id, resolveCharacterId]);
+
+  useEffect(() => {
+    setSelectedVoiceState(storedVoice);
+  }, [storedVoice]);
 
   /**
    * 다이얼로그 열기
@@ -90,6 +100,25 @@ export const useCharacterSelection = (): UseCharacterSelectionReturn => {
    */
   const closeCharacterDialog = useCallback(() => {
     setCharacterDialogOpen(false);
+  }, []);
+
+  /**
+   * 캐릭터 선택 시 로컬 상태 업데이트 (미리보기 목적)
+   * 새로운 캐릭터 기본 음성으로 자동 전환
+   */
+  const setSelectedCharacterId = useCallback(
+    (id: (typeof CHARACTER_PRESETS)[number]["id"]) => {
+      setSelectedCharacterIdState(id);
+      const preset = CHARACTER_PRESETS.find((c) => c.id === id);
+      if (preset?.defaultVoice) {
+        setSelectedVoiceState(preset.defaultVoice);
+      }
+    },
+    [],
+  );
+
+  const setSelectedVoice = useCallback((voice: string) => {
+    setSelectedVoiceState(voice);
   }, []);
 
   /**
@@ -110,10 +139,11 @@ export const useCharacterSelection = (): UseCharacterSelectionReturn => {
    * 1. zustand store 업데이트
    * 2. 로컬 음성 상태 업데이트
    * 3. 다이얼로그 닫기
+   * 4. 음성 연결 재시작 콜백 호출
    */
   const applyCharacterSettings = useCallback(
-    (settings: CharacterSelectionValue) => {
-      console.log("Setting new character via store:", settings);
+    (settings: CharacterSelectionValue, onComplete?: () => void) => {
+      console.log("🎭 [캐릭터 변경] 새로운 캐릭터 적용 시작:", settings);
 
       // zustand store를 통해 캐릭터 설정 업데이트
       setCharacterSettings({
@@ -124,12 +154,23 @@ export const useCharacterSelection = (): UseCharacterSelectionReturn => {
       });
 
       // 로컬 selectedVoice 상태도 업데이트
-      setSelectedVoice(settings.voice);
+      setSelectedCharacterIdState(resolveCharacterId(settings.characterId));
+      setSelectedVoiceState(settings.voice);
+
+      console.log(
+        "🎭 [캐릭터 변경] store 업데이트 완료, 상태 동기화 대기 중...",
+      );
 
       // 다이얼로그 닫기
       closeCharacterDialog();
+
+      // 상태 동기화를 위한 지연 후 완료 콜백 호출
+      setTimeout(() => {
+        console.log("🎭 [캐릭터 변경] 상태 동기화 완료, 음성 재시작 준비");
+        onComplete?.();
+      }, 100); // 짧은 지연으로 상태 동기화 보장
     },
-    [setCharacterSettings, closeCharacterDialog],
+    [setCharacterSettings, closeCharacterDialog, resolveCharacterId],
   );
 
   return {
