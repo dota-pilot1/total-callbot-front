@@ -24,10 +24,10 @@ import MobileCharacterDialog from "../../../components/MobileCharacterDialog";
 import VoicePulse from "../../../components/VoicePulse";
 import CardForChattingMessageWithTranslation from "../../../components/CardForChattingMessageWithTranslation";
 import { useWebSocketStore } from "../../websocket/stores/useWebSocketStore";
+import { apiClient } from "../../../shared/api/client";
 
 export default function CharacterChatbotMobilePage() {
-  const { logout, getUser } = useAuthStore();
-  const user = getUser();
+  const { logout } = useAuthStore();
   const navigate = useNavigate();
 
   // WebSocket Store (참가자 수 표시용)
@@ -81,6 +81,8 @@ export default function CharacterChatbotMobilePage() {
   const [newMessage, setNewMessage] = useState("");
   const [isIMEComposing, setIsIMEComposing] = useState(false);
   const [suggestLoading, setSuggestLoading] = useState(false);
+  const [showTranslation, setShowTranslation] = useState(false);
+  const [translation, setTranslation] = useState("");
 
   // 대화 시작/중단 처리
   const handleStartConversation = async () => {
@@ -106,29 +108,111 @@ export default function CharacterChatbotMobilePage() {
     addUserMessage(text);
     setNewMessage("");
 
+    // 번역 숨기기
+    setShowTranslation(false);
+
     // 음성 연결을 통해 전송
     if (isConnected) {
       sendTextMessage(text);
     }
   };
 
-  // AI 제안 생성 (임시 구현)
+  // AI 자동 완성 기능
   const suggestReply = async () => {
     setSuggestLoading(true);
     try {
-      // 간단한 제안 메시지들
-      const suggestions = [
-        "Tell me about yourself",
-        "What's your advice for beginners?",
-        "Share your experience with me",
-        "What motivates you the most?",
-        "How did you start your journey?",
-      ];
-      const randomSuggestion =
-        suggestions[Math.floor(Math.random() * suggestions.length)];
-      setNewMessage(randomSuggestion);
+      // 캐릭터와 최근 대화 맥락을 고려한 AI 제안 생성
+      const recentMessages = messages.slice(-3); // 최근 3개 메시지
+      const conversationContext = recentMessages
+        .map((msg) => `${msg.sender}: ${msg.message}`)
+        .join("\n");
+
+      const prompt = `You are having a conversation with ${settings.character.name} (${settings.character.personality}).
+Based on this recent conversation context:
+${conversationContext}
+
+Generate a natural, engaging English response or question that would be appropriate to continue this conversation.
+Keep it conversational, friendly, and relevant to ${settings.character.name}'s character.
+Response should be 1-2 sentences maximum.`;
+
+      const response = await apiClient.post("/chat/ai-suggestion", {
+        prompt: prompt,
+        maxTokens: 50,
+      });
+
+      let suggestedText = "";
+
+      if (response.data && response.data.suggestion) {
+        suggestedText = response.data.suggestion.trim();
+      } else {
+        // Fallback to character-specific suggestions
+        const characterSuggestions = [
+          `Tell me more about your ${settings.character.personality.toLowerCase()} side`,
+          "What's been on your mind lately?",
+          "Share something interesting with me",
+          "What advice would you give me?",
+          "How do you see the world?",
+        ];
+        suggestedText =
+          characterSuggestions[
+            Math.floor(Math.random() * characterSuggestions.length)
+          ];
+      }
+
+      setNewMessage(suggestedText);
+
+      // 간단한 번역 제공
+      const translateText = (text: string): string => {
+        // 영어 → 한국어 간단 번역
+        const translations: { [key: string]: string } = {
+          "What makes you unique?": "당신을 독특하게 만드는 것은 무엇인가요?",
+          "Tell me about yourself": "자신에 대해 말해주세요",
+          "What's your story?": "당신의 이야기는 무엇인가요?",
+          "Share your thoughts with me": "당신의 생각을 저와 공유해주세요",
+          "How are you feeling today?": "오늘 기분이 어떠세요?",
+          "What's been on your mind lately?":
+            "최근에 무엇을 생각하고 계셨나요?",
+          "Share something interesting with me":
+            "흥미로운 것을 저와 공유해주세요",
+          "What advice would you give me?": "저에게 어떤 조언을 해주시겠어요?",
+          "How do you see the world?": "세상을 어떻게 보시나요?",
+        };
+
+        return translations[text] || `[한국어 번역] ${text}`;
+      };
+
+      setTranslation(translateText(suggestedText));
+      setShowTranslation(true);
     } catch (error) {
       console.error("AI 제안 생성 실패:", error);
+      // Fallback suggestions
+      const fallbackSuggestions = [
+        "Tell me about yourself",
+        "What's your story?",
+        "Share your thoughts with me",
+        "What makes you unique?",
+        "How are you feeling today?",
+      ];
+      const randomSuggestion =
+        fallbackSuggestions[
+          Math.floor(Math.random() * fallbackSuggestions.length)
+        ];
+      setNewMessage(randomSuggestion);
+
+      // 간단한 번역 제공
+      const translateText = (text: string): string => {
+        const translations: { [key: string]: string } = {
+          "Tell me about yourself": "자신에 대해 말해주세요",
+          "What's your story?": "당신의 이야기는 무엇인가요?",
+          "Share your thoughts with me": "당신의 생각을 저와 공유해주세요",
+          "What makes you unique?": "당신을 독특하게 만드는 것은 무엇인가요?",
+          "How are you feeling today?": "오늘 기분이 어떠세요?",
+        };
+        return translations[text] || `[한국어 번역] ${text}`;
+      };
+
+      setTranslation(translateText(randomSuggestion));
+      setShowTranslation(true);
     } finally {
       setSuggestLoading(false);
     }
@@ -389,64 +473,97 @@ export default function CharacterChatbotMobilePage() {
 
       {/* 입력 영역 */}
       {isConnected && (
-        <div className="bg-card border-t border-border p-4 flex-shrink-0">
-          <div className="flex items-center space-x-2">
-            {/* 왼쪽 미니 버튼들 */}
-            <div className="flex flex-col space-y-1">
-              <Button
-                onClick={suggestReply}
-                variant="outline"
-                size="sm"
-                className={`w-8 h-8 p-0 ${suggestLoading ? "animate-pulse" : ""}`}
-                title="AI 제안"
-                disabled={suggestLoading}
-              >
-                <SparklesIcon className="h-3 w-3" />
-              </Button>
+        <div className="bg-card border-t border-border flex-shrink-0">
+          {/* 번역 영역 */}
+          {showTranslation && (
+            <div className="px-4 py-3 bg-blue-50/50 border-b border-blue-200">
+              <div className="flex items-start gap-3">
+                <LanguageIcon className="h-4 w-4 text-blue-600 mt-1 flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium text-blue-700 mb-1">
+                    한글 번역
+                  </p>
+                  <p className="text-sm text-blue-800 leading-relaxed">
+                    {translation || "번역을 가져올 수 없습니다."}
+                  </p>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowTranslation(false)}
+                  className="h-6 w-6 p-0 text-blue-600 hover:text-blue-700"
+                >
+                  ×
+                </Button>
+              </div>
             </div>
+          )}
 
-            {/* 텍스트 입력 */}
-            <textarea
-              rows={3}
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              onCompositionStart={() => setIsIMEComposing(true)}
-              onCompositionEnd={() => setIsIMEComposing(false)}
-              onKeyDown={(e) => {
-                const anyEvt = e.nativeEvent as any;
-                const composing =
-                  isIMEComposing ||
-                  anyEvt?.isComposing ||
-                  anyEvt?.keyCode === 229;
-                if (
-                  e.key === "Enter" &&
-                  !e.shiftKey &&
-                  !composing &&
-                  !suggestLoading
-                ) {
-                  e.preventDefault();
-                  handleSendMessage();
+          <div className="p-4">
+            <div className="flex items-center space-x-2">
+              {/* 왼쪽 미니 버튼들 */}
+              <div className="flex flex-col space-y-1">
+                <Button
+                  onClick={suggestReply}
+                  variant="outline"
+                  size="sm"
+                  className={`w-8 h-8 p-0 ${suggestLoading ? "animate-pulse" : ""}`}
+                  title="AI 제안"
+                  disabled={suggestLoading}
+                >
+                  <SparklesIcon className="h-3 w-3" />
+                </Button>
+              </div>
+
+              {/* 텍스트 입력 */}
+              <textarea
+                rows={3}
+                value={newMessage}
+                onChange={(e) => {
+                  setNewMessage(e.target.value);
+                  // 텍스트 변경 시 번역 숨기기 (suggestLoading이 아닐 때만)
+                  if (showTranslation && !suggestLoading) {
+                    setShowTranslation(false);
+                  }
+                }}
+                onCompositionStart={() => setIsIMEComposing(true)}
+                onCompositionEnd={() => setIsIMEComposing(false)}
+                onKeyDown={(e) => {
+                  const anyEvt = e.nativeEvent as any;
+                  const composing =
+                    isIMEComposing ||
+                    anyEvt?.isComposing ||
+                    anyEvt?.keyCode === 229;
+                  if (
+                    e.key === "Enter" &&
+                    !e.shiftKey &&
+                    !composing &&
+                    !suggestLoading
+                  ) {
+                    e.preventDefault();
+                    handleSendMessage();
+                  }
+                }}
+                placeholder={
+                  suggestLoading ? "AI 응답 생성 중…" : "메시지를 입력하세요..."
                 }
-              }}
-              placeholder={
-                suggestLoading ? "AI 응답 생성 중…" : "메시지를 입력하세요..."
-              }
-              className="flex-1 px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring resize-none text-[13px] md:text-sm placeholder:text-muted-foreground"
-              style={{ minHeight: "4.5rem" }}
-            />
+                className="flex-1 px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring resize-none text-[13px] md:text-sm placeholder:text-muted-foreground"
+                style={{ minHeight: "4.5rem" }}
+              />
 
-            {/* 오른쪽 미니 버튼들 */}
-            <div className="flex flex-col space-y-1">
-              <Button
-                onClick={handleSendMessage}
-                disabled={!newMessage.trim() || suggestLoading}
-                variant="outline"
-                size="sm"
-                className="w-8 h-8 p-0"
-                title="전송"
-              >
-                <PaperAirplaneIcon className="h-3 w-3" />
-              </Button>
+              {/* 오른쪽 미니 버튼들 */}
+              <div className="flex flex-col space-y-1">
+                <Button
+                  onClick={handleSendMessage}
+                  disabled={!newMessage.trim() || suggestLoading}
+                  variant="outline"
+                  size="sm"
+                  className="w-8 h-8 p-0"
+                  title="전송"
+                >
+                  <PaperAirplaneIcon className="h-3 w-3" />
+                </Button>
+              </div>
             </div>
           </div>
         </div>

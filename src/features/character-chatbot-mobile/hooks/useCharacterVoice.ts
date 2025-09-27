@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, type RefObject } from "react";
 import { voiceApi } from "../../../shared/chatbot-utils/voice/api/voice";
 import {
   connectRealtimeVoice,
@@ -28,7 +28,7 @@ export interface UseCharacterVoiceReturn {
   sendTextMessage: (message: string) => void;
 
   // 오디오 참조
-  audioRef: React.RefObject<HTMLAudioElement>;
+  audioRef: RefObject<HTMLAudioElement | null>;
 }
 
 /**

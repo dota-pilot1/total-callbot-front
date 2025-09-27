@@ -1,6 +1,5 @@
 import { useState, useRef } from "react";
 import { useAuthStore } from "../features/auth";
-import { examApi } from "../shared/chatbot-utils/exam/api/exam";
 import { examArchiveApi } from "../features/role-play/api/examArchive";
 import {
   LanguageIcon,
@@ -58,26 +57,25 @@ export default function CardForChattingMessageWithTranslation({
       const sourceLanguage = detectLanguage(text);
       const targetLanguage = sourceLanguage === "ko" ? "en" : "ko";
 
-      // examApi의 getSampleAnswers를 사용해서 번역 요청
-      const translationQuestion =
-        sourceLanguage === "ko"
-          ? `Translate this Korean text to English: "${text}"`
-          : `Translate this English text to Korean: "${text}"`;
-
-      const response = await examApi.getSampleAnswers({
-        question: translationQuestion,
-        topic: "translation",
-        level: "intermediate",
-        count: 1,
-        englishOnly: targetLanguage === "en",
-        context: `Please provide only the translated text without any explanations or additional text.`,
+      // 간단한 번역 API 호출
+      const response = await fetch("/api/translate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${useAuthStore.getState().getAccessToken()}`,
+        },
+        body: JSON.stringify({
+          text: text,
+          sourceLanguage: sourceLanguage,
+          targetLanguage: targetLanguage,
+        }),
       });
 
-      const translatedText = (response.samples?.[0]?.text || "").trim();
-      if (translatedText) {
-        setTranslation(translatedText);
+      if (response.ok) {
+        const data = await response.json();
+        setTranslation(data.translatedText || data.translation);
       } else {
-        throw new Error("No translation received");
+        throw new Error(`Translation API failed: ${response.status}`);
       }
     } catch (error) {
       console.error("번역 실패:", error);
