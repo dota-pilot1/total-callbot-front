@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useAuthStore } from "../../auth";
 import { Button } from "../../../components/ui";
 import { createPortal } from "react-dom";
+import FullScreenSlideDialog from "../../../components/ui/FullScreenSlideDialog";
 import { motion, AnimatePresence } from "framer-motion";
 
 import {
@@ -1264,6 +1265,29 @@ SITUATION: This is the beginning of a ${selectedExamCharacter.description} conve
       {/* 테스트 입력 영역 */}
       {connected && (
         <div className="bg-card border-t border-border p-4 flex-shrink-0">
+          {/* 번역 표시 영역 - 자동 완성 위로 이동 */}
+          {showTranslation && translatedText && (
+            <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <p className="text-xs text-blue-600 font-medium mb-1">
+                    한국어 번역
+                  </p>
+                  <p className="text-sm text-blue-800">{translatedText}</p>
+                </div>
+                <button
+                  onClick={() => {
+                    setShowTranslation(false);
+                    setTranslatedText("");
+                  }}
+                  className="ml-2 p-1 text-blue-400 hover:text-blue-600 transition-colors"
+                  title="번역 닫기"
+                >
+                  <XMarkIcon className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          )}
           <div className="flex items-center space-x-2">
             {/* 왼쪽 미니 버튼들 */}
             <div className="flex flex-col space-y-1">
@@ -1383,30 +1407,6 @@ SITUATION: This is the beginning of a ${selectedExamCharacter.description} conve
               </Button>
             </div>
           </div>
-
-          {/* 번역 표시 영역 */}
-          {showTranslation && translatedText && (
-            <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <p className="text-xs text-blue-600 font-medium mb-1">
-                    한국어 번역
-                  </p>
-                  <p className="text-sm text-blue-800">{translatedText}</p>
-                </div>
-                <button
-                  onClick={() => {
-                    setShowTranslation(false);
-                    setTranslatedText("");
-                  }}
-                  className="ml-2 p-1 text-blue-400 hover:text-blue-600 transition-colors"
-                  title="번역 닫기"
-                >
-                  <XMarkIcon className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
-          )}
         </div>
       )}
       {/* 설정 드롭다운 */}
@@ -1488,132 +1488,92 @@ SITUATION: This is the beginning of a ${selectedExamCharacter.description} conve
         isVisible={examResultsVisible}
         onClose={() => setExamResultsVisible(false)}
       />
-      {/* 문장별 분석 모달 다이얼로그 */}
-      {showSentenceAnalysis &&
-        createPortal(
-          <AnimatePresence>
-            <motion.div
-              className="fixed inset-0 z-50"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-            >
-              <div
-                className="absolute inset-0 bg-black/40"
-                onClick={handleCloseSentenceAnalysis}
-              />
-              <motion.div
-                className="absolute inset-0 bg-white md:rounded-t-xl md:top-auto md:bottom-0 md:h-[90vh] shadow-xl"
-                initial={{ y: "-100%" }}
-                animate={{ y: 0 }}
-                exit={{ y: "-100%" }}
-                transition={{ type: "spring", stiffness: 220, damping: 28 }}
-              >
-                <div className="flex flex-col h-full">
-                  {/* 헤더 */}
-                  <div className="flex items-center justify-between p-4 border-b border-gray-200 flex-shrink-0">
-                    <h3 className="text-lg font-semibold text-gray-900">
-                      문장별 번역
-                    </h3>
-                    <button
-                      onClick={handleCloseSentenceAnalysis}
-                      className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
+      {/* 문장별 분석 모달 다이얼로그 - FullScreenSlideDialog 사용 */}
+      <FullScreenSlideDialog
+        isOpen={showSentenceAnalysis}
+        onClose={handleCloseSentenceAnalysis}
+        title="문장별 번역"
+      >
+        <div className="p-4">
+          <div className="space-y-4">
+            {sentences.map((sentence, index) => (
+              <div key={index} className="border border-border rounded-lg p-4">
+                {/* 원본 문장 */}
+                <div className="mb-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="text-foreground leading-relaxed flex-1">
+                      {sentence}
+                    </p>
+                    <Button
+                      onClick={() => {
+                        if (playingIndexes.has(index)) {
+                          stopAudio(index);
+                        } else {
+                          playText(sentence, index);
+                        }
+                      }}
+                      variant="outline"
+                      size="sm"
+                      className="flex-shrink-0 w-8 h-8 p-0"
+                      title="원본 음성 재생"
                     >
-                      <XMarkIcon className="h-4 w-4" />
-                    </button>
-                  </div>
-
-                  {/* 컨텐츠 */}
-                  <div className="flex-1 overflow-y-auto p-4">
-                    <div className="space-y-4">
-                      {sentences.map((sentence, index) => (
-                        <div
-                          key={index}
-                          className="border border-gray-200 rounded-lg p-4"
-                        >
-                          {/* 원본 문장 */}
-                          <div className="mb-3">
-                            <div className="flex items-start justify-between gap-2">
-                              <p className="text-gray-900 leading-relaxed flex-1">
-                                {sentence}
-                              </p>
-                              <button
-                                onClick={() => {
-                                  if (playingIndexes.has(index)) {
-                                    stopAudio(index);
-                                  } else {
-                                    playText(sentence, index);
-                                  }
-                                }}
-                                className="flex-shrink-0 p-1.5 rounded-full bg-blue-100 hover:bg-blue-200 text-blue-600 transition-colors"
-                                title="원본 음성 재생"
-                              >
-                                {playingIndexes.has(index) ? (
-                                  <PauseIcon className="h-4 w-4" />
-                                ) : (
-                                  <PlayIcon className="h-4 w-4" />
-                                )}
-                              </button>
-                            </div>
-                          </div>
-
-                          {/* 번역 섹션 */}
-                          <div className="border-t border-gray-100 pt-3">
-                            {translations[index] ? (
-                              <div className="flex items-start justify-between gap-2">
-                                <p className="text-green-700 bg-green-50 p-2 rounded leading-relaxed flex-1">
-                                  {translations[index]}
-                                </p>
-                                <button
-                                  onClick={() => {
-                                    const translationKey = index + 1000; // 번역용 인덱스
-
-                                    if (playingIndexes.has(translationKey)) {
-                                      stopAudio(translationKey);
-                                    } else {
-                                      playText(
-                                        translations[index],
-                                        translationKey,
-                                      );
-                                    }
-                                  }}
-                                  className="flex-shrink-0 p-1.5 rounded-full bg-green-100 hover:bg-green-200 text-green-600 transition-colors"
-                                  title="번역 음성 재생"
-                                >
-                                  {playingIndexes.has(index + 1000) ? (
-                                    <PauseIcon className="h-4 w-4" />
-                                  ) : (
-                                    <PlayIcon className="h-4 w-4" />
-                                  )}
-                                </button>
-                              </div>
-                            ) : (
-                              <button
-                                onClick={() =>
-                                  translateSentence(sentence, index)
-                                }
-                                disabled={translatingIndexes.has(index)}
-                                className="w-full px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center space-x-2"
-                              >
-                                <LanguageIcon className="h-4 w-4" />
-                                <span>
-                                  {translatingIndexes.has(index)
-                                    ? "번역 중..."
-                                    : "번역하기"}
-                                </span>
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                      {playingIndexes.has(index) ? (
+                        <PauseIcon className="h-4 w-4" />
+                      ) : (
+                        <PlayIcon className="h-4 w-4" />
+                      )}
+                    </Button>
                   </div>
                 </div>
-              </motion.div>
-            </motion.div>
-          </AnimatePresence>,
-          document.body,
-        )}
+
+                {/* 번역 섹션 */}
+                <div className="border-t border-border pt-3">
+                  {translations[index] ? (
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="text-green-700 bg-green-50 p-2 rounded leading-relaxed flex-1">
+                        {translations[index]}
+                      </p>
+                      <Button
+                        onClick={() => {
+                          const translationKey = index + 1000; // 번역용 인덱스
+
+                          if (playingIndexes.has(translationKey)) {
+                            stopAudio(translationKey);
+                          } else {
+                            playText(translations[index], translationKey);
+                          }
+                        }}
+                        variant="outline"
+                        size="sm"
+                        className="flex-shrink-0 w-8 h-8 p-0"
+                        title="번역 음성 재생"
+                      >
+                        {playingIndexes.has(index + 1000) ? (
+                          <PauseIcon className="h-4 w-4" />
+                        ) : (
+                          <PlayIcon className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button
+                      onClick={() => translateSentence(sentence, index)}
+                      disabled={translatingIndexes.has(index)}
+                      className="w-full"
+                      variant="default"
+                    >
+                      <LanguageIcon className="h-4 w-4 mr-2" />
+                      {translatingIndexes.has(index)
+                        ? "번역 중..."
+                        : "번역하기"}
+                    </Button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </FullScreenSlideDialog>
       {/* Toast Container */}
       <ToastContainer />
     </div>
